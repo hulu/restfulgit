@@ -74,21 +74,26 @@ def _convert_commit(repo_key, commit):
         } for c in commit.parents]
     }
 
+GIT_MODE_SUBMODULE = int('0160000', 8)
+
 def _convert_tree(repo_key, tree):
     entry_list = []
     for entry in tree:
-        obj = entry.to_object()
         entry_data = {
             "path": entry.name,
             "sha": entry.hex,
         }
-        if obj.type == GIT_OBJ_BLOB:
-            entry_data['type'] = "blob"
-            entry_data['size'] = obj.size
-            entry_data['url'] = url_for('get_blob', _external=True, repo_key=repo_key, sha=entry.hex)
-        elif obj.type == GIT_OBJ_TREE:
-            entry_data['type'] = "tree"
-            entry_data['url'] = url_for('get_tree', _external=True, repo_key=repo_key, sha=entry.hex)
+        if entry.filemode == GIT_MODE_SUBMODULE:
+            entry_data['type'] = "submodule"
+        else:
+            obj = entry.to_object()
+            if obj.type == GIT_OBJ_BLOB:
+                entry_data['type'] = "blob"
+                entry_data['size'] = obj.size
+                entry_data['url'] = url_for('get_blob', _external=True, repo_key=repo_key, sha=entry.hex)
+            elif obj.type == GIT_OBJ_TREE:
+                entry_data['type'] = "tree"
+                entry_data['url'] = url_for('get_tree', _external=True, repo_key=repo_key, sha=entry.hex)
         entry_list.append(entry_data)
 
     return {
