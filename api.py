@@ -1,7 +1,7 @@
-from flask import Flask, url_for
-from werkzeug.exceptions import NotFound
+from flask import Flask, url_for, request
+from werkzeug.exceptions import NotFound, BadRequest
 app = Flask(__name__)
-from pygit2 import Repository, GIT_OBJ_COMMIT, GIT_OBJ_TREE, GIT_OBJ_BLOB, GIT_REF_SYMBOLIC
+from pygit2 import Repository, GIT_OBJ_COMMIT, GIT_OBJ_TREE, GIT_OBJ_BLOB, GIT_REF_SYMBOLIC, GIT_SORT_TIME
 from datetime import datetime, tzinfo, timedelta
 import json
 from base64 import b64encode
@@ -25,6 +25,30 @@ def _get_repo(repo_key):
         return Repository(path)
     except KeyError:
         raise NotFound("repository not found")
+
+def _get_commit(repo, sha):
+    try:
+        commit = repo[unicode(sha)]
+    except KeyError:
+        raise NotFound("commit not found")
+    if commit.type != GIT_OBJ_COMMIT:
+        raise NotFound("sha not a commit")
+    return commit
+
+def _lookup_ref(repo, ref_name):
+    try:
+        return repo.lookup_reference(ref_name)
+    except:
+        if "/" in ref_name and not ref_name.startswith("refs/"):
+            ref_name = "refs/" + ref_name
+        else:
+            ref_name = "refs/heads/" + ref_name
+
+        try:
+            return repo.lookup_reference(ref_name)
+        except:
+            return None
+
 
 def _convert_signature(sig):
     return {
@@ -120,15 +144,45 @@ def dthandler(obj):
 def _json_dump(obj):
     return json.dumps(obj, default=dthandler)
 
+
+
+@app.route('/repos/<repo_key>/git/commits')
+def get_commit_list(repo_key):
+    ref_name = request.args.get('ref_name') or None
+    start_sha = request.args.get('start_sha') or None
+    limit = request.args.get('limit') or 50
+    try:
+        limit = int(limit)
+    except:
+        raise BadRequest("invalid limit")
+
+    repo = _get_repo(repo_key)
+
+    start_commit_id = None
+    if start_sha is not None:
+        start_commit_id = start_sha
+    else:
+        if ref_name is None:
+            ref_name = "HEAD"
+        ref = _lookup_ref(repo, ref_name)
+        if ref is None:
+            raise NotFound("reference not found")
+        start_commit_id = _lookup_ref(repo, ref_name).resolve().oid
+
+    commits = []
+    walker = repo.walk(start_commit_id, GIT_SORT_TIME)
+    count = 0
+    for commit in walker:
+        count += 1
+        if count > limit:
+            break
+        commits.append(_convert_commit(repo_key, commit))
+    return _json_dump(commits)
+
 @app.route('/repos/<repo_key>/git/commits/<sha>')
 def get_commit(repo_key, sha):
     repo = _get_repo(repo_key)
-    try:
-        commit = repo[unicode(sha)]
-    except KeyError:
-        raise NotFound("commit not found")
-    if commit.type != GIT_OBJ_COMMIT:
-        raise NotFound("sha not a commit")
+    commit = _get_commit(repo, sha)
     return _json_dump(_convert_commit(repo_key, commit))
 
 
