@@ -28,7 +28,7 @@ class FixedOffset(tzinfo):
     def dst(self, dt):
         return self.ZERO
 
-REPO_BASE = '/Users/rajiv/Code/'
+REPO_BASE = '/Users/rajiv/HuluCode/'
 
 def _get_repo(repo_key):
     path = REPO_BASE + repo_key
@@ -105,13 +105,13 @@ def _convert_tree(repo_key, tree):
             elif obj.type == GIT_OBJ_TREE:
                 entry_data['type'] = "tree"
                 entry_data['url'] = url_for('get_tree', _external=True, repo_key=repo_key, sha=entry.hex)
+        entry_data['mode'] = oct(entry.filemode)
         entry_list.append(entry_data)
 
     return {
         "url": url_for('get_tree', _external=True, repo_key=repo_key, sha=tree.hex),
         "sha": tree.hex,
         "tree": entry_list,
-        #"mode": todo,
     }
 
 def _linkobj_for_gitobj(repo_key, obj, include_type=False):
