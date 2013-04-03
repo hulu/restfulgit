@@ -46,6 +46,28 @@ def _get_commit(repo, sha):
         raise NotFound("sha not a commit")
     return commit
 
+def _get_tree(repo, sha):
+    try:
+        tree = repo[unicode(sha)]
+    except KeyError:
+        raise NotFound("tree not found")
+    if tree.type != GIT_OBJ_TREE:
+        raise NotFound("sha not a tree")
+    return tree
+
+def _get_object_from_path(tree, path):
+    path_segments = path.split("/")
+
+    ctree = tree
+    for path_seg in path_segments:
+        if ctree.type != GIT_OBJ_TREE:
+            raise NotFound("invalid path")
+        try:
+            ctree = ctree[path_seg].to_object()
+        except KeyError:
+            raise NotFound("invalid path")
+    return ctree
+
 def _lookup_ref(repo, ref_name):
     try:
         return repo.lookup_reference(ref_name)
@@ -199,12 +221,7 @@ def get_commit(repo_key, sha):
 @jsonify
 def get_tree(repo_key, sha):
     repo = _get_repo(repo_key)
-    try:
-        tree = repo[unicode(sha)]
-    except KeyError:
-        raise NotFound("tree not found")
-    if tree.type != GIT_OBJ_TREE:
-        raise NotFound("sha not a tree")
+    tree = _get_tree(repo, sha)
     return _convert_tree(repo_key, tree)
 
 @app.route('/repos/<repo_key>/git/blobs/<sha>')
@@ -234,6 +251,22 @@ def get_ref_list(repo_key, ref_path=None):
     if len(ref_data) == 1:
         ref_data = ref_data[0]
     return ref_data
+
+@app.route('/repos/<repo_key>/raw/<branch_name>/<path:file_path>')
+def get_raw(repo_key, branch_name, file_path):
+    repo = _get_repo(repo_key)
+
+    commit_sha = _lookup_ref(repo, branch_name).resolve().hex
+
+    tree = _get_tree(repo, _get_commit(repo, commit_sha).tree.hex)
+    git_obj = _get_object_from_path(tree, file_path)
+
+    if git_obj.type != GIT_OBJ_BLOB:
+        return "not a file", 406
+
+    return git_obj.data
+
+
     
 
 if __name__ == '__main__':
