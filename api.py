@@ -7,11 +7,12 @@ import json
 from base64 import b64encode
 import functools
 
-def dthandler(obj):
-    if hasattr(obj, 'isoformat'):
-        return obj.isoformat()
+REPO_BASE = '/Users/rajiv/Code/'
 
 def jsonify(f):
+    def dthandler(obj):
+        if hasattr(obj, 'isoformat'):
+            return obj.isoformat()
     @functools.wraps(f)
     def wrapped(*args, **kwargs):
         return Response(json.dumps(f(*args, **kwargs), default=dthandler), mimetype='application/json')
@@ -27,8 +28,6 @@ class FixedOffset(tzinfo):
 
     def dst(self, dt):
         return self.ZERO
-
-REPO_BASE = '/Users/rajiv/HuluCode/'
 
 def _get_repo(repo_key):
     path = REPO_BASE + repo_key
@@ -81,7 +80,6 @@ def _lookup_ref(repo, ref_name):
             return repo.lookup_reference(ref_name)
         except:
             return None
-
 
 def _convert_signature(sig):
     return {
@@ -175,6 +173,8 @@ def _convert_ref(repo_key, ref, obj):
         "object": _linkobj_for_gitobj(repo_key, obj, include_type=True),
     }
 
+##### VIEWS #####
+
 @app.route('/repos/<repo_key>/git/commits')
 @jsonify
 def get_commit_list(repo_key):
@@ -266,8 +266,6 @@ def get_raw(repo_key, branch_name, file_path):
 
     return git_obj.data
 
-
-    
 
 if __name__ == '__main__':
     app.debug = True
