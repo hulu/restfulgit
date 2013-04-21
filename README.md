@@ -4,6 +4,11 @@ REST API for Git data
 Provides a read-only restful interface for accessing data from Git repositories (local to the server).
 Modeled off the GitHub Git DB API for compatibility (see http://developer.github.com/v3/git/).
 
+Requires: flask, pygit2 (>= 0.18.1), libgit2 (>= 0.18).
+Must modify: REPO_BASE (root path for repositories, note only repositories immediately under this path are currently supported).
+
+api.py is a valid WSGI application.
+
 --
 
 All of these routes return JSON unless otherwise specified.
