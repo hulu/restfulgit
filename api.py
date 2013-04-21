@@ -266,6 +266,14 @@ def get_raw(repo_key, branch_name, file_path):
 
     return git_obj.data
 
+@app.route('/')
+@jsonify
+def index():
+    links = []
+    for rule in app.url_map.iter_rules():
+        if str(rule).startswith("/repos"):
+            links.append(str(rule))
+    return links
 
 if __name__ == '__main__':
     app.debug = True
