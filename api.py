@@ -9,12 +9,13 @@ GIT_MODE_SUBMODULE = int('0160000', 8)
 from datetime import datetime, tzinfo, timedelta
 from base64 import b64encode
 import json
+import mimetypes
 import functools
 
 app = Flask(__name__)
 
 
-REPO_BASE = '~/Code/'
+REPO_BASE = '/Code/'
 
 DEFAULT_COMMIT_LIST_LIMIT = 50
 
@@ -292,7 +293,11 @@ def get_raw(repo_key, branch_name, file_path):
     if git_obj.type != GIT_OBJ_BLOB:
         return "not a file", 406
 
-    return git_obj.data
+    (mimetype, encoding) = mimetypes.guess_type(file_path)
+    if mimetype is not None:
+        return Response(git_obj.data, mimetype=mimetype)
+    else:
+        return git_obj.data
 
 
 @app.route('/')
