@@ -285,7 +285,10 @@ def get_ref_list(repo_key, ref_path=None):
 def get_raw(repo_key, branch_name, file_path):
     repo = _get_repo(repo_key)
 
-    commit_sha = _lookup_ref(repo, branch_name).resolve().hex
+    ref = _lookup_ref(repo, branch_name)
+    if ref is None:
+        raise NotFound("branch not found")
+    commit_sha = ref.resolve().hex
 
     tree = _get_tree(repo, _get_commit(repo, commit_sha).tree.hex)
     git_obj = _get_object_from_path(tree, file_path)
