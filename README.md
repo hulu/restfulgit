@@ -5,9 +5,12 @@ Provides a read-only restful interface for accessing data from Git repositories 
 Modeled off the GitHub Git DB API for compatibility (see http://developer.github.com/v3/git/).
 
 Requires: flask, pygit2 (>= 0.18.1), libgit2 (>= 0.18).
-Must modify: REPO_BASE (root path for repositories, note only repositories immediately under this path are currently supported).
+Must modify: config.conf : repo_base_path (root path for repositories, note only repositories immediately under this path are currently supported).
 
-api.py is a valid WSGI application.
+gitapi.py is a valid WSGI application.
+
+While the app can be run with "python gitapi.py" -- this runs Flask in debug mode and should NOT be used in production.
+Instead the app can be run with any WSGI server, such as gunicorn (pip install gunicorn; gunicorn gitapi)
 
 --
 
