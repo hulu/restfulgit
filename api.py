@@ -1,33 +1,23 @@
 from flask import Flask, url_for, request, Response
 from werkzeug.exceptions import NotFound, BadRequest
-app = Flask(__name__)
-from pygit2 import Repository, GIT_OBJ_COMMIT, GIT_OBJ_TREE, GIT_OBJ_BLOB, GIT_REF_SYMBOLIC, GIT_SORT_TIME
+
+from pygit2 import Repository
+from pygit2 import GIT_OBJ_COMMIT, GIT_OBJ_TREE, GIT_OBJ_BLOB
+from pygit2 import GIT_REF_SYMBOLIC, GIT_SORT_TIME
+GIT_MODE_SUBMODULE = int('0160000', 8)
+
 from datetime import datetime, tzinfo, timedelta
-import json
 from base64 import b64encode
+import json
 import functools
 
-REPO_BASE = '/Users/rajiv/Code/'
+app = Flask(__name__)
 
-def jsonify(f):
-    def dthandler(obj):
-        if hasattr(obj, 'isoformat'):
-            return obj.isoformat()
-    @functools.wraps(f)
-    def wrapped(*args, **kwargs):
-        return Response(json.dumps(f(*args, **kwargs), default=dthandler), mimetype='application/json')
-    return wrapped
 
-class FixedOffset(tzinfo):
-    ZERO = timedelta(0)
-    def __init__(self, offset):
-        self._offset = timedelta(minutes = offset)
+REPO_BASE = '~/Code/'
 
-    def utcoffset(self, dt):
-        return self._offset
+DEFAULT_COMMIT_LIST_LIMIT = 50
 
-    def dst(self, dt):
-        return self.ZERO
 
 def _get_repo(repo_key):
     path = REPO_BASE + repo_key
@@ -36,14 +26,16 @@ def _get_repo(repo_key):
     except KeyError:
         raise NotFound("repository not found")
 
+
 def _get_commit(repo, sha):
     try:
         commit = repo[unicode(sha)]
     except KeyError:
         raise NotFound("commit not found")
     if commit.type != GIT_OBJ_COMMIT:
-        raise NotFound("sha not a commit")
+        raise NotFound("object not a commit")
     return commit
+
 
 def _get_tree(repo, sha):
     try:
@@ -51,8 +43,9 @@ def _get_tree(repo, sha):
     except KeyError:
         raise NotFound("tree not found")
     if tree.type != GIT_OBJ_TREE:
-        raise NotFound("sha not a tree")
+        raise NotFound("object not a tree")
     return tree
+
 
 def _get_object_from_path(tree, path):
     path_segments = path.split("/")
@@ -66,6 +59,7 @@ def _get_object_from_path(tree, path):
         except KeyError:
             raise NotFound("invalid path")
     return ctree
+
 
 def _lookup_ref(repo, ref_name):
     try:
@@ -81,12 +75,14 @@ def _lookup_ref(repo, ref_name):
         except:
             return None
 
+
 def _convert_signature(sig):
     return {
-        "name" : sig.name,
-        "email" : sig.email,
-        "date" : datetime.fromtimestamp(sig.time, FixedOffset(sig.offset))
+        "name": sig.name,
+        "email": sig.email,
+        "date": datetime.fromtimestamp(sig.time, FixedOffset(sig.offset))
     }
+
 
 def _convert_commit(repo_key, commit):
     return {
@@ -95,17 +91,16 @@ def _convert_commit(repo_key, commit):
         "author": _convert_signature(commit.author),
         "committer": _convert_signature(commit.committer),
         "message": commit.message,
-        "tree" : {
+        "tree": {
             "sha": commit.tree.hex,
             "url": url_for('get_tree', _external=True, repo_key=repo_key, sha=commit.tree.hex),
         },
-        "parents" : [{
+        "parents": [{
             "sha": c.hex,
             "url": url_for('get_commit', _external=True, repo_key=repo_key, sha=c.hex)
         } for c in commit.parents]
     }
 
-GIT_MODE_SUBMODULE = int('0160000', 8)
 
 def _convert_tree(repo_key, tree):
     entry_list = []
@@ -134,6 +129,7 @@ def _convert_tree(repo_key, tree):
         "tree": entry_list,
     }
 
+
 def _linkobj_for_gitobj(repo_key, obj, include_type=False):
     data = {}
     data['sha'] = obj.hex
@@ -150,11 +146,13 @@ def _linkobj_for_gitobj(repo_key, obj, include_type=False):
         data['type'] = obj_type
     return data
 
+
 def _encode_blob_data(data):
     try:
-       return 'utf-8', data.decode('utf-8')
+        return 'utf-8', data.decode('utf-8')
     except UnicodeDecodeError:
-       return 'base64', b64encode(data)
+        return 'base64', b64encode(data)
+
 
 def _convert_blob(repo_key, blob):
     encoding, data = _encode_blob_data(blob.data)
@@ -166,6 +164,7 @@ def _convert_blob(repo_key, blob):
         "data": data,
     }
 
+
 def _convert_ref(repo_key, ref, obj):
     return {
         "url": url_for('get_ref_list', _external=True, repo_key=repo_key, ref_path=ref.name[5:]), #[5:] to cut off the redundant refs/
@@ -173,14 +172,39 @@ def _convert_ref(repo_key, ref, obj):
         "object": _linkobj_for_gitobj(repo_key, obj, include_type=True),
     }
 
+
+def jsonify(f):
+    def dthandler(obj):
+        if hasattr(obj, 'isoformat'):
+            return obj.isoformat()
+
+    @functools.wraps(f)
+    def wrapped(*args, **kwargs):
+        return Response(json.dumps(f(*args, **kwargs), default=dthandler), mimetype='application/json')
+    return wrapped
+
+
+class FixedOffset(tzinfo):
+    ZERO = timedelta(0)
+
+    def __init__(self, offset):
+        self._offset = timedelta(minutes=offset)
+
+    def utcoffset(self, dt):
+        return self._offset
+
+    def dst(self, dt):
+        return self.ZERO
+
 ##### VIEWS #####
+
 
 @app.route('/repos/<repo_key>/git/commits')
 @jsonify
 def get_commit_list(repo_key):
     ref_name = request.args.get('ref_name') or None
     start_sha = request.args.get('start_sha') or None
-    limit = request.args.get('limit') or 50
+    limit = request.args.get('limit') or DEFAULT_COMMIT_LIST_LIMIT
     try:
         limit = int(limit)
     except:
@@ -209,6 +233,7 @@ def get_commit_list(repo_key):
         commits.append(_convert_commit(repo_key, commit))
     return commits
 
+
 @app.route('/repos/<repo_key>/git/commits/<sha>')
 @jsonify
 def get_commit(repo_key, sha):
@@ -224,6 +249,7 @@ def get_tree(repo_key, sha):
     tree = _get_tree(repo, sha)
     return _convert_tree(repo_key, tree)
 
+
 @app.route('/repos/<repo_key>/git/blobs/<sha>')
 @jsonify
 def get_blob(repo_key, sha):
@@ -235,6 +261,7 @@ def get_blob(repo_key, sha):
     if blob.type != GIT_OBJ_BLOB:
         raise NotFound("sha not a blob")
     return _convert_blob(repo_key, blob)
+
 
 @app.route('/repos/<repo_key>/git/refs')
 @app.route('/repos/<repo_key>/git/refs/<path:ref_path>')
@@ -252,6 +279,7 @@ def get_ref_list(repo_key, ref_path=None):
         ref_data = ref_data[0]
     return ref_data
 
+
 @app.route('/repos/<repo_key>/raw/<branch_name>/<path:file_path>')
 def get_raw(repo_key, branch_name, file_path):
     repo = _get_repo(repo_key)
@@ -266,6 +294,7 @@ def get_raw(repo_key, branch_name, file_path):
 
     return git_obj.data
 
+
 @app.route('/')
 @jsonify
 def index():
@@ -278,5 +307,6 @@ def index():
 if __name__ == '__main__':
     app.debug = True
     app.run(host="0.0.0.0")
-    
+
+
 application = app
