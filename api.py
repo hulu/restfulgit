@@ -14,10 +14,14 @@ import functools
 
 app = Flask(__name__)
 
+config = {}
+try:
+    execfile("config.conf", config)
+except:
+    print "error loading config"
 
-REPO_BASE = '/Code/'
-
-DEFAULT_COMMIT_LIST_LIMIT = 50
+REPO_BASE = config.get("repo_base_path", "/Code/")
+DEFAULT_COMMIT_LIST_LIMIT = config.get("default_commit_list_limit", 50)
 
 
 def _get_repo(repo_key):
