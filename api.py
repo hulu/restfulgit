@@ -87,18 +87,21 @@ def _convert_signature(sig):
 
 def _convert_commit(repo_key, commit):
     return {
-        "url": url_for('get_commit', _external=True, repo_key=repo_key, sha=commit.hex),
+        "url": url_for('get_commit', _external=True,
+                       repo_key=repo_key, sha=commit.hex),
         "sha": commit.hex,
         "author": _convert_signature(commit.author),
         "committer": _convert_signature(commit.committer),
         "message": commit.message,
         "tree": {
             "sha": commit.tree.hex,
-            "url": url_for('get_tree', _external=True, repo_key=repo_key, sha=commit.tree.hex),
+            "url": url_for('get_tree', _external=True,
+                           repo_key=repo_key, sha=commit.tree.hex),
         },
         "parents": [{
             "sha": c.hex,
-            "url": url_for('get_commit', _external=True, repo_key=repo_key, sha=c.hex)
+            "url": url_for('get_commit', _external=True,
+                           repo_key=repo_key, sha=c.hex)
         } for c in commit.parents]
     }
 
@@ -117,15 +120,18 @@ def _convert_tree(repo_key, tree):
             if obj.type == GIT_OBJ_BLOB:
                 entry_data['type'] = "blob"
                 entry_data['size'] = obj.size
-                entry_data['url'] = url_for('get_blob', _external=True, repo_key=repo_key, sha=entry.hex)
+                entry_data['url'] = url_for('get_blob', _external=True,
+                                            repo_key=repo_key, sha=entry.hex)
             elif obj.type == GIT_OBJ_TREE:
                 entry_data['type'] = "tree"
-                entry_data['url'] = url_for('get_tree', _external=True, repo_key=repo_key, sha=entry.hex)
+                entry_data['url'] = url_for('get_tree', _external=True,
+                                            repo_key=repo_key, sha=entry.hex)
         entry_data['mode'] = oct(entry.filemode)
         entry_list.append(entry_data)
 
     return {
-        "url": url_for('get_tree', _external=True, repo_key=repo_key, sha=tree.hex),
+        "url": url_for('get_tree', _external=True,
+                       repo_key=repo_key, sha=tree.hex),
         "sha": tree.hex,
         "tree": entry_list,
     }
@@ -142,7 +148,8 @@ def _linkobj_for_gitobj(repo_key, obj, include_type=False):
     elif obj.type == GIT_OBJ_BLOB:
         obj_type = 'blob'
     if obj_type is not None:
-        data['url'] = url_for('get_' + obj_type, _external=True, repo_key=repo_key, sha=obj.hex)
+        data['url'] = url_for('get_' + obj_type, _external=True,
+                              repo_key=repo_key, sha=obj.hex)
     if include_type:
         data['type'] = obj_type
     return data
@@ -158,7 +165,8 @@ def _encode_blob_data(data):
 def _convert_blob(repo_key, blob):
     encoding, data = _encode_blob_data(blob.data)
     return {
-        "url": url_for('get_blob', _external=True, repo_key=repo_key, sha=blob.hex),
+        "url": url_for('get_blob', _external=True,
+                       repo_key=repo_key, sha=blob.hex),
         "sha": blob.hex,
         "size": blob.size,
         "encoding": encoding,
@@ -168,7 +176,8 @@ def _convert_blob(repo_key, blob):
 
 def _convert_ref(repo_key, ref, obj):
     return {
-        "url": url_for('get_ref_list', _external=True, repo_key=repo_key, ref_path=ref.name[5:]), #[5:] to cut off the redundant refs/
+        "url": url_for('get_ref_list', _external=True,
+                       repo_key=repo_key, ref_path=ref.name[5:]),  # [5:] to cut off the redundant refs/
         "ref": ref.name,
         "object": _linkobj_for_gitobj(repo_key, obj, include_type=True),
     }
@@ -181,7 +190,8 @@ def jsonify(f):
 
     @functools.wraps(f)
     def wrapped(*args, **kwargs):
-        return Response(json.dumps(f(*args, **kwargs), default=dthandler), mimetype='application/json')
+        return Response(json.dumps(f(*args, **kwargs), default=dthandler),
+                        mimetype='application/json')
     return wrapped
 
 
@@ -274,7 +284,10 @@ def get_ref_list(repo_key, ref_path=None):
         ref_path = ""
     repo = _get_repo(repo_key)
     ref_data = [
-        _convert_ref(repo_key, reference, repo[reference.oid]) for reference in filter(lambda x: x.type != GIT_REF_SYMBOLIC, [repo.lookup_reference(r) for r in filter(lambda x: x.startswith(ref_path), repo.listall_references())])
+        _convert_ref(repo_key, reference, repo[reference.oid]) for reference in
+        filter(lambda x: x.type != GIT_REF_SYMBOLIC,
+               [repo.lookup_reference(r) for r in filter(
+               lambda x: x.startswith(ref_path), repo.listall_references())])
     ]
     if len(ref_data) == 1:
         ref_data = ref_data[0]
