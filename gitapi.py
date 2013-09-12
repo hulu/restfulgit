@@ -239,7 +239,12 @@ def get_commit_list(repo_key):
         start_commit_id = _lookup_ref(repo, ref_name).resolve().oid
 
     commits = []
-    walker = repo.walk(start_commit_id, GIT_SORT_TIME)
+    try:
+        walker = repo.walk(start_commit_id, GIT_SORT_TIME)
+    except ValueError:
+        raise BadRequest("invalid start_sha")
+    except KeyError:
+        raise NotFound("commit not found")
     count = 0
     for commit in walker:
         count += 1
