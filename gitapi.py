@@ -1,5 +1,6 @@
 from flask import Flask, url_for, request, Response
 from werkzeug.exceptions import NotFound, BadRequest
+from werkzeug.routing import BaseConverter
 
 from pygit2 import Repository
 from pygit2 import GIT_OBJ_COMMIT, GIT_OBJ_TREE, GIT_OBJ_BLOB
@@ -214,6 +215,13 @@ class FixedOffset(tzinfo):
 ##### VIEWS #####
 
 
+class SHAConverter(BaseConverter):
+    regex = r'(?:[0-9a-fA-F]{1,40})'
+
+
+app.url_map.converters['sha'] = SHAConverter
+
+
 @app.route('/repos/<repo_key>/git/commits')
 @jsonify
 def get_commit_list(repo_key):
@@ -249,7 +257,7 @@ def get_commit_list(repo_key):
     return commits
 
 
-@app.route('/repos/<repo_key>/git/commits/<sha>')
+@app.route('/repos/<repo_key>/git/commits/<sha:sha>')
 @jsonify
 def get_commit(repo_key, sha):
     repo = _get_repo(repo_key)
@@ -257,7 +265,7 @@ def get_commit(repo_key, sha):
     return _convert_commit(repo_key, commit)
 
 
-@app.route('/repos/<repo_key>/git/trees/<sha>')
+@app.route('/repos/<repo_key>/git/trees/<sha:sha>')
 @jsonify
 def get_tree(repo_key, sha):
     repo = _get_repo(repo_key)
@@ -265,7 +273,7 @@ def get_tree(repo_key, sha):
     return _convert_tree(repo_key, repo, tree)
 
 
-@app.route('/repos/<repo_key>/git/blobs/<sha>')
+@app.route('/repos/<repo_key>/git/blobs/<sha:sha>')
 @jsonify
 def get_blob(repo_key, sha):
     repo = _get_repo(repo_key)
