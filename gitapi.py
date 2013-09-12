@@ -52,7 +52,7 @@ def _get_tree(repo, sha):
     return tree
 
 
-def _get_object_from_path(tree, path):
+def _get_object_from_path(repo, tree, path):
     path_segments = path.split("/")
 
     ctree = tree
@@ -60,7 +60,7 @@ def _get_object_from_path(tree, path):
         if ctree.type != GIT_OBJ_TREE:
             raise NotFound("invalid path")
         try:
-            ctree = ctree[path_seg].to_object()
+            ctree = repo[ctree[path_seg].oid]
         except KeyError:
             raise NotFound("invalid path")
     return ctree
@@ -110,7 +110,7 @@ def _convert_commit(repo_key, commit):
     }
 
 
-def _convert_tree(repo_key, tree):
+def _convert_tree(repo_key, repo, tree):
     entry_list = []
     for entry in tree:
         entry_data = {
@@ -120,7 +120,7 @@ def _convert_tree(repo_key, tree):
         if entry.filemode == GIT_MODE_SUBMODULE:
             entry_data['type'] = "submodule"
         else:
-            obj = entry.to_object()
+            obj = repo[entry.oid]
             if obj.type == GIT_OBJ_BLOB:
                 entry_data['type'] = "blob"
                 entry_data['size'] = obj.size
@@ -236,7 +236,7 @@ def get_commit_list(repo_key):
         ref = _lookup_ref(repo, ref_name)
         if ref is None:
             raise NotFound("reference not found")
-        start_commit_id = _lookup_ref(repo, ref_name).resolve().oid
+        start_commit_id = _lookup_ref(repo, ref_name).resolve().target
 
     commits = []
     walker = repo.walk(start_commit_id, GIT_SORT_TIME)
@@ -262,7 +262,7 @@ def get_commit(repo_key, sha):
 def get_tree(repo_key, sha):
     repo = _get_repo(repo_key)
     tree = _get_tree(repo, sha)
-    return _convert_tree(repo_key, tree)
+    return _convert_tree(repo_key, repo, tree)
 
 
 @app.route('/repos/<repo_key>/git/blobs/<sha>')
@@ -288,7 +288,7 @@ def get_ref_list(repo_key, ref_path=None):
         ref_path = ""
     repo = _get_repo(repo_key)
     ref_data = [
-        _convert_ref(repo_key, reference, repo[reference.oid]) for reference in
+        _convert_ref(repo_key, reference, repo[reference.target]) for reference in
         filter(lambda x: x.type != GIT_REF_SYMBOLIC,
                [repo.lookup_reference(r) for r in filter(
                lambda x: x.startswith(ref_path), repo.listall_references())])
@@ -305,10 +305,10 @@ def get_raw(repo_key, branch_name, file_path):
     ref = _lookup_ref(repo, branch_name)
     if ref is None:
         raise NotFound("branch not found")
-    commit_sha = ref.resolve().hex
+    commit_sha = ref.resolve().target.hex
 
     tree = _get_tree(repo, _get_commit(repo, commit_sha).tree.hex)
-    git_obj = _get_object_from_path(tree, file_path)
+    git_obj = _get_object_from_path(repo, tree, file_path)
 
     if git_obj.type != GIT_OBJ_BLOB:
         return "not a file", 406
@@ -331,7 +331,7 @@ def index():
 
 if __name__ == '__main__':
     app.debug = True
-    app.run(host="0.0.0.0")
+    app.run(host="0.0.0.0", port=8888)
 
 
 application = app
