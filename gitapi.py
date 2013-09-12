@@ -9,6 +9,7 @@ GIT_MODE_SUBMODULE = int('0160000', 8)
 
 from datetime import datetime, tzinfo, timedelta
 from base64 import b64encode
+from itertools import islice
 import json
 import mimetypes
 import functools
@@ -232,6 +233,8 @@ def get_commit_list(repo_key):
         limit = int(limit)
     except:
         raise BadRequest("invalid limit")
+    if limit < 0:
+        raise BadRequest("invalid limit")
 
     repo = _get_repo(repo_key)
 
@@ -246,19 +249,14 @@ def get_commit_list(repo_key):
             raise NotFound("reference not found")
         start_commit_id = _lookup_ref(repo, ref_name).resolve().target
 
-    commits = []
     try:
         walker = repo.walk(start_commit_id, GIT_SORT_TIME)
     except ValueError:
         raise BadRequest("invalid start_sha")
     except KeyError:
         raise NotFound("commit not found")
-    count = 0
-    for commit in walker:
-        count += 1
-        if count > limit:
-            break
-        commits.append(_convert_commit(repo_key, commit))
+
+    commits = [_convert_commit(repo_key, commit) for commit in islice(walker, limit)]
     return commits
 
 
