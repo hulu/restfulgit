@@ -2,9 +2,9 @@ from flask import Flask, url_for, request, Response
 from werkzeug.exceptions import NotFound, BadRequest
 from werkzeug.routing import BaseConverter
 
-from pygit2 import Repository
-from pygit2 import GIT_OBJ_COMMIT, GIT_OBJ_TREE, GIT_OBJ_BLOB
-from pygit2 import GIT_REF_SYMBOLIC, GIT_SORT_TIME
+from pygit2 import (Repository,
+                    GIT_OBJ_COMMIT, GIT_OBJ_TREE, GIT_OBJ_BLOB,
+                    GIT_REF_SYMBOLIC, GIT_SORT_TIME)
 GIT_MODE_SUBMODULE = int('0160000', 8)
 
 from datetime import datetime, tzinfo, timedelta
