@@ -9,7 +9,7 @@ GIT_MODE_SUBMODULE = int('0160000', 8)
 
 from datetime import datetime, tzinfo, timedelta
 from base64 import b64encode
-from itertools import islice
+from itertools import islice, ifilter
 import json
 import mimetypes
 import functools
@@ -299,11 +299,12 @@ def get_ref_list(repo_key, ref_path=None):
     else:
         ref_path = ""
     repo = _get_repo(repo_key)
+    ref_names = ifilter(lambda x: x.startswith(ref_path), repo.listall_references())
+    references = (repo.lookup_reference(ref_name) for ref_name in ref_names)
+    nonsymbolic_refs = ifilter(lambda x: x.type != GIT_REF_SYMBOLIC, references)
     ref_data = [
-        _convert_ref(repo_key, reference, repo[reference.target]) for reference in
-        filter(lambda x: x.type != GIT_REF_SYMBOLIC,
-               [repo.lookup_reference(r) for r in filter(
-               lambda x: x.startswith(ref_path), repo.listall_references())])
+        _convert_ref(repo_key, reference, repo[reference.target])
+        for reference in nonsymbolic_refs
     ]
     if len(ref_data) == 1:
         ref_data = ref_data[0]
