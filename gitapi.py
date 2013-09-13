@@ -142,7 +142,7 @@ def _convert_tree(repo_key, repo, tree):
     }
 
 
-TYPE_CODE_TO_NAME = {
+GIT_OBJ_TYPE_TO_NAME = {
     GIT_OBJ_COMMIT: 'commit',
     GIT_OBJ_TREE: 'tree',
     GIT_OBJ_BLOB: 'blob',
@@ -152,7 +152,7 @@ TYPE_CODE_TO_NAME = {
 def _linkobj_for_gitobj(repo_key, obj, include_type=False):
     data = {}
     data['sha'] = obj.hex
-    obj_type = TYPE_CODE_TO_NAME.get(obj.type)
+    obj_type = GIT_OBJ_TYPE_TO_NAME.get(obj.type)
     if obj_type is not None:
         data['url'] = url_for('get_' + obj_type, _external=True,
                               repo_key=repo_key, sha=obj.hex)
