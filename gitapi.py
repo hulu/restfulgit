@@ -3,7 +3,7 @@ from werkzeug.exceptions import NotFound, BadRequest
 from werkzeug.routing import BaseConverter
 
 from pygit2 import (Repository,
-                    GIT_OBJ_COMMIT, GIT_OBJ_TREE, GIT_OBJ_BLOB,
+                    GIT_OBJ_COMMIT, GIT_OBJ_TREE, GIT_OBJ_BLOB, GIT_OBJ_TAG,
                     GIT_REF_SYMBOLIC, GIT_SORT_TIME)
 GIT_MODE_SUBMODULE = int('0160000', 8)
 
@@ -52,6 +52,16 @@ def _get_tree(repo, sha):
     if tree.type != GIT_OBJ_TREE:
         raise NotFound("object not a tree")
     return tree
+
+
+def _get_tag(repo, sha):
+    try:
+        tag = repo[unicode(sha)]
+    except KeyError:
+        raise NotFound("tag not found")
+    if tag.type != GIT_OBJ_TAG:
+        raise NotFound("object not a tag")
+    return tag
 
 
 def _get_object_from_path(repo, tree, path):
@@ -143,10 +153,29 @@ def _convert_tree(repo_key, repo, tree):
     }
 
 
+def _convert_tag(repo_key, repo, tag):
+    target_type_name = GIT_OBJ_TYPE_TO_NAME.get(repo[tag.target].type)
+    return {
+        "url": url_for('get_tag', _external=True,
+                       repo_key=repo_key, sha=tag.hex),
+        "sha": tag.hex,
+        "tag": tag.name,
+        "tagger": _convert_signature(tag.tagger),
+        "message": tag.message,
+        "object": {
+            "type": target_type_name,
+            "sha": tag.target.hex,
+            "url": url_for('get_' + target_type_name, _external=True,
+                           repo_key=repo_key, sha=tag.target.hex),
+        },
+    }
+
+
 GIT_OBJ_TYPE_TO_NAME = {
     GIT_OBJ_COMMIT: 'commit',
     GIT_OBJ_TREE: 'tree',
     GIT_OBJ_BLOB: 'blob',
+    GIT_OBJ_TAG: 'tag',
 }
 
 
@@ -288,6 +317,14 @@ def get_blob(repo_key, sha):
     if blob.type != GIT_OBJ_BLOB:
         raise NotFound("sha not a blob")
     return _convert_blob(repo_key, blob)
+
+
+@app.route('/repos/<repo_key>/git/tags/<sha:sha>')
+@jsonify
+def get_tag(repo_key, sha):
+    repo = _get_repo(repo_key)
+    tag = _get_tag(repo, sha)
+    return _convert_tag(repo_key, repo, tag)
 
 
 @app.route('/repos/<repo_key>/git/refs')

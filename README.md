@@ -101,6 +101,31 @@ Retrieves a specific tree object:
 }
 ```
 
+Tags
+----------
+Retrieves a specific tag object:
+
+    GET /repos/:repo_key/git/tags/:sha
+
+```json
+{
+    "url": "http://localhost:5000/repos/restfulgit.git/git/tags/89571737c474fae7ea4c092b5ed94e4eccb11b2a",
+    "object": {
+        "url": "http://localhost:5000/repos/restfulgit.git/git/commits/b6b05bb0f230b591d82fcc07d169b7453e04cf89",
+        "sha": "b6b05bb0f230b591d82fcc07d169b7453e04cf89",
+        "type": "commit"
+    },
+    "sha": "89571737c474fae7ea4c092b5ed94e4eccb11b2a",
+    "tag": "v0.1",
+    "tagger": {
+        "date": "2013-09-12T21:00:28-07:00",
+        "name": "Rajiv Makhijani",
+        "email": "rajiv@hulu.com"
+    },
+    "message": "this is our first release"
+}
+```
+
 Refs
 ----------
 Retrieves a list of refs:
