@@ -82,7 +82,7 @@ def _get_object_from_path(repo, tree, path):
 def _lookup_ref(repo, ref_name):
     try:
         return repo.lookup_reference(ref_name)
-    except:
+    except (ValueError, KeyError):
         if "/" in ref_name and not ref_name.startswith("refs/"):
             ref_name = "refs/" + ref_name
         else:
@@ -90,7 +90,7 @@ def _lookup_ref(repo, ref_name):
 
         try:
             return repo.lookup_reference(ref_name)
-        except:
+        except (ValueError, KeyError):
             return None
 
 
@@ -262,7 +262,7 @@ def get_commit_list(repo_key):
     limit = request.args.get('limit') or DEFAULT_COMMIT_LIST_LIMIT
     try:
         limit = int(limit)
-    except:
+    except ValueError:
         raise BadRequest("invalid limit")
     if limit < 0:
         raise BadRequest("invalid limit")
