@@ -1,4 +1,5 @@
 #!/usr/bin/env python2.7
+# coding=utf-8
 from flask import Flask, url_for, request, Response
 from werkzeug.exceptions import NotFound, BadRequest
 from werkzeug.routing import BaseConverter
