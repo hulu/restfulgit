@@ -221,14 +221,14 @@ def _convert_ref(repo_key, ref, obj):
     }
 
 
-def jsonify(f):
+def jsonify(func):
     def dthandler(obj):
         if hasattr(obj, 'isoformat'):
             return obj.isoformat()
 
-    @functools.wraps(f)
+    @functools.wraps(func)
     def wrapped(*args, **kwargs):
-        return Response(json.dumps(f(*args, **kwargs), default=dthandler),
+        return Response(json.dumps(func(*args, **kwargs), default=dthandler),
                         mimetype='application/json')
     return wrapped
 
