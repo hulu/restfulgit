@@ -237,18 +237,19 @@ class FixedOffset(tzinfo):
     ZERO = timedelta(0)
 
     def __init__(self, offset):
+        super(FixedOffset, self).__init__()
         self._offset = timedelta(minutes=offset)
 
-    def utcoffset(self, dt):
+    def utcoffset(self, dt):  # pylint: disable=W0613
         return self._offset
 
-    def dst(self, dt):
+    def dst(self, dt):  # pylint: disable=W0613
         return self.ZERO
 
 ##### VIEWS #####
 
 
-class SHAConverter(BaseConverter):
+class SHAConverter(BaseConverter):  # pylint: disable=W0232
     regex = r'(?:[0-9a-fA-F]{1,40})'
 
 
@@ -365,7 +366,7 @@ def get_raw(repo_key, branch_name, file_path):
     if git_obj.type != GIT_OBJ_BLOB:
         return "not a file", 406
 
-    (mimetype, encoding) = mimetypes.guess_type(file_path)
+    (mimetype, encoding) = mimetypes.guess_type(file_path)  # pylint: disable=W0612
     if mimetype is not None:
         return Response(git_obj.data, mimetype=mimetype)
     else:
