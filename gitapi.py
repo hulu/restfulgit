@@ -1,5 +1,7 @@
 #!/usr/bin/env python2.7
 # coding=utf-8
+from __future__ import print_function
+
 from flask import Flask, url_for, request, Response
 from werkzeug.exceptions import NotFound, BadRequest
 from werkzeug.routing import BaseConverter
@@ -21,8 +23,12 @@ app = Flask(__name__)
 CONFIG = {}
 try:
     execfile("config.conf", CONFIG)
-except:
-    print "error loading config"
+except:  # pylint: disable=W0702
+    import sys
+    from traceback import print_exc
+    print("error loading config:\n", file=sys.stderr)
+    print_exc()
+    sys.exit(1)
 
 REPO_BASE = CONFIG.get("repo_base_path", "/Code/")
 DEFAULT_COMMIT_LIST_LIMIT = CONFIG.get("default_commit_list_limit", 50)
