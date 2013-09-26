@@ -18,14 +18,14 @@ import functools
 
 app = Flask(__name__)
 
-config = {}
+CONFIG = {}
 try:
-    execfile("config.conf", config)
+    execfile("config.conf", CONFIG)
 except:
     print "error loading config"
 
-REPO_BASE = config.get("repo_base_path", "/Code/")
-DEFAULT_COMMIT_LIST_LIMIT = config.get("default_commit_list_limit", 50)
+REPO_BASE = CONFIG.get("repo_base_path", "/Code/")
+DEFAULT_COMMIT_LIST_LIMIT = CONFIG.get("default_commit_list_limit", 50)
 
 
 def _get_repo(repo_key):
