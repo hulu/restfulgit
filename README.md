@@ -1,4 +1,4 @@
-RestfulGit: A Restful API for Git data
+RestfulGit: A Restful API for Git data [![Build Status](https://travis-ci.org/hulu/restfulgit.png?branch=master)](https://travis-ci.org/hulu/restfulgit)
 =======================================
 
 Provides a read-only restful interface for accessing data from Git repositories (local to the server).
