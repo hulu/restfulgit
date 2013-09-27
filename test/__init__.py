@@ -2,6 +2,7 @@
 from __future__ import unicode_literals
 
 from hashlib import sha512
+import io
 import os.path
 
 from flask.ext.testing import TestCase as _FlaskTestCase
@@ -9,7 +10,9 @@ from flask.ext.testing import TestCase as _FlaskTestCase
 import gitapi
 
 
-PARENT_DIR_OF_RESTFULGIT_REPO = os.path.join(os.path.abspath(os.path.join(os.path.dirname(gitapi.__file__), '..')), '')
+RESTFULGIT_REPO = os.path.dirname(gitapi.__file__)
+DESCRIPTION_FILEPATH = os.path.join(RESTFULGIT_REPO, '.git', 'description')
+PARENT_DIR_OF_RESTFULGIT_REPO = os.path.join(os.path.abspath(os.path.join(RESTFULGIT_REPO, '..')), '')
 FIRST_COMMIT = "07b9bf1540305153ceeb4519a50b588c35a35464"
 TREE_OF_FIRST_COMMIT = "6ca22167185c31554aa6157306e68dfd612d6345"
 BLOB_FROM_FIRST_COMMIT = "ae9d90706c632c26023ce599ac96cb152673da7c"
@@ -27,8 +30,7 @@ class RepoKeyTestCase(_GitApiTestCase):
         self.assert404(resp)
 
     def test_directory_is_not_git_repo(self):
-        arbitrary_directory = os.path.join(PARENT_DIR_OF_RESTFULGIT_REPO, 'restfulgit')
-        gitapi.app.REPO_BASE = arbitrary_directory
+        gitapi.app.REPO_BASE = RESTFULGIT_REPO
         resp = self.client.get('/repos/test/git/commits')
         self.assert404(resp)
 
@@ -198,3 +200,30 @@ class RawFileTestCase(_GitApiTestCase):
             '7201955547d83fb4e740adf52d95c3044591ec8b60e4a136f5486a05d1dfaac2bd44d4546830cf0f32d05b40ce5928d0b3f71e0b2628488ea0db1427a6dd2988',
             sha512(resp.data).hexdigest()
         )
+
+
+class DescriptionTestCase(_GitApiTestCase):
+    def test_no_description_file(self):
+        try:
+            os.remove(DESCRIPTION_FILEPATH)
+        except OSError:
+            pass
+        resp = self.client.get('/repos/restfulgit/description')
+        self.assert200(resp)
+        self.assertEqual(resp.data, "")
+
+    def test_dot_dot_disallowed(self):
+        resp = self.client.get('/repos/../description')
+        self.assert404(resp)
+
+    def test_nonexistent_repo(self):
+        gitapi.app.REPO_BASE = RESTFULGIT_REPO
+        resp = self.client.get('/repos/test/description')
+        self.assert404(resp)
+
+    def test_works(self):
+        description = "REST API for Git data\n"
+        with io.open(DESCRIPTION_FILEPATH, mode='wt', encoding='utf-8') as description_file:
+            description_file.write(description)
+        resp = self.client.get('/repos/restfulgit/description')
+        self.assertEqual(resp.data, description)

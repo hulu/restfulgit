@@ -158,3 +158,15 @@ Raw Files
 Returns the raw file data for the file on the specified branch:
 
     /repos/:repo_key/raw/:branch_name/:file_path
+
+Repository Descriptions
+-----------------
+Retrieve the description (if any) of the repo, as plain text:
+
+    GET /repos/:repo_key/description
+
+```
+REST API for Git data
+```
+
+(If there is no description, the result will be blank.)

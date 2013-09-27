@@ -2,7 +2,7 @@
 # coding=utf-8
 from __future__ import print_function
 
-from flask import Flask, url_for, request, Response, safe_join
+from flask import Flask, url_for, request, Response, safe_join, send_from_directory
 from werkzeug.exceptions import NotFound, BadRequest
 from werkzeug.routing import BaseConverter
 
@@ -16,6 +16,7 @@ from base64 import b64encode
 from itertools import islice, ifilter
 import json
 import mimetypes
+import os.path
 import functools
 
 app = Flask(__name__)
@@ -334,6 +335,19 @@ def get_tag(repo_key, sha):
     repo = _get_repo(repo_key)
     tag = _get_tag(repo, sha)
     return _convert_tag(repo_key, repo, tag)
+
+
+PLAIN_TEXT = 'text/plain'
+
+
+@app.route('/repos/<repo_key>/description')
+def get_description(repo_key):
+    _get_repo(repo_key)  # check repo_key validity
+    relative_path = os.path.join(repo_key, '.git', 'description')
+    absolute_path = safe_join(REPO_BASE, relative_path)
+    if not os.path.isfile(absolute_path):
+        return Response("", mimetype=PLAIN_TEXT)
+    return send_from_directory(REPO_BASE, relative_path, mimetype=PLAIN_TEXT)
 
 
 @app.route('/repos/<repo_key>/git/refs')
