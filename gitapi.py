@@ -2,7 +2,7 @@
 # coding=utf-8
 from __future__ import print_function
 
-from flask import Flask, url_for, request, Response
+from flask import Flask, url_for, request, Response, safe_join
 from werkzeug.exceptions import NotFound, BadRequest
 from werkzeug.routing import BaseConverter
 
@@ -35,7 +35,7 @@ DEFAULT_COMMIT_LIST_LIMIT = CONFIG.get("default_commit_list_limit", 50)
 
 
 def _get_repo(repo_key):
-    path = REPO_BASE + repo_key
+    path = safe_join(REPO_BASE, repo_key)
     try:
         return Repository(path)
     except KeyError:
