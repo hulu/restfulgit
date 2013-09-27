@@ -1,5 +1,7 @@
 #!/usr/bin/env python2.7
 # coding=utf-8
+from __future__ import print_function
+
 from flask import Flask, url_for, request, Response
 from werkzeug.exceptions import NotFound, BadRequest
 from werkzeug.routing import BaseConverter
@@ -18,14 +20,18 @@ import functools
 
 app = Flask(__name__)
 
-config = {}
+CONFIG = {}
 try:
-    execfile("config.conf", config)
-except:
-    print "error loading config"
+    execfile("config.conf", CONFIG)
+except:  # pylint: disable=W0702
+    import sys
+    from traceback import print_exc
+    print("error loading config:\n", file=sys.stderr)
+    print_exc()
+    sys.exit(1)
 
-REPO_BASE = config.get("repo_base_path", "/Code/")
-DEFAULT_COMMIT_LIST_LIMIT = config.get("default_commit_list_limit", 50)
+REPO_BASE = CONFIG.get("repo_base_path", "/Code/")
+DEFAULT_COMMIT_LIST_LIMIT = CONFIG.get("default_commit_list_limit", 50)
 
 
 def _get_repo(repo_key):
@@ -221,14 +227,14 @@ def _convert_ref(repo_key, ref, obj):
     }
 
 
-def jsonify(f):
+def jsonify(func):
     def dthandler(obj):
         if hasattr(obj, 'isoformat'):
             return obj.isoformat()
 
-    @functools.wraps(f)
+    @functools.wraps(func)
     def wrapped(*args, **kwargs):
-        return Response(json.dumps(f(*args, **kwargs), default=dthandler),
+        return Response(json.dumps(func(*args, **kwargs), default=dthandler),
                         mimetype='application/json')
     return wrapped
 
@@ -237,18 +243,19 @@ class FixedOffset(tzinfo):
     ZERO = timedelta(0)
 
     def __init__(self, offset):
+        super(FixedOffset, self).__init__()
         self._offset = timedelta(minutes=offset)
 
-    def utcoffset(self, dt):
+    def utcoffset(self, dt):  # pylint: disable=W0613
         return self._offset
 
-    def dst(self, dt):
+    def dst(self, dt):  # pylint: disable=W0613
         return self.ZERO
 
 ##### VIEWS #####
 
 
-class SHAConverter(BaseConverter):
+class SHAConverter(BaseConverter):  # pylint: disable=W0232
     regex = r'(?:[0-9a-fA-F]{1,40})'
 
 
@@ -365,7 +372,7 @@ def get_raw(repo_key, branch_name, file_path):
     if git_obj.type != GIT_OBJ_BLOB:
         return "not a file", 406
 
-    (mimetype, encoding) = mimetypes.guess_type(file_path)
+    (mimetype, encoding) = mimetypes.guess_type(file_path)  # pylint: disable=W0612
     if mimetype is not None:
         return Response(git_obj.data, mimetype=mimetype)
     else:

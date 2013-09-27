@@ -1,0 +1,23 @@
+language: python
+python:
+  - "2.7"
+before_install:
+  - "wget -O libgit2.tar.gz https://github.com/libgit2/libgit2/archive/v0.19.0.tar.gz"
+  - "tar xf libgit2.tar.gz"
+  - "cd libgit2-*"
+  - "mkdir build && cd build"
+  - "cmake .. && cmake --build ."
+  - "sudo cmake --build . --target install"
+  - "cd .."
+  - "cd .. && rm -rf libgit2-*"
+  - "export LIBGIT2='/usr/local'"
+  - "export LDFLAGS=\"-Wl,-rpath='$LIBGIT2/lib',--enable-new-dtags $LDFLAGS\""
+before_script:
+  - "git branch -v"
+  - "pip install --use-mirrors pep8 'pylint<1.0.0' Flask-Testing nose"
+  - "git fetch --unshallow || true"
+  - "git checkout -b master || true"
+script:
+  - "pep8 *.py"
+  - "pylint --rcfile=pylint.rc *.py"
+  - "nosetests"
