@@ -18,6 +18,7 @@ FIRST_COMMIT = "07b9bf1540305153ceeb4519a50b588c35a35464"
 TREE_OF_FIRST_COMMIT = "6ca22167185c31554aa6157306e68dfd612d6345"
 BLOB_FROM_FIRST_COMMIT = "ae9d90706c632c26023ce599ac96cb152673da7c"
 TAG_FOR_FIRST_COMMIT = "1dffc031c9beda43ff94c526cbc00a30d231c079"
+FIFTH_COMMIT = "c04112733fe2db2cb2f179fca1a19365cf15fef5"
 IMPROBABLE_SHA = "F" * 40
 
 
@@ -79,10 +80,9 @@ class CommitsTestCase(_GitApiTestCase):
         resp = self.client.get('/repos/restfulgit/git/commits?start_sha=thisIsNotHexHash')
         self.assert400(resp)
 
-    def test_start_sha_works(self):
+    def test_start_sha_works_basic(self):
         resp = self.client.get('/repos/restfulgit/git/commits?start_sha={}'.format(FIRST_COMMIT))
         self.assert200(resp)
-        # FIXME: should be more thorough
 
     def test_nonexistent_ref_name(self):
         resp = self.client.get('/repos/restfulgit/git/commits?ref_name=doesNotExist')
@@ -101,10 +101,87 @@ class CommitsTestCase(_GitApiTestCase):
         resp = self.client.get('/repos/restfulgit/git/commits?limit=-1')
         self.assert400(resp)
 
-    def test_limit_works(self):
+    def test_limit_works_basic(self):
         resp = self.client.get('/repos/restfulgit/git/commits?limit=3')
         self.assert200(resp)
-        # FIXME: should be more thorough
+
+    def test_limit_and_start_sha_work_full(self):
+        resp = self.client.get('/repos/restfulgit/git/commits?limit=3&start_sha={}'.format(FIFTH_COMMIT))
+        self.assert200(resp)
+        self.assertEqual(
+            resp.json,
+            [
+                {
+                    'author': {
+                        'date': '2013-02-26T19:14:13-08:00',
+                        'email': 'rajiv@hulu.com',
+                        'name': 'Rajiv Makhijani'
+                    },
+                    'committer': {
+                        'date': '2013-02-26T19:14:13-08:00',
+                        'email': 'rajiv@hulu.com',
+                        'name': 'Rajiv Makhijani'
+                    },
+                    'message': 'add file mode\n',
+                    'parents': [{
+                            'sha': '326d80cd68ec3413fe6eaca99c52c59ca428a0d0',
+                            'url': 'http://localhost/repos/restfulgit/git/commits/326d80cd68ec3413fe6eaca99c52c59ca428a0d0'
+                    }],
+                    'sha': 'c04112733fe2db2cb2f179fca1a19365cf15fef5',
+                    'tree': {
+                        'sha': '3fdeafb3d2f69a4f7d8bb499b81f836aa10b06eb',
+                        'url': 'http://localhost/repos/restfulgit/git/trees/3fdeafb3d2f69a4f7d8bb499b81f836aa10b06eb'
+                    },
+                    'url': 'http://localhost/repos/restfulgit/git/commits/c04112733fe2db2cb2f179fca1a19365cf15fef5'
+                },
+                {
+                    'author': {
+                        'date': '2013-02-26T01:15:35-08:00',
+                        'email': 'rajiv@hulu.com',
+                        'name': 'Rajiv Makhijani'
+                    },
+                    'committer': {
+                        'date': '2013-02-26T01:15:35-08:00',
+                        'email': 'rajiv@hulu.com',
+                        'name': 'Rajiv Makhijani'
+                    },
+                    'message': 'Now using a jsonify decorator which returns the correct content-type\n',
+                    'parents': [{
+                            'sha': '1f51b91ac383806df9d322ae67bbad3364f50811',
+                            'url': 'http://localhost/repos/restfulgit/git/commits/1f51b91ac383806df9d322ae67bbad3364f50811'
+                    }],
+                    'sha': '326d80cd68ec3413fe6eaca99c52c59ca428a0d0',
+                    'tree': {
+                        'sha': '3f4b1282d80af3f8a51000993968897330635e4f',
+                        'url': 'http://localhost/repos/restfulgit/git/trees/3f4b1282d80af3f8a51000993968897330635e4f'
+                    },
+                    'url': 'http://localhost/repos/restfulgit/git/commits/326d80cd68ec3413fe6eaca99c52c59ca428a0d0'
+                },
+                {
+                    'author': {
+                        'date': '2013-02-25T04:35:29-08:00',
+                        'email': 'rajiv@hulu.com',
+                        'name': 'Rajiv Makhijani'
+                    },
+                    'committer': {
+                        'date': '2013-02-25T04:35:29-08:00',
+                        'email': 'rajiv@hulu.com',
+                        'name': 'Rajiv Makhijani'
+                    },
+                    'message': 'Support submodule in tree-listings\n',
+                    'parents': [{
+                        'sha': 'ff6405b71273b5c2c50d5c33d5cf962af5390542',
+                        'url': 'http://localhost/repos/restfulgit/git/commits/ff6405b71273b5c2c50d5c33d5cf962af5390542'
+                    }],
+                    'sha': '1f51b91ac383806df9d322ae67bbad3364f50811',
+                    'tree': {
+                        'sha': '1404e1766a3269f5a73b3d2ec8c81b7ea3ad6e09',
+                        'url': 'http://localhost/repos/restfulgit/git/trees/1404e1766a3269f5a73b3d2ec8c81b7ea3ad6e09'
+                    },
+                    'url': 'http://localhost/repos/restfulgit/git/commits/1f51b91ac383806df9d322ae67bbad3364f50811'
+                }
+            ]
+        )
 
     #FIXME: test combos
 
