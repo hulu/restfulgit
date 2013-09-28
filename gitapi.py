@@ -402,7 +402,7 @@ def index():  # pragma: no cover
             links.append(str(rule))
     return links
 
-if __name__ == '__main__':
+if __name__ == '__main__':  # pragma: no cover
     app.debug = True
     app.run(host="0.0.0.0")
 
