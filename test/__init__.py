@@ -145,22 +145,91 @@ class SimpleSHATestCase(_GitApiTestCase):
     def test_get_commit_works(self):
         resp = self.client.get('/repos/restfulgit/git/commits/{}'.format(FIRST_COMMIT))
         self.assert200(resp)
-        # FIXME: should be more thorough
+        self.assertEqual(
+            resp.json,
+            {
+                "committer": {
+                    "date": "2013-02-24T05:25:46-08:00",
+                    "name": "Rajiv Makhijani",
+                    "email": "rajiv@hulu.com"
+                },
+                "author": {
+                    "date": "2013-02-24T05:25:46-08:00",
+                    "name": "Rajiv Makhijani",
+                    "email": "rajiv@hulu.com"
+                },
+                "url": "http://localhost/repos/restfulgit/git/commits/07b9bf1540305153ceeb4519a50b588c35a35464",
+                "tree": {
+                    "url": "http://localhost/repos/restfulgit/git/trees/6ca22167185c31554aa6157306e68dfd612d6345",
+                    "sha": "6ca22167185c31554aa6157306e68dfd612d6345"
+                },
+                "sha": "07b9bf1540305153ceeb4519a50b588c35a35464",
+                "parents": [],
+                "message": "Initial support for read-only REST api for Git plumbing\n"
+            }
+        )
 
     def test_get_tree_works(self):
         resp = self.client.get('/repos/restfulgit/git/trees/{}'.format(TREE_OF_FIRST_COMMIT))
         self.assert200(resp)
-        # FIXME: should be more thorough
+        self.assertEqual(
+            resp.json,
+            {
+                "url": "http://localhost/repos/restfulgit/git/trees/6ca22167185c31554aa6157306e68dfd612d6345",
+                "sha": "6ca22167185c31554aa6157306e68dfd612d6345",
+                "tree": [
+                    {
+                        "url": "http://localhost/repos/restfulgit/git/blobs/ae9d90706c632c26023ce599ac96cb152673da7c",
+                        "sha": "ae9d90706c632c26023ce599ac96cb152673da7c",
+                        "mode": "0100644",
+                        "path": "api.py",
+                        "type": "blob",
+                        "size": 5543
+                    }
+                ]
+            }
+        )
 
     def test_get_blob_works(self):
         resp = self.client.get('/repos/restfulgit/git/blobs/{}'.format(BLOB_FROM_FIRST_COMMIT))
         self.assert200(resp)
-        # FIXME: should be more thorough
+        json = resp.json
+        self.assertIsInstance(json, dict)
+        self.assertIn("data", json)
+        self.assertTrue(json["data"].startswith("from flask import Flask, url_for\n"))
+        del json["data"]
+        self.assertEqual(
+            json,
+            {
+                "url": "http://localhost/repos/restfulgit/git/blobs/ae9d90706c632c26023ce599ac96cb152673da7c",
+                "sha": "ae9d90706c632c26023ce599ac96cb152673da7c",
+                "encoding": "utf-8",
+                "size": 5543
+            }
+        )
 
     def test_get_tag_works(self):
         resp = self.client.get('/repos/restfulgit/git/tags/{}'.format(TAG_FOR_FIRST_COMMIT))
         self.assert200(resp)
-        # FIXME: should be more thorough
+        self.assertEqual(
+            resp.json,
+            {
+                "url": "http://localhost/repos/restfulgit/git/tags/1dffc031c9beda43ff94c526cbc00a30d231c079",
+                "object": {
+                    "url": "http://localhost/repos/restfulgit/git/commits/07b9bf1540305153ceeb4519a50b588c35a35464",
+                    "sha": "07b9bf1540305153ceeb4519a50b588c35a35464",
+                    "type": "commit"
+                },
+                "sha": "1dffc031c9beda43ff94c526cbc00a30d231c079",
+                "tag": "initial",
+                "tagger": {
+                    "date": "2013-09-27T18:14:09-07:00",
+                    "name": "Chris Rebert",
+                    "email": "chris.rebert@hulu.com"
+                },
+                "message": "initial commit\n"
+            }
+        )
 
 
 class RefsTestCase(_GitApiTestCase):
