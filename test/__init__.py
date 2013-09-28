@@ -273,7 +273,10 @@ class SimpleSHATestCase(_GitApiTestCase):
         json = resp.json
         self.assertIsInstance(json, dict)
         self.assertIn("data", json)
-        self.assertTrue(json["data"].startswith("from flask import Flask, url_for\n"))
+        self.assertEqual(
+            sha512(json["data"]).hexdigest(),
+            '1c846bb4d44c08073c487316a7dc02d97d825aecf50546caf9bf10277c01d17e19860d5f86de877268dd969bd081c7595991c325e0ab492374b956e3a6c9967f'
+        )
         del json["data"]
         self.assertEqual(
             json,
