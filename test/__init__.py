@@ -16,6 +16,7 @@ PARENT_DIR_OF_RESTFULGIT_REPO = os.path.join(os.path.abspath(os.path.join(RESTFU
 FIRST_COMMIT = "07b9bf1540305153ceeb4519a50b588c35a35464"
 TREE_OF_FIRST_COMMIT = "6ca22167185c31554aa6157306e68dfd612d6345"
 BLOB_FROM_FIRST_COMMIT = "ae9d90706c632c26023ce599ac96cb152673da7c"
+TAG_FOR_FIRST_COMMIT = "1dffc031c9beda43ff94c526cbc00a30d231c079"
 IMPROBABLE_SHA = "F" * 40
 
 
@@ -157,9 +158,9 @@ class SimpleSHATestCase(_GitApiTestCase):
         # FIXME: should be more thorough
 
     def test_get_tag_works(self):
-        # resp = self.client.get('/repos/restfulgit/git/tags/{}'.format())
-        # FIXME: implement
-        pass
+        resp = self.client.get('/repos/restfulgit/git/tags/{}'.format(TAG_FOR_FIRST_COMMIT))
+        self.assert200(resp)
+        # FIXME: should be more thorough
 
 
 class RefsTestCase(_GitApiTestCase):
@@ -180,7 +181,7 @@ class RefsTestCase(_GitApiTestCase):
             obj.viewkeys() == {'type', 'sha', 'url'}
             for val in obj.itervalues():
                 self.assertIsInstance(val, unicode)
-            self.assertIn(obj['type'], {'commit'})
+            self.assertIn(obj['type'], {'commit', 'tag'})
 
     def test_invalid_ref_path(self):
         resp = self.client.get('/repos/restfulgit/git/refs/this_ref/path_does/not_exist')
