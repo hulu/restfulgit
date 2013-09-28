@@ -258,9 +258,20 @@ class RefsTestCase(_GitApiTestCase):
         self.assertEqual([], resp.json)
 
     def test_valid_ref_path(self):
-        resp = self.client.get('/repos/restfulgit/git/refs/heads/master')
+        resp = self.client.get('/repos/restfulgit/git/refs/tags/initial')
         self.assert200(resp)
-        # FIXME: should be more thorough
+        self.assertEqual(
+            resp.json,
+            {
+                "url": "http://localhost/repos/restfulgit/git/refs/tags/initial",
+                "object": {
+                    "url": "http://localhost/repos/restfulgit/git/tags/1dffc031c9beda43ff94c526cbc00a30d231c079",
+                    "sha": "1dffc031c9beda43ff94c526cbc00a30d231c079",
+                    "type": "tag"
+                },
+                "ref": "refs/tags/initial"
+            }
+        )
 
 
 class RawFileTestCase(_GitApiTestCase):
