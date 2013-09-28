@@ -203,10 +203,6 @@ class RawFileTestCase(_GitApiTestCase):
         resp = self.client.get('/repos/restfulgit/raw/master/this_path/does_not/exist.txt')
         self.assert404(resp)
 
-    def test_file_path_security(self):
-        # FIXME: implement
-        pass
-
     def test_mime_type_logic(self):
         # FIXME: implement
         pass
