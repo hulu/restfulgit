@@ -16,6 +16,7 @@ PARENT_DIR_OF_RESTFULGIT_REPO = os.path.join(os.path.abspath(os.path.join(RESTFU
 FIRST_COMMIT = "07b9bf1540305153ceeb4519a50b588c35a35464"
 TREE_OF_FIRST_COMMIT = "6ca22167185c31554aa6157306e68dfd612d6345"
 BLOB_FROM_FIRST_COMMIT = "ae9d90706c632c26023ce599ac96cb152673da7c"
+IMPROBABLE_SHA = "F" * 40
 
 
 class _GitApiTestCase(_FlaskTestCase):
@@ -122,6 +123,22 @@ class SimpleSHATestCase(_GitApiTestCase):
 
     def test_get_tag_with_non_tag_sha(self):
         resp = self.client.get('/repos/restfulgit/git/tags/{}'.format(BLOB_FROM_FIRST_COMMIT))
+        self.assert404(resp)
+
+    def test_get_commit(self):
+        resp = self.client.get('/repos/restfulgit/git/commits/{}'.format(IMPROBABLE_SHA))
+        self.assert404(resp)
+
+    def test_get_tree(self):
+        resp = self.client.get('/repos/restfulgit/git/trees/{}'.format(IMPROBABLE_SHA))
+        self.assert404(resp)
+
+    def test_get_blob(self):
+        resp = self.client.get('/repos/restfulgit/git/blobs/{}'.format(IMPROBABLE_SHA))
+        self.assert404(resp)
+
+    def test_get_tag(self):
+        resp = self.client.get('/repos/restfulgit/git/tags/{}'.format(IMPROBABLE_SHA))
         self.assert404(resp)
 
     def test_get_commit_works(self):

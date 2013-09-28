@@ -395,7 +395,7 @@ def get_raw(repo_key, branch_name, file_path):
 
 @app.route('/')
 @jsonify
-def index():
+def index():  # pragma: no cover
     links = []
     for rule in app.url_map.iter_rules():
         if str(rule).startswith("/repos"):
