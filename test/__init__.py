@@ -126,19 +126,19 @@ class SimpleSHATestCase(_GitApiTestCase):
         resp = self.client.get('/repos/restfulgit/git/tags/{}'.format(BLOB_FROM_FIRST_COMMIT))
         self.assert404(resp)
 
-    def test_get_commit(self):
+    def test_get_commit_with_nonexistent_sha(self):
         resp = self.client.get('/repos/restfulgit/git/commits/{}'.format(IMPROBABLE_SHA))
         self.assert404(resp)
 
-    def test_get_tree(self):
+    def test_get_tree_with_nonexistent_sha(self):
         resp = self.client.get('/repos/restfulgit/git/trees/{}'.format(IMPROBABLE_SHA))
         self.assert404(resp)
 
-    def test_get_blob(self):
+    def test_get_blob_with_nonexistent_sha(self):
         resp = self.client.get('/repos/restfulgit/git/blobs/{}'.format(IMPROBABLE_SHA))
         self.assert404(resp)
 
-    def test_get_tag(self):
+    def test_get_tag_with_nonexistent_sha(self):
         resp = self.client.get('/repos/restfulgit/git/tags/{}'.format(IMPROBABLE_SHA))
         self.assert404(resp)
 
