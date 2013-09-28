@@ -11,6 +11,7 @@ import gitapi
 
 
 RESTFULGIT_REPO = os.path.abspath(os.path.dirname(gitapi.__file__))
+TEST_SUBDIR = os.path.join(RESTFULGIT_REPO, 'test')
 DESCRIPTION_FILEPATH = os.path.join(RESTFULGIT_REPO, '.git', 'description')
 PARENT_DIR_OF_RESTFULGIT_REPO = os.path.join(os.path.abspath(os.path.join(RESTFULGIT_REPO, '..')), '')
 FIRST_COMMIT = "07b9bf1540305153ceeb4519a50b588c35a35464"
@@ -296,6 +297,7 @@ class DescriptionTestCase(_GitApiTestCase):
         self.assertEqual(resp.data, "")
 
     def test_dot_dot_disallowed(self):
+        gitapi.REPO_BASE = TEST_SUBDIR
         resp = self.client.get('/repos/../description')
         self.assert404(resp)
 
