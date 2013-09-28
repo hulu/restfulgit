@@ -38,10 +38,9 @@ class RepoKeyTestCase(_GitApiTestCase):
         self.assert404(resp)
 
     def test_dot_dot_disallowed(self):
-        # FIXME: implement
-        # resp = self.client.get('/repos/../git/commits')
-        # self.assert403(resp)
-        pass
+        gitapi.REPO_BASE = TEST_SUBDIR
+        resp = self.client.get('/repos/../git/commits')
+        self.assert404(resp)
 
 
 class SHAConverterTestCase(_GitApiTestCase):
