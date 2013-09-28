@@ -10,7 +10,7 @@ from flask.ext.testing import TestCase as _FlaskTestCase
 import gitapi
 
 
-RESTFULGIT_REPO = os.path.dirname(gitapi.__file__)
+RESTFULGIT_REPO = os.path.abspath(os.path.dirname(gitapi.__file__))
 DESCRIPTION_FILEPATH = os.path.join(RESTFULGIT_REPO, '.git', 'description')
 PARENT_DIR_OF_RESTFULGIT_REPO = os.path.join(os.path.abspath(os.path.join(RESTFULGIT_REPO, '..')), '')
 FIRST_COMMIT = "07b9bf1540305153ceeb4519a50b588c35a35464"
@@ -32,7 +32,7 @@ class RepoKeyTestCase(_GitApiTestCase):
         self.assert404(resp)
 
     def test_directory_is_not_git_repo(self):
-        gitapi.app.REPO_BASE = RESTFULGIT_REPO
+        gitapi.REPO_BASE = RESTFULGIT_REPO
         resp = self.client.get('/repos/test/git/commits')
         self.assert404(resp)
 
@@ -300,7 +300,7 @@ class DescriptionTestCase(_GitApiTestCase):
         self.assert404(resp)
 
     def test_nonexistent_repo(self):
-        gitapi.app.REPO_BASE = RESTFULGIT_REPO
+        gitapi.REPO_BASE = RESTFULGIT_REPO
         resp = self.client.get('/repos/test/description')
         self.assert404(resp)
 
