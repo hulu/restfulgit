@@ -263,7 +263,7 @@ class SHAConverter(BaseConverter):  # pylint: disable=W0232
 app.url_map.converters['sha'] = SHAConverter
 
 
-@app.route('/repos/<repo_key>/git/commits')
+@app.route('/repos/<repo_key>/git/commits/')
 @jsonify
 def get_commit_list(repo_key):
     ref_name = request.args.get('ref_name') or None
@@ -300,7 +300,7 @@ def get_commit_list(repo_key):
     return commits
 
 
-@app.route('/repos/<repo_key>/git/commits/<sha:sha>')
+@app.route('/repos/<repo_key>/git/commits/<sha:sha>/')
 @jsonify
 def get_commit(repo_key, sha):
     repo = _get_repo(repo_key)
@@ -308,7 +308,7 @@ def get_commit(repo_key, sha):
     return _convert_commit(repo_key, commit)
 
 
-@app.route('/repos/<repo_key>/git/trees/<sha:sha>')
+@app.route('/repos/<repo_key>/git/trees/<sha:sha>/')
 @jsonify
 def get_tree(repo_key, sha):
     repo = _get_repo(repo_key)
@@ -316,7 +316,7 @@ def get_tree(repo_key, sha):
     return _convert_tree(repo_key, repo, tree)
 
 
-@app.route('/repos/<repo_key>/git/blobs/<sha:sha>')
+@app.route('/repos/<repo_key>/git/blobs/<sha:sha>/')
 @jsonify
 def get_blob(repo_key, sha):
     repo = _get_repo(repo_key)
@@ -329,7 +329,7 @@ def get_blob(repo_key, sha):
     return _convert_blob(repo_key, blob)
 
 
-@app.route('/repos/<repo_key>/git/tags/<sha:sha>')
+@app.route('/repos/<repo_key>/git/tags/<sha:sha>/')
 @jsonify
 def get_tag(repo_key, sha):
     repo = _get_repo(repo_key)
@@ -340,7 +340,7 @@ def get_tag(repo_key, sha):
 PLAIN_TEXT = 'text/plain'
 
 
-@app.route('/repos/<repo_key>/description')
+@app.route('/repos/<repo_key>/description/')
 def get_description(repo_key):
     _get_repo(repo_key)  # check repo_key validity
     relative_path = os.path.join(repo_key, '.git', 'description')
@@ -350,7 +350,7 @@ def get_description(repo_key):
     return send_from_directory(REPO_BASE, relative_path, mimetype=PLAIN_TEXT)
 
 
-@app.route('/repos/<repo_key>/git/refs')
+@app.route('/repos/<repo_key>/git/refs/')
 @app.route('/repos/<repo_key>/git/refs/<path:ref_path>')
 @jsonify
 def get_ref_list(repo_key, ref_path=None):
