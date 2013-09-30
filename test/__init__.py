@@ -30,17 +30,17 @@ class _GitApiTestCase(_FlaskTestCase):
 
 class RepoKeyTestCase(_GitApiTestCase):
     def test_nonexistent_directory(self):
-        resp = self.client.get('/repos/this-directory-does-not-exist/git/commits')
+        resp = self.client.get('/repos/this-directory-does-not-exist/git/commits/')
         self.assert404(resp)
 
     def test_directory_is_not_git_repo(self):
         gitapi.REPO_BASE = RESTFULGIT_REPO
-        resp = self.client.get('/repos/test/git/commits')
+        resp = self.client.get('/repos/test/git/commits/')
         self.assert404(resp)
 
     def test_dot_dot_disallowed(self):
         gitapi.REPO_BASE = TEST_SUBDIR
-        resp = self.client.get('/repos/../git/commits')
+        resp = self.client.get('/repos/../git/commits/')
         self.assert404(resp)
 
 
@@ -50,63 +50,63 @@ class SHAConverterTestCase(_GitApiTestCase):
         self.assert404(resp)
 
     def test_too_long_sha_rejected(self):
-        resp = self.client.get('/repos/restfulgit/git/trees/{}0'.format(TREE_OF_FIRST_COMMIT))
+        resp = self.client.get('/repos/restfulgit/git/trees/{}0/'.format(TREE_OF_FIRST_COMMIT))
         self.assert404(resp)
 
     def test_malformed_sha_rejected(self):
-        resp = self.client.get('/repos/restfulgit/git/trees/0123456789abcdefghijklmnopqrstuvwxyzABCD')
+        resp = self.client.get('/repos/restfulgit/git/trees/0123456789abcdefghijklmnopqrstuvwxyzABCD/')
         self.assert404(resp)
 
     def test_full_sha_accepted(self):
-        resp = self.client.get('/repos/restfulgit/git/trees/{}'.format(TREE_OF_FIRST_COMMIT))
+        resp = self.client.get('/repos/restfulgit/git/trees/{}/'.format(TREE_OF_FIRST_COMMIT))
         self.assert200(resp)
 
     def test_partial_sha_accepted(self):
-        resp = self.client.get('/repos/restfulgit/git/trees/{}'.format(TREE_OF_FIRST_COMMIT[:35]))
+        resp = self.client.get('/repos/restfulgit/git/trees/{}/'.format(TREE_OF_FIRST_COMMIT[:35]))
         self.assert200(resp)
 
 
 class CommitsTestCase(_GitApiTestCase):
     """Tests the "commits" endpoint."""
     def test_nonexistent_start_sha(self):
-        resp = self.client.get('/repos/restfulgit/git/commits?start_sha=1234567890abcdef')
+        resp = self.client.get('/repos/restfulgit/git/commits/?start_sha=1234567890abcdef')
         self.assert404(resp)
 
     def test_non_commit_start_sha(self):
-        resp = self.client.get('/repos/restfulgit/git/commits?start_sha={}'.format(TREE_OF_FIRST_COMMIT))
+        resp = self.client.get('/repos/restfulgit/git/commits/?start_sha={}'.format(TREE_OF_FIRST_COMMIT))
         self.assert400(resp)
 
     def test_malformed_start_sha(self):
-        resp = self.client.get('/repos/restfulgit/git/commits?start_sha=thisIsNotHexHash')
+        resp = self.client.get('/repos/restfulgit/git/commits/?start_sha=thisIsNotHexHash')
         self.assert400(resp)
 
     def test_start_sha_works_basic(self):
-        resp = self.client.get('/repos/restfulgit/git/commits?start_sha={}'.format(FIRST_COMMIT))
+        resp = self.client.get('/repos/restfulgit/git/commits?start_sha={}'.format(FIRST_COMMIT), follow_redirects=True)
         self.assert200(resp)
 
     def test_nonexistent_ref_name(self):
-        resp = self.client.get('/repos/restfulgit/git/commits?ref_name=doesNotExist')
+        resp = self.client.get('/repos/restfulgit/git/commits/?ref_name=doesNotExist')
         self.assert404(resp)
 
     def test_ref_name_works(self):
-        resp = self.client.get('/repos/restfulgit/git/commits?ref_name=master')
+        resp = self.client.get('/repos/restfulgit/git/commits?ref_name=master', follow_redirects=True)
         self.assert200(resp)
         # FIXME: should be more thorough
 
     def test_non_integer_limit_rejected(self):
-        resp = self.client.get('/repos/restfulgit/git/commits?limit=abc123')
+        resp = self.client.get('/repos/restfulgit/git/commits/?limit=abc123')
         self.assert400(resp)
 
     def test_negative_limit_rejected(self):
-        resp = self.client.get('/repos/restfulgit/git/commits?limit=-1')
+        resp = self.client.get('/repos/restfulgit/git/commits/?limit=-1')
         self.assert400(resp)
 
     def test_limit_works_basic(self):
-        resp = self.client.get('/repos/restfulgit/git/commits?limit=3')
+        resp = self.client.get('/repos/restfulgit/git/commits?limit=3', follow_redirects=True)
         self.assert200(resp)
 
     def test_limit_and_start_sha_work_full(self):
-        resp = self.client.get('/repos/restfulgit/git/commits?limit=3&start_sha={}'.format(FIFTH_COMMIT))
+        resp = self.client.get('/repos/restfulgit/git/commits?limit=3&start_sha={}'.format(FIFTH_COMMIT), follow_redirects=True)
         self.assert200(resp)
         self.assertEqual(
             resp.json,
@@ -125,14 +125,14 @@ class CommitsTestCase(_GitApiTestCase):
                     'message': 'add file mode\n',
                     'parents': [{
                             'sha': '326d80cd68ec3413fe6eaca99c52c59ca428a0d0',
-                            'url': 'http://localhost/repos/restfulgit/git/commits/326d80cd68ec3413fe6eaca99c52c59ca428a0d0'
+                            'url': 'http://localhost/repos/restfulgit/git/commits/326d80cd68ec3413fe6eaca99c52c59ca428a0d0/'
                     }],
                     'sha': 'c04112733fe2db2cb2f179fca1a19365cf15fef5',
                     'tree': {
                         'sha': '3fdeafb3d2f69a4f7d8bb499b81f836aa10b06eb',
-                        'url': 'http://localhost/repos/restfulgit/git/trees/3fdeafb3d2f69a4f7d8bb499b81f836aa10b06eb'
+                        'url': 'http://localhost/repos/restfulgit/git/trees/3fdeafb3d2f69a4f7d8bb499b81f836aa10b06eb/'
                     },
-                    'url': 'http://localhost/repos/restfulgit/git/commits/c04112733fe2db2cb2f179fca1a19365cf15fef5'
+                    'url': 'http://localhost/repos/restfulgit/git/commits/c04112733fe2db2cb2f179fca1a19365cf15fef5/'
                 },
                 {
                     'author': {
@@ -148,14 +148,14 @@ class CommitsTestCase(_GitApiTestCase):
                     'message': 'Now using a jsonify decorator which returns the correct content-type\n',
                     'parents': [{
                             'sha': '1f51b91ac383806df9d322ae67bbad3364f50811',
-                            'url': 'http://localhost/repos/restfulgit/git/commits/1f51b91ac383806df9d322ae67bbad3364f50811'
+                            'url': 'http://localhost/repos/restfulgit/git/commits/1f51b91ac383806df9d322ae67bbad3364f50811/'
                     }],
                     'sha': '326d80cd68ec3413fe6eaca99c52c59ca428a0d0',
                     'tree': {
                         'sha': '3f4b1282d80af3f8a51000993968897330635e4f',
-                        'url': 'http://localhost/repos/restfulgit/git/trees/3f4b1282d80af3f8a51000993968897330635e4f'
+                        'url': 'http://localhost/repos/restfulgit/git/trees/3f4b1282d80af3f8a51000993968897330635e4f/'
                     },
-                    'url': 'http://localhost/repos/restfulgit/git/commits/326d80cd68ec3413fe6eaca99c52c59ca428a0d0'
+                    'url': 'http://localhost/repos/restfulgit/git/commits/326d80cd68ec3413fe6eaca99c52c59ca428a0d0/'
                 },
                 {
                     'author': {
@@ -171,14 +171,14 @@ class CommitsTestCase(_GitApiTestCase):
                     'message': 'Support submodule in tree-listings\n',
                     'parents': [{
                         'sha': 'ff6405b71273b5c2c50d5c33d5cf962af5390542',
-                        'url': 'http://localhost/repos/restfulgit/git/commits/ff6405b71273b5c2c50d5c33d5cf962af5390542'
+                        'url': 'http://localhost/repos/restfulgit/git/commits/ff6405b71273b5c2c50d5c33d5cf962af5390542/'
                     }],
                     'sha': '1f51b91ac383806df9d322ae67bbad3364f50811',
                     'tree': {
                         'sha': '1404e1766a3269f5a73b3d2ec8c81b7ea3ad6e09',
-                        'url': 'http://localhost/repos/restfulgit/git/trees/1404e1766a3269f5a73b3d2ec8c81b7ea3ad6e09'
+                        'url': 'http://localhost/repos/restfulgit/git/trees/1404e1766a3269f5a73b3d2ec8c81b7ea3ad6e09/'
                     },
-                    'url': 'http://localhost/repos/restfulgit/git/commits/1f51b91ac383806df9d322ae67bbad3364f50811'
+                    'url': 'http://localhost/repos/restfulgit/git/commits/1f51b91ac383806df9d322ae67bbad3364f50811/'
                 }
             ]
         )
@@ -188,39 +188,39 @@ class CommitsTestCase(_GitApiTestCase):
 
 class SimpleSHATestCase(_GitApiTestCase):
     def test_get_commit_with_non_commit_sha(self):
-        resp = self.client.get('/repos/restfulgit/git/commits/{}'.format(BLOB_FROM_FIRST_COMMIT))
+        resp = self.client.get('/repos/restfulgit/git/commits/{}/'.format(BLOB_FROM_FIRST_COMMIT))
         self.assert404(resp)
 
     def test_get_tree_with_non_tree_sha(self):
-        resp = self.client.get('/repos/restfulgit/git/trees/{}'.format(BLOB_FROM_FIRST_COMMIT))
+        resp = self.client.get('/repos/restfulgit/git/trees/{}/'.format(BLOB_FROM_FIRST_COMMIT))
         self.assert404(resp)
 
     def test_get_blob_with_non_blob_sha(self):
-        resp = self.client.get('/repos/restfulgit/git/blobs/{}'.format(FIRST_COMMIT))
+        resp = self.client.get('/repos/restfulgit/git/blobs/{}/'.format(FIRST_COMMIT))
         self.assert404(resp)
 
     def test_get_tag_with_non_tag_sha(self):
-        resp = self.client.get('/repos/restfulgit/git/tags/{}'.format(BLOB_FROM_FIRST_COMMIT))
+        resp = self.client.get('/repos/restfulgit/git/tags/{}/'.format(BLOB_FROM_FIRST_COMMIT))
         self.assert404(resp)
 
     def test_get_commit_with_nonexistent_sha(self):
-        resp = self.client.get('/repos/restfulgit/git/commits/{}'.format(IMPROBABLE_SHA))
+        resp = self.client.get('/repos/restfulgit/git/commits/{}/'.format(IMPROBABLE_SHA))
         self.assert404(resp)
 
     def test_get_tree_with_nonexistent_sha(self):
-        resp = self.client.get('/repos/restfulgit/git/trees/{}'.format(IMPROBABLE_SHA))
+        resp = self.client.get('/repos/restfulgit/git/trees/{}/'.format(IMPROBABLE_SHA))
         self.assert404(resp)
 
     def test_get_blob_with_nonexistent_sha(self):
-        resp = self.client.get('/repos/restfulgit/git/blobs/{}'.format(IMPROBABLE_SHA))
+        resp = self.client.get('/repos/restfulgit/git/blobs/{}/'.format(IMPROBABLE_SHA))
         self.assert404(resp)
 
     def test_get_tag_with_nonexistent_sha(self):
-        resp = self.client.get('/repos/restfulgit/git/tags/{}'.format(IMPROBABLE_SHA))
+        resp = self.client.get('/repos/restfulgit/git/tags/{}/'.format(IMPROBABLE_SHA))
         self.assert404(resp)
 
     def test_get_commit_works(self):
-        resp = self.client.get('/repos/restfulgit/git/commits/{}'.format(FIRST_COMMIT))
+        resp = self.client.get('/repos/restfulgit/git/commits/{}/'.format(FIRST_COMMIT))
         self.assert200(resp)
         self.assertEqual(
             resp.json,
@@ -235,9 +235,9 @@ class SimpleSHATestCase(_GitApiTestCase):
                     "name": "Rajiv Makhijani",
                     "email": "rajiv@hulu.com"
                 },
-                "url": "http://localhost/repos/restfulgit/git/commits/07b9bf1540305153ceeb4519a50b588c35a35464",
+                "url": "http://localhost/repos/restfulgit/git/commits/07b9bf1540305153ceeb4519a50b588c35a35464/",
                 "tree": {
-                    "url": "http://localhost/repos/restfulgit/git/trees/6ca22167185c31554aa6157306e68dfd612d6345",
+                    "url": "http://localhost/repos/restfulgit/git/trees/6ca22167185c31554aa6157306e68dfd612d6345/",
                     "sha": "6ca22167185c31554aa6157306e68dfd612d6345"
                 },
                 "sha": "07b9bf1540305153ceeb4519a50b588c35a35464",
@@ -247,16 +247,16 @@ class SimpleSHATestCase(_GitApiTestCase):
         )
 
     def test_get_tree_works(self):
-        resp = self.client.get('/repos/restfulgit/git/trees/{}'.format(TREE_OF_FIRST_COMMIT))
+        resp = self.client.get('/repos/restfulgit/git/trees/{}/'.format(TREE_OF_FIRST_COMMIT))
         self.assert200(resp)
         self.assertEqual(
             resp.json,
             {
-                "url": "http://localhost/repos/restfulgit/git/trees/6ca22167185c31554aa6157306e68dfd612d6345",
+                "url": "http://localhost/repos/restfulgit/git/trees/6ca22167185c31554aa6157306e68dfd612d6345/",
                 "sha": "6ca22167185c31554aa6157306e68dfd612d6345",
                 "tree": [
                     {
-                        "url": "http://localhost/repos/restfulgit/git/blobs/ae9d90706c632c26023ce599ac96cb152673da7c",
+                        "url": "http://localhost/repos/restfulgit/git/blobs/ae9d90706c632c26023ce599ac96cb152673da7c/",
                         "sha": "ae9d90706c632c26023ce599ac96cb152673da7c",
                         "mode": "0100644",
                         "path": "api.py",
@@ -268,7 +268,7 @@ class SimpleSHATestCase(_GitApiTestCase):
         )
 
     def test_get_blob_works(self):
-        resp = self.client.get('/repos/restfulgit/git/blobs/{}'.format(BLOB_FROM_FIRST_COMMIT))
+        resp = self.client.get('/repos/restfulgit/git/blobs/{}/'.format(BLOB_FROM_FIRST_COMMIT))
         self.assert200(resp)
         json = resp.json
         self.assertIsInstance(json, dict)
@@ -281,7 +281,7 @@ class SimpleSHATestCase(_GitApiTestCase):
         self.assertEqual(
             json,
             {
-                "url": "http://localhost/repos/restfulgit/git/blobs/ae9d90706c632c26023ce599ac96cb152673da7c",
+                "url": "http://localhost/repos/restfulgit/git/blobs/ae9d90706c632c26023ce599ac96cb152673da7c/",
                 "sha": "ae9d90706c632c26023ce599ac96cb152673da7c",
                 "encoding": "utf-8",
                 "size": 5543
@@ -289,14 +289,14 @@ class SimpleSHATestCase(_GitApiTestCase):
         )
 
     def test_get_tag_works(self):
-        resp = self.client.get('/repos/restfulgit/git/tags/{}'.format(TAG_FOR_FIRST_COMMIT))
+        resp = self.client.get('/repos/restfulgit/git/tags/{}/'.format(TAG_FOR_FIRST_COMMIT))
         self.assert200(resp)
         self.assertEqual(
             resp.json,
             {
-                "url": "http://localhost/repos/restfulgit/git/tags/1dffc031c9beda43ff94c526cbc00a30d231c079",
+                "url": "http://localhost/repos/restfulgit/git/tags/1dffc031c9beda43ff94c526cbc00a30d231c079/",
                 "object": {
-                    "url": "http://localhost/repos/restfulgit/git/commits/07b9bf1540305153ceeb4519a50b588c35a35464",
+                    "url": "http://localhost/repos/restfulgit/git/commits/07b9bf1540305153ceeb4519a50b588c35a35464/",
                     "sha": "07b9bf1540305153ceeb4519a50b588c35a35464",
                     "type": "commit"
                 },
@@ -314,7 +314,7 @@ class SimpleSHATestCase(_GitApiTestCase):
 
 class RefsTestCase(_GitApiTestCase):
     def test_get_ref_list_works(self):
-        resp = self.client.get('/repos/restfulgit/git/refs')
+        resp = self.client.get('/repos/restfulgit/git/refs/')
         self.assert200(resp)
         ref_list = resp.json
         self.assertIsInstance(ref_list, list)
@@ -345,7 +345,7 @@ class RefsTestCase(_GitApiTestCase):
             {
                 "url": "http://localhost/repos/restfulgit/git/refs/tags/initial",
                 "object": {
-                    "url": "http://localhost/repos/restfulgit/git/tags/1dffc031c9beda43ff94c526cbc00a30d231c079",
+                    "url": "http://localhost/repos/restfulgit/git/tags/1dffc031c9beda43ff94c526cbc00a30d231c079/",
                     "sha": "1dffc031c9beda43ff94c526cbc00a30d231c079",
                     "type": "tag"
                 },
@@ -382,23 +382,23 @@ class DescriptionTestCase(_GitApiTestCase):
             os.remove(DESCRIPTION_FILEPATH)
         except OSError:
             pass
-        resp = self.client.get('/repos/restfulgit/description')
+        resp = self.client.get('/repos/restfulgit/description/')
         self.assert200(resp)
         self.assertEqual(resp.data, "")
 
     def test_dot_dot_disallowed(self):
         gitapi.REPO_BASE = TEST_SUBDIR
-        resp = self.client.get('/repos/../description')
+        resp = self.client.get('/repos/../description/')
         self.assert404(resp)
 
     def test_nonexistent_repo(self):
         gitapi.REPO_BASE = RESTFULGIT_REPO
-        resp = self.client.get('/repos/test/description')
+        resp = self.client.get('/repos/test/description/')
         self.assert404(resp)
 
     def test_works(self):
         description = "REST API for Git data\n"
         with io.open(DESCRIPTION_FILEPATH, mode='wt', encoding='utf-8') as description_file:
             description_file.write(description)
-        resp = self.client.get('/repos/restfulgit/description')
+        resp = self.client.get('/repos/restfulgit/description/')
         self.assertEqual(resp.data, description)

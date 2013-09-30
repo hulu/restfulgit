@@ -22,7 +22,7 @@ Commits
 ----------
 Retrieves a list of commit objects:
 
-    GET /repos/:repo_key/git/commits
+    GET /repos/:repo_key/git/commits/
     
     optional: ?start_sha=:sha
     optional: ?ref_name=:ref_name
@@ -41,15 +41,15 @@ Retrieves a list of commit objects:
             "name": "Rajiv Makhijani",
             "email": "rajiv@hulu.com"
         },
-        "url": "http://localhost:5000/repos/restfulgit.git/git/commits/f85df530d8413b0390364b291eb97d1cc5798dee",
+        "url": "http://localhost:5000/repos/restfulgit.git/git/commits/f85df530d8413b0390364b291eb97d1cc5798dee/",
         "tree": {
-            "url": "http://localhost:5000/repos/restfulgit.git/git/trees/4c392547aa3d644877f3b22e198a5caac99a69a3",
+            "url": "http://localhost:5000/repos/restfulgit.git/git/trees/4c392547aa3d644877f3b22e198a5caac99a69a3/",
             "sha": "4c392547aa3d644877f3b22e198a5caac99a69a3"
         },
         "sha": "f85df530d8413b0390364b291eb97d1cc5798dee",
         "parents": [
             {
-                "url": "http://localhost:5000/repos/restfulgit.git/git/commits/7b3f40ff9aba370a59732522420201b744297317",
+                "url": "http://localhost:5000/repos/restfulgit.git/git/commits/7b3f40ff9aba370a59732522420201b744297317/",
                 "sha": "7b3f40ff9aba370a59732522420201b744297317"
             }
         ],
@@ -61,17 +61,17 @@ Retrieves a list of commit objects:
 
 Retrieves specific commit object:
 
-    GET /repos/:repo_key/git/commits/:sha
+    GET /repos/:repo_key/git/commits/:sha/
 
 Blobs
 ----------
 Retrieves a specific blob object:
 
-    GET /repos/:repo_key/git/blobs/:sha
+    GET /repos/:repo_key/git/blobs/:sha/
 
 ```json
 {
-    "url": "http://localhost:5000/repos/restfulgit.git/git/blobs/0d20b6487c61e7d1bde93acf4a14b7a89083a16d",
+    "url": "http://localhost:5000/repos/restfulgit.git/git/blobs/0d20b6487c61e7d1bde93acf4a14b7a89083a16d/",
     "sha": "0d20b6487c61e7d1bde93acf4a14b7a89083a16d",
     "encoding": "utf-8",
     "data": "*.pyc ",
@@ -83,15 +83,15 @@ Trees
 ----------
 Retrieves a specific tree object:
 
-    GET /repos/:repo_key/git/trees/:sha
+    GET /repos/:repo_key/git/trees/:sha/
 
 ```json
 {
-    "url": "http://localhost:5000/repos/restfulgit.git/git/trees/4c392547aa3d644877f3b22e198a5caac99a69a3",
+    "url": "http://localhost:5000/repos/restfulgit.git/git/trees/4c392547aa3d644877f3b22e198a5caac99a69a3/",
     "sha": "4c392547aa3d644877f3b22e198a5caac99a69a3",
     "tree": [
         {
-            "url": "http://localhost:5000/repos/restfulgit.git/git/blobs/0d20b6487c61e7d1bde93acf4a14b7a89083a16d",
+            "url": "http://localhost:5000/repos/restfulgit.git/git/blobs/0d20b6487c61e7d1bde93acf4a14b7a89083a16d/",
             "sha": "0d20b6487c61e7d1bde93acf4a14b7a89083a16d",
             "mode": "0100644",
             "path": ".gitignore",
@@ -107,13 +107,13 @@ Tags
 ----------
 Retrieves a specific tag object:
 
-    GET /repos/:repo_key/git/tags/:sha
+    GET /repos/:repo_key/git/tags/:sha/
 
 ```json
 {
-    "url": "http://localhost:5000/repos/restfulgit.git/git/tags/89571737c474fae7ea4c092b5ed94e4eccb11b2a",
+    "url": "http://localhost:5000/repos/restfulgit.git/git/tags/89571737c474fae7ea4c092b5ed94e4eccb11b2a/",
     "object": {
-        "url": "http://localhost:5000/repos/restfulgit.git/git/commits/b6b05bb0f230b591d82fcc07d169b7453e04cf89",
+        "url": "http://localhost:5000/repos/restfulgit.git/git/commits/b6b05bb0f230b591d82fcc07d169b7453e04cf89/",
         "sha": "b6b05bb0f230b591d82fcc07d169b7453e04cf89",
         "type": "commit"
     },
@@ -132,14 +132,14 @@ Refs
 ----------
 Retrieves a list of refs:
 
-    GET /repos/:repo_key/git/refs
+    GET /repos/:repo_key/git/refs/
 
 ```json
 [
     {
         "url": "http://localhost:5000/repos/restfulgit.git/git/refs/heads/master",
         "object": {
-            "url": "http://localhost:5000/repos/restfulgit.git/git/commits/f85df530d8413b0390364b291eb97d1cc5798dee",
+            "url": "http://localhost:5000/repos/restfulgit.git/git/commits/f85df530d8413b0390364b291eb97d1cc5798dee/",
             "sha": "f85df530d8413b0390364b291eb97d1cc5798dee",
             "type": "commit"
         },
@@ -163,7 +163,7 @@ Repository Descriptions
 -----------------
 Retrieve the description (if any) of the repo, as plain text:
 
-    GET /repos/:repo_key/description
+    GET /repos/:repo_key/description/
 
 ```
 REST API for Git data
