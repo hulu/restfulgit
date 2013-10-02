@@ -2,6 +2,7 @@
 from __future__ import unicode_literals
 
 from hashlib import sha512
+from os import remove as _delete_file
 import io
 import os.path
 
@@ -12,7 +13,8 @@ import gitapi
 
 RESTFULGIT_REPO = os.path.abspath(os.path.dirname(gitapi.__file__))
 TEST_SUBDIR = os.path.join(RESTFULGIT_REPO, 'test')
-DESCRIPTION_FILEPATH = os.path.join(RESTFULGIT_REPO, '.git', 'description')
+GIT_MIRROR_DESCRIPTION_FILEPATH = os.path.join(RESTFULGIT_REPO, 'description')
+NORMAL_CLONE_DESCRIPTION_FILEPATH = os.path.join(RESTFULGIT_REPO, '.git', 'description')
 PARENT_DIR_OF_RESTFULGIT_REPO = os.path.join(os.path.abspath(os.path.join(RESTFULGIT_REPO, '..')), '')
 FIRST_COMMIT = "07b9bf1540305153ceeb4519a50b588c35a35464"
 TREE_OF_FIRST_COMMIT = "6ca22167185c31554aa6157306e68dfd612d6345"
@@ -20,6 +22,13 @@ BLOB_FROM_FIRST_COMMIT = "ae9d90706c632c26023ce599ac96cb152673da7c"
 TAG_FOR_FIRST_COMMIT = "1dffc031c9beda43ff94c526cbc00a30d231c079"
 FIFTH_COMMIT = "c04112733fe2db2cb2f179fca1a19365cf15fef5"
 IMPROBABLE_SHA = "F" * 40
+
+
+def delete_file_quietly(filepath):
+    try:
+        _delete_file(filepath)
+    except EnvironmentError as err:
+        pass
 
 
 class _GitApiTestCase(_FlaskTestCase):
@@ -378,10 +387,8 @@ class RawFileTestCase(_GitApiTestCase):
 
 class DescriptionTestCase(_GitApiTestCase):
     def test_no_description_file(self):
-        try:
-            os.remove(DESCRIPTION_FILEPATH)
-        except OSError:
-            pass
+        delete_file_quietly(NORMAL_CLONE_DESCRIPTION_FILEPATH)
+        delete_file_quietly(GIT_MIRROR_DESCRIPTION_FILEPATH)
         resp = self.client.get('/repos/restfulgit/description/')
         self.assert200(resp)
         self.assertEqual(resp.data, "")
@@ -396,9 +403,22 @@ class DescriptionTestCase(_GitApiTestCase):
         resp = self.client.get('/repos/test/description/')
         self.assert404(resp)
 
-    def test_works(self):
+    def test_works_normal_clone(self):
         description = "REST API for Git data\n"
-        with io.open(DESCRIPTION_FILEPATH, mode='wt', encoding='utf-8') as description_file:
+        with io.open(NORMAL_CLONE_DESCRIPTION_FILEPATH, mode='wt', encoding='utf-8') as description_file:
             description_file.write(description)
-        resp = self.client.get('/repos/restfulgit/description/')
-        self.assertEqual(resp.data, description)
+        try:
+            resp = self.client.get('/repos/restfulgit/description/')
+            self.assertEqual(resp.data, description)
+        finally:
+            delete_file_quietly(NORMAL_CLONE_DESCRIPTION_FILEPATH)
+
+    def test_works_git_mirror(self):
+        description = "REST API for Git data\n"
+        with io.open(GIT_MIRROR_DESCRIPTION_FILEPATH, mode='wt', encoding='utf-8') as description_file:
+            description_file.write(description)
+        try:
+            resp = self.client.get('/repos/restfulgit/description/')
+            self.assertEqual(resp.data, description)
+        finally:
+            delete_file_quietly(GIT_MIRROR_DESCRIPTION_FILEPATH)
