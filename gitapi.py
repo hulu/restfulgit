@@ -343,11 +343,15 @@ PLAIN_TEXT = 'text/plain'
 @app.route('/repos/<repo_key>/description/')
 def get_description(repo_key):
     _get_repo(repo_key)  # check repo_key validity
-    relative_path = os.path.join(repo_key, '.git', 'description')
-    absolute_path = safe_join(REPO_BASE, relative_path)
-    if not os.path.isfile(absolute_path):
+    relative_paths = (
+        os.path.join(repo_key, 'description'),
+        os.path.join(repo_key, '.git', 'description'),
+    )
+    extant_relative_paths = (relative_path for relative_path in relative_paths if os.path.isfile(safe_join(REPO_BASE, relative_path)))
+    extant_relative_path = next(extant_relative_paths, None)
+    if extant_relative_path is None:
         return Response("", mimetype=PLAIN_TEXT)
-    return send_from_directory(REPO_BASE, relative_path, mimetype=PLAIN_TEXT)
+    return send_from_directory(REPO_BASE, extant_relative_path, mimetype=PLAIN_TEXT)
 
 
 @app.route('/repos/<repo_key>/git/refs/')
