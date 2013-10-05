@@ -2,7 +2,7 @@
 # coding=utf-8
 from __future__ import print_function
 
-from flask import Flask, url_for, request, Response, safe_join, send_from_directory
+from flask import Flask, url_for, request, Response, Blueprint, safe_join, send_from_directory
 from werkzeug.exceptions import NotFound, BadRequest
 from werkzeug.routing import BaseConverter
 
@@ -37,6 +37,7 @@ else:
 
 
 app = Flask(__name__)
+restfulgit = Blueprint('restfulgit', __name__)  # pylint: disable=C0103
 
 CONFIG = {}
 try:
@@ -129,7 +130,7 @@ def _convert_signature(sig):
 
 def _convert_commit(repo_key, commit):
     return {
-        "url": url_for('get_commit', _external=True,
+        "url": url_for('.get_commit', _external=True,
                        repo_key=repo_key, sha=commit.hex),
         "sha": commit.hex,
         "author": _convert_signature(commit.author),
@@ -137,12 +138,12 @@ def _convert_commit(repo_key, commit):
         "message": commit.message,
         "tree": {
             "sha": commit.tree.hex,
-            "url": url_for('get_tree', _external=True,
+            "url": url_for('.get_tree', _external=True,
                            repo_key=repo_key, sha=commit.tree.hex),
         },
         "parents": [{
             "sha": c.hex,
-            "url": url_for('get_commit', _external=True,
+            "url": url_for('.get_commit', _external=True,
                            repo_key=repo_key, sha=c.hex)
         } for c in commit.parents]
     }
@@ -162,17 +163,17 @@ def _convert_tree(repo_key, repo, tree):
             if obj.type == GIT_OBJ_BLOB:
                 entry_data['type'] = "blob"
                 entry_data['size'] = obj.size
-                entry_data['url'] = url_for('get_blob', _external=True,
+                entry_data['url'] = url_for('.get_blob', _external=True,
                                             repo_key=repo_key, sha=entry.hex)
             elif obj.type == GIT_OBJ_TREE:
                 entry_data['type'] = "tree"
-                entry_data['url'] = url_for('get_tree', _external=True,
+                entry_data['url'] = url_for('.get_tree', _external=True,
                                             repo_key=repo_key, sha=entry.hex)
         entry_data['mode'] = oct(entry.filemode)
         entry_list.append(entry_data)
 
     return {
-        "url": url_for('get_tree', _external=True,
+        "url": url_for('.get_tree', _external=True,
                        repo_key=repo_key, sha=tree.hex),
         "sha": tree.hex,
         "tree": entry_list,
@@ -182,7 +183,7 @@ def _convert_tree(repo_key, repo, tree):
 def _convert_tag(repo_key, repo, tag):
     target_type_name = GIT_OBJ_TYPE_TO_NAME.get(repo[tag.target].type)
     return {
-        "url": url_for('get_tag', _external=True,
+        "url": url_for('.get_tag', _external=True,
                        repo_key=repo_key, sha=tag.hex),
         "sha": tag.hex,
         "tag": tag.name,
@@ -191,7 +192,7 @@ def _convert_tag(repo_key, repo, tag):
         "object": {
             "type": target_type_name,
             "sha": tag.target.hex,
-            "url": url_for('get_' + target_type_name, _external=True,
+            "url": url_for('.get_' + target_type_name, _external=True,
                            repo_key=repo_key, sha=tag.target.hex),
         },
     }
@@ -210,7 +211,7 @@ def _linkobj_for_gitobj(repo_key, obj, include_type=False):
     data['sha'] = obj.hex
     obj_type = GIT_OBJ_TYPE_TO_NAME.get(obj.type)
     if obj_type is not None:
-        data['url'] = url_for('get_' + obj_type, _external=True,
+        data['url'] = url_for('.get_' + obj_type, _external=True,
                               repo_key=repo_key, sha=obj.hex)
     if include_type:
         data['type'] = obj_type
@@ -227,7 +228,7 @@ def _encode_blob_data(data):
 def _convert_blob(repo_key, blob):
     encoding, data = _encode_blob_data(blob.data)
     return {
-        "url": url_for('get_blob', _external=True,
+        "url": url_for('.get_blob', _external=True,
                        repo_key=repo_key, sha=blob.hex),
         "sha": blob.hex,
         "size": blob.size,
@@ -238,7 +239,7 @@ def _convert_blob(repo_key, blob):
 
 def _convert_ref(repo_key, ref, obj):
     return {
-        "url": url_for('get_ref_list', _external=True,
+        "url": url_for('.get_ref_list', _external=True,
                        repo_key=repo_key, ref_path=ref.name[5:]),  # [5:] to cut off the redundant refs/
         "ref": ref.name,
         "object": _linkobj_for_gitobj(repo_key, obj, include_type=True),
@@ -273,14 +274,20 @@ class FixedOffset(tzinfo):
 ##### VIEWS #####
 
 
+def register_converter(blueprint, name, converter):
+    @blueprint.record_once
+    def registrator(state):  # pylint: disable=W0612
+        state.app.url_map.converters[name] = converter
+
+
 class SHAConverter(BaseConverter):  # pylint: disable=W0232
     regex = r'(?:[0-9a-fA-F]{1,40})'
 
 
-app.url_map.converters['sha'] = SHAConverter
+register_converter(restfulgit, 'sha', SHAConverter)
 
 
-@app.route('/repos/<repo_key>/git/commits/')
+@restfulgit.route('/repos/<repo_key>/git/commits/')
 @jsonify
 def get_commit_list(repo_key):
     ref_name = request.args.get('ref_name') or None
@@ -317,7 +324,7 @@ def get_commit_list(repo_key):
     return commits
 
 
-@app.route('/repos/<repo_key>/git/commits/<sha:sha>/')
+@restfulgit.route('/repos/<repo_key>/git/commits/<sha:sha>/')
 @jsonify
 def get_commit(repo_key, sha):
     repo = _get_repo(repo_key)
@@ -325,7 +332,7 @@ def get_commit(repo_key, sha):
     return _convert_commit(repo_key, commit)
 
 
-@app.route('/repos/<repo_key>/git/trees/<sha:sha>/')
+@restfulgit.route('/repos/<repo_key>/git/trees/<sha:sha>/')
 @jsonify
 def get_tree(repo_key, sha):
     repo = _get_repo(repo_key)
@@ -333,7 +340,7 @@ def get_tree(repo_key, sha):
     return _convert_tree(repo_key, repo, tree)
 
 
-@app.route('/repos/<repo_key>/git/blobs/<sha:sha>/')
+@restfulgit.route('/repos/<repo_key>/git/blobs/<sha:sha>/')
 @jsonify
 def get_blob(repo_key, sha):
     repo = _get_repo(repo_key)
@@ -346,7 +353,7 @@ def get_blob(repo_key, sha):
     return _convert_blob(repo_key, blob)
 
 
-@app.route('/repos/<repo_key>/git/tags/<sha:sha>/')
+@restfulgit.route('/repos/<repo_key>/git/tags/<sha:sha>/')
 @jsonify
 def get_tag(repo_key, sha):
     repo = _get_repo(repo_key)
@@ -357,7 +364,7 @@ def get_tag(repo_key, sha):
 PLAIN_TEXT = 'text/plain'
 
 
-@app.route('/repos/<repo_key>/description/')
+@restfulgit.route('/repos/<repo_key>/description/')
 def get_description(repo_key):
     _get_repo(repo_key)  # check repo_key validity
     relative_paths = (
@@ -371,8 +378,8 @@ def get_description(repo_key):
     return send_from_directory(REPO_BASE, extant_relative_path, mimetype=PLAIN_TEXT)
 
 
-@app.route('/repos/<repo_key>/git/refs/')
-@app.route('/repos/<repo_key>/git/refs/<path:ref_path>')
+@restfulgit.route('/repos/<repo_key>/git/refs/')
+@restfulgit.route('/repos/<repo_key>/git/refs/<path:ref_path>')
 @jsonify
 def get_ref_list(repo_key, ref_path=None):
     if ref_path is not None:
@@ -392,7 +399,7 @@ def get_ref_list(repo_key, ref_path=None):
     return ref_data
 
 
-@app.route('/repos/<repo_key>/raw/<branch_name>/<path:file_path>')
+@restfulgit.route('/repos/<repo_key>/raw/<branch_name>/<path:file_path>')
 def get_raw(repo_key, branch_name, file_path):
     repo = _get_repo(repo_key)
 
@@ -415,7 +422,7 @@ def get_raw(repo_key, branch_name, file_path):
         return data
 
 
-@app.route('/')
+@restfulgit.route('/')
 @jsonify
 def index():  # pragma: no cover
     links = []
@@ -423,6 +430,9 @@ def index():  # pragma: no cover
         if str(rule).startswith("/repos"):
             links.append(str(rule))
     return links
+
+
+app.register_blueprint(restfulgit)
 
 if __name__ == '__main__':  # pragma: no cover
     app.debug = True
