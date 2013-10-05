@@ -15,6 +15,7 @@ before_install:
 before_script:
   - "git branch -v"
   - "pip install --use-mirrors pep8 'pylint<1.0.0' Flask-Testing nose"
+  - "pip install --use-mirrors filemagic"
   - "git fetch --unshallow || true"
   - "git checkout -b master || true"
 script:

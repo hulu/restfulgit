@@ -15,9 +15,26 @@ from datetime import datetime, tzinfo, timedelta
 from base64 import b64encode
 from itertools import islice, ifilter
 import json
-import mimetypes
 import os.path
 import functools
+
+# Optionally use better libmagic-based MIME-type guessing
+try:
+    import magic as libmagic
+except ImportError:
+    import mimetypes
+
+    def guess_mime_type(filename, content):  # pylint: disable=W0613
+        (mime_type, encoding) = mimetypes.guess_type(filename)  # pylint: disable=W0612
+        return mime_type
+else:
+    import atexit
+    MAGIC = libmagic.Magic(flags=libmagic.MAGIC_MIME_TYPE)
+    atexit.register(MAGIC.close)
+
+    def guess_mime_type(filename, content):  # pylint: disable=W0613
+        return MAGIC.id_buffer(content)
+
 
 app = Flask(__name__)
 
@@ -390,11 +407,12 @@ def get_raw(repo_key, branch_name, file_path):
     if git_obj.type != GIT_OBJ_BLOB:
         return "not a file", 406
 
-    (mimetype, encoding) = mimetypes.guess_type(file_path)  # pylint: disable=W0612
-    if mimetype is not None:
-        return Response(git_obj.data, mimetype=mimetype)
+    data = git_obj.data
+    mime_type = guess_mime_type(os.path.basename(file_path), data)
+    if mime_type is not None:
+        return Response(data, mimetype=mime_type)
     else:
-        return git_obj.data
+        return data
 
 
 @app.route('/')
