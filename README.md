@@ -13,7 +13,7 @@ Requires:
 Must modify: `config.conf` : `repo_base_path` (root path for repositories; note: only repositories immediately under this path are currently supported).
 
 Optional:
-- filemagic (= 1.6) (offers improved MIME-type guessing)
+- filemagic (= 1.6) (offers improved MIME-type guessing), which itself requires libmagic (= 5.11)
 
 `gitapi.py` is a valid WSGI application.
 
