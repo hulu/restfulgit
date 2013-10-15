@@ -336,7 +336,7 @@ class RefsTestCase(_GitApiTestCase):
 
             obj = ref['object']
             self.assertIsInstance(obj, dict)
-            obj.viewkeys() == {'type', 'sha', 'url'}
+            self.assertEqual(obj.viewkeys(), {'type', 'sha', 'url'})
             for val in obj.itervalues():
                 self.assertIsInstance(val, unicode)
             self.assertIn(obj['type'], {'commit', 'tag'})
