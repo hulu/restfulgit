@@ -274,6 +274,10 @@ class FixedOffset(tzinfo):
 ##### VIEWS #####
 
 
+PLAIN_TEXT = 'text/plain'
+OCTET_STREAM = 'application/octet-stream'
+
+
 def register_converter(blueprint, name, converter):
     @blueprint.record_once
     def registrator(state):  # pylint: disable=W0612
@@ -361,9 +365,6 @@ def get_tag(repo_key, sha):
     return _convert_tag(repo_key, repo, tag)
 
 
-PLAIN_TEXT = 'text/plain'
-
-
 @restfulgit.route('/repos/<repo_key>/description/')
 def get_description(repo_key):
     _get_repo(repo_key)  # check repo_key validity
@@ -399,6 +400,47 @@ def get_ref_list(repo_key, ref_path=None):
     return ref_data
 
 
+UNSAFE_TEXT_FILENAMES = frozenset({'crossdomain.xml', 'clientaccesspolicy.xml'})
+HTML_FILE_EXTENSIONS = frozenset({'html', 'htm', 'xhtml', 'xht'})  # From Wikipedia's HTML and XHTML articles
+# From Wikipedia's JavaScript, ECMAScript, JScript, and VBScript articles
+WEB_SCRIPT_FILE_EXTENSIONS = frozenset({'js', 'es', 'jse', 'wsf', 'wsc', 'vbs', 'vbe'})
+UNSAFE_TEXT_FILE_EXTENSIONS = HTML_FILE_EXTENSIONS | WEB_SCRIPT_FILE_EXTENSIONS
+UNSAFE_BINARY_FILE_EXTENSIONS = frozenset({'swf', 'xap', 'jar', 'class'})  # Flash, Silverlight, and Java
+# From http://www.whatwg.org/specs/web-apps/current-work/multipage/iana.html
+UNSAFE_TEXT_MIME_TYPES = frozenset({'text/html', 'application/xhtml+xml', 'text/cache-manifest'})
+MISC_WEB_SCRIPT_MIME_SUBTYPES = frozenset({'ecmascript', 'jscript', 'livescript', 'vbscript', 'vbs'})
+
+
+def _somewhat_sanitize_mime_type(mime_type, filename):
+    # WARNING: Not vetted to provide meaningful security against a malicious repo owner
+    # or for an installation exposed to the public Internet.
+    orig_mime_type = mime_type
+
+    mime_type = mime_type.lower()
+    general_type, _, subtype = mime_type.partition('/')
+    if subtype.startswith('x-'):
+        subtype = subtype[2:]
+        mime_type = '/'.join((general_type, subtype))
+
+    filename = filename.lower()
+    extension = os.path.splitext(filename)[1][1:]  # [1:] to remove leading dot
+
+    if extension in UNSAFE_BINARY_FILE_EXTENSIONS or mime_type == 'application/shockwave-flash':
+        return OCTET_STREAM
+    if general_type == 'application' and ('java' in subtype or 'class' in subtype):
+        return OCTET_STREAM
+
+    if (mime_type in UNSAFE_TEXT_MIME_TYPES
+            or extension in UNSAFE_TEXT_FILE_EXTENSIONS
+            or filename in UNSAFE_TEXT_FILENAMES):
+        return PLAIN_TEXT
+    # Based on http://www.whatwg.org/specs/web-apps/current-work/multipage/scripting-1.html#scriptingLanguages
+    if general_type in {'application', 'text'} and (subtype in MISC_WEB_SCRIPT_MIME_SUBTYPES or subtype.startswith('javascript')):
+        return PLAIN_TEXT
+
+    return orig_mime_type
+
+
 @restfulgit.route('/repos/<repo_key>/raw/<branch_name>/<path:file_path>')
 def get_raw(repo_key, branch_name, file_path):
     repo = _get_repo(repo_key)
@@ -415,11 +457,16 @@ def get_raw(repo_key, branch_name, file_path):
         return "not a file", 406
 
     data = git_obj.data
-    mime_type = guess_mime_type(os.path.basename(file_path), data)
-    if mime_type is not None:
-        return Response(data, mimetype=mime_type)
+    filename = os.path.basename(file_path)
+    mime_type = guess_mime_type(filename, data)
+    if mime_type is None:
+        mime_type = OCTET_STREAM
     else:
-        return data
+        mime_type = _somewhat_sanitize_mime_type(mime_type, filename)
+
+    resp = Response(data, mimetype=mime_type)
+    resp.headers['X-Content-Type-Options'] = 'nosniff'
+    return resp
 
 
 @restfulgit.route('/')
