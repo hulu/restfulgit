@@ -35,30 +35,26 @@ else:
         return MAGIC.id_buffer(content)
 
 
+class DefaultConfig(object):
+    RESTFULGIT_DEFAULT_COMMIT_LIST_LIMIT = 50
+    RESTFULGIT_ENABLE_CORS = False
+    RESTFULGIT_CORS_ALLOWED_HEADERS = []
+    RESTFULGIT_CORS_ALLOW_CREDENTIALS = False
+    RESTFULGIT_CORS_MAX_AGE = timedelta(days=30)
+    RESTFULGIT_CORS_ALLOWED_ORIGIN = "*"
+
+
 app = Flask(__name__)
+app.config.from_object(DefaultConfig)
+LOADED_CONFIG = app.config.from_envvar('RESTFULGIT_CONFIG', silent=True)
+LOADED_CONFIG = LOADED_CONFIG or app.config.from_pyfile('/etc/restfulgit.conf.py', silent=True)
+if not LOADED_CONFIG:
+    raise SystemExit("Failed to load any RestfulGit configuration!")
 restfulgit = Blueprint('restfulgit', __name__)  # pylint: disable=C0103
-
-CONFIG = {}
-try:
-    execfile("config.conf", CONFIG)
-except:  # pylint: disable=W0702
-    import sys
-    from traceback import print_exc
-    print("error loading config:\n", file=sys.stderr)
-    print_exc()
-    sys.exit(1)
-
-REPO_BASE = CONFIG.get("repo_base_path", "/Code/")
-DEFAULT_COMMIT_LIST_LIMIT = CONFIG.get("default_commit_list_limit", 50)
-ENABLE_CORS = CONFIG.get("enable_cors", False)
-CORS_ALLOWED_HEADERS = CONFIG.get("cors_allowed_headers", [])
-CORS_ALLOW_CREDENTIALS = CONFIG.get("cors_allow_credentials", False)
-CORS_MAX_AGE = CONFIG.get("cors_max_age", timedelta(days=30))
-CORS_ALLOWED_ORIGIN = CONFIG.get("cors_allowed_origin", "*")
 
 
 def _get_repo(repo_key):
-    path = safe_join(REPO_BASE, repo_key)
+    path = safe_join(current_app.config['RESTFULGIT_REPO_BASE_PATH'], repo_key)
     try:
         return Repository(path)
     except KeyError:
@@ -288,11 +284,10 @@ def jsonify(func):
 
 def corsify(func):
     # based on http://flask.pocoo.org/snippets/56/
-    if not ENABLE_CORS:
-        return func
-
     @functools.wraps(func)
     def wrapped(*args, **kwargs):
+        if not current_app.config['RESTFULGIT_ENABLE_CORS']:
+            return func(*args, **kwargs)
         options_resp = current_app.make_default_options_response()
         if request.method == 'OPTIONS':
             resp = options_resp
@@ -300,12 +295,14 @@ def corsify(func):
             resp = make_response(func(*args, **kwargs))
         headers = resp.headers
         headers['Access-Control-Allow-Methods'] = options_resp.headers['allow']
-        headers['Access-Control-Allow-Origin'] = CORS_ALLOWED_ORIGIN
-        headers['Access-Control-Allow-Credentials'] = str(CORS_ALLOW_CREDENTIALS).lower()
-        if CORS_ALLOWED_HEADERS:
-            headers['Access-Control-Allow-Headers'] = ", ".join(CORS_ALLOWED_HEADERS)
-        if CORS_MAX_AGE is not None:
-            headers['Access-Control-Max-Age'] = str(int(CORS_MAX_AGE.total_seconds()))
+        headers['Access-Control-Allow-Origin'] = current_app.config['RESTFULGIT_CORS_ALLOWED_ORIGIN']
+        headers['Access-Control-Allow-Credentials'] = str(current_app.config['RESTFULGIT_CORS_ALLOW_CREDENTIALS']).lower()
+        allowed_headers = current_app.config['RESTFULGIT_CORS_ALLOWED_HEADERS']
+        if allowed_headers:
+            headers['Access-Control-Allow-Headers'] = ", ".join(allowed_headers)
+        max_age = current_app.config['RESTFULGIT_CORS_MAX_AGE']
+        if max_age is not None:
+            headers['Access-Control-Max-Age'] = str(int(max_age.total_seconds()))
         return resp
 
     return wrapped
@@ -349,7 +346,7 @@ register_converter(restfulgit, 'sha', SHAConverter)
 def get_commit_list(repo_key):
     ref_name = request.args.get('ref_name') or None
     start_sha = request.args.get('start_sha') or None
-    limit = request.args.get('limit') or DEFAULT_COMMIT_LIST_LIMIT
+    limit = request.args.get('limit') or current_app.config['RESTFULGIT_DEFAULT_COMMIT_LIST_LIMIT']
     try:
         limit = int(limit)
     except ValueError:
@@ -433,18 +430,25 @@ def get_description(repo_key):
         os.path.join(repo_key, 'description'),
         os.path.join(repo_key, '.git', 'description'),
     )
-    extant_relative_paths = (relative_path for relative_path in relative_paths if os.path.isfile(safe_join(REPO_BASE, relative_path)))
+    extant_relative_paths = (
+        relative_path
+        for relative_path in relative_paths
+        if os.path.isfile(safe_join(current_app.config['RESTFULGIT_REPO_BASE_PATH'], relative_path))
+    )
     extant_relative_path = next(extant_relative_paths, None)
     if extant_relative_path is None:
         return Response("", mimetype=PLAIN_TEXT)
-    return send_from_directory(REPO_BASE, extant_relative_path, mimetype=PLAIN_TEXT)
+    return send_from_directory(current_app.config['RESTFULGIT_REPO_BASE_PATH'], extant_relative_path, mimetype=PLAIN_TEXT)
 
 
 @restfulgit.route('/repos/')
 @corsify
 @jsonify
 def get_repo_list():
-    children = ((name, safe_join(REPO_BASE, name)) for name in os.listdir(REPO_BASE))
+    children = (
+        (name, safe_join(current_app.config['RESTFULGIT_REPO_BASE_PATH'], name))
+        for name in os.listdir(current_app.config['RESTFULGIT_REPO_BASE_PATH'])
+    )
     subdirs = [(dir_name, full_path) for dir_name, full_path in children if os.path.isdir(full_path)]
     mirrors = set(name for name, _ in subdirs if name.endswith('.git'))
     working_copies = set(name for name, full_path in subdirs if os.path.isdir(safe_join(full_path, '.git')))

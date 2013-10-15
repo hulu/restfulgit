@@ -3,20 +3,22 @@ from __future__ import absolute_import, unicode_literals
 
 import unittest
 from hashlib import sha512
-from os import remove as _delete_file
-import io
+import os
 import os.path
+import io
 
 from flask.ext.testing import TestCase as _FlaskTestCase
 
+
+RESTFULGIT_REPO = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+PARENT_DIR_OF_RESTFULGIT_REPO = os.path.abspath(os.path.join(RESTFULGIT_REPO, '..'))
+os.environ[b'RESTFULGIT_CONFIG'] = os.path.join(RESTFULGIT_REPO, 'example_config.py')
 import restfulgit
 
 
-RESTFULGIT_REPO = os.path.abspath(os.path.join(os.path.dirname(restfulgit.__file__), '..'))
 TEST_SUBDIR = os.path.join(RESTFULGIT_REPO, 'test')
 GIT_MIRROR_DESCRIPTION_FILEPATH = os.path.join(RESTFULGIT_REPO, 'description')
 NORMAL_CLONE_DESCRIPTION_FILEPATH = os.path.join(RESTFULGIT_REPO, '.git', 'description')
-PARENT_DIR_OF_RESTFULGIT_REPO = os.path.join(os.path.abspath(os.path.join(RESTFULGIT_REPO, '..')), '')
 FIRST_COMMIT = "07b9bf1540305153ceeb4519a50b588c35a35464"
 TREE_OF_FIRST_COMMIT = "6ca22167185c31554aa6157306e68dfd612d6345"
 BLOB_FROM_FIRST_COMMIT = "ae9d90706c632c26023ce599ac96cb152673da7c"
@@ -27,14 +29,14 @@ IMPROBABLE_SHA = "f" * 40
 
 def delete_file_quietly(filepath):
     try:
-        _delete_file(filepath)
+        os.remove(filepath)
     except EnvironmentError as err:
         pass
 
 
 class _RestfulGitTestCase(_FlaskTestCase):
     def create_app(self):
-        restfulgit.REPO_BASE = PARENT_DIR_OF_RESTFULGIT_REPO
+        restfulgit.app.config['RESTFULGIT_REPO_BASE_PATH'] = PARENT_DIR_OF_RESTFULGIT_REPO
         return restfulgit.app
 
 

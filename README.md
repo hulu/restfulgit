@@ -23,6 +23,22 @@ While the app can be run with `python -m restfulgit` -- this runs Flask in debug
 Instead, the app can be run with any WSGI server, such as gunicorn (`pip install gunicorn; gunicorn restfulgit`)
 (Note: If you haven't installed restfulgit into your Python environment, you may need to explicitly set `PYTHONPATH` when running the above commands.)
 
+Configuration
+----------------
+RestfulGit uses Flask's config system. See `example_config.py` for an example config file.
+If the `$RESTFULGIT_CONFIG` environment variable is set, RestfulGit will assume its value is a config filepath and will attempt to load its config from that file.
+If the variable is not set or the loading attempt fails, RestfulGit will then attempt to load its config from `/etc/restfulgit.conf.py`.
+
+| Config parameter                     | Default value     | Description                                                                                                                                         |
+-----------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------|
+| RESTFULGIT_REPO_BASE_PATH            | (none)            | Root path for Git repositories. Note: only repositories immediately under this path are currently supported.                                        |
+| RESTFULGIT_DEFAULT_COMMIT_LIST_LIMIT | 50                | Number of most recent commits to return by default from the "commits" API endpoint.                                                                 |
+| RESTFULGIT_ENABLE_CORS               | False             | Whether to enable [cross-origin resource sharing (CORS)](http://en.wikipedia.org/wiki/Cross-origin_resource_sharing) headers for the API endpoints. |
+| RESTFULGIT_CORS_ALLOWED_HEADERS      | `[]` (empty list) | List of HTTP header names (strings) that are allowed be used by the client when making a CORS request.                                              |
+| RESTFULGIT_CORS_ALLOW_CREDENTIALS    | False             | Whether HTTP Cookies and HTTP Authentication information should be sent by the client when making a CORS request.                                   |
+| RESTFULGIT_CORS_MAX_AGE              | 30 days           | `datetime.timedelta` specifying how long the results of a CORS preflight request can be cached by clients.                                          |
+| RESTFULGIT_CORS_ALLOWED_ORIGIN       | `*` (all origins) | Which [origin](http://en.wikipedia.org/wiki/Same-origin_policy#Origin_determination_rules) is allowed to access the API endpoints using CORS.       |
+
 --
 
 All of these routes return JSON unless otherwise specified.
@@ -35,7 +51,7 @@ Retrieves a list of commit objects:
     
     optional: ?start_sha=:sha
     optional: ?ref_name=:ref_name
-    optional: ?limit=:limit (default=50)
+    optional: ?limit=:limit (default=50, or as specified by the config)
 
 ```json
 [
