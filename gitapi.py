@@ -15,7 +15,7 @@ from datetime import datetime, tzinfo, timedelta
 from base64 import b64encode
 from itertools import islice, ifilter
 import json
-import os.path
+import os
 import functools
 
 # Optionally use better libmagic-based MIME-type guessing
@@ -415,6 +415,19 @@ def get_description(repo_key):
     if extant_relative_path is None:
         return Response("", mimetype=PLAIN_TEXT)
     return send_from_directory(REPO_BASE, extant_relative_path, mimetype=PLAIN_TEXT)
+
+
+@restfulgit.route('/repos/')
+@corsify
+@jsonify
+def get_repo_list():
+    children = ((name, safe_join(REPO_BASE, name)) for name in os.listdir(REPO_BASE))
+    subdirs = [(dir_name, full_path) for dir_name, full_path in children if os.path.isdir(full_path)]
+    mirrors = set(name for name, _ in subdirs if name.endswith('.git'))
+    working_copies = set(name for name, full_path in subdirs if os.path.isdir(safe_join(full_path, '.git')))
+    repositories = list(mirrors | working_copies)
+    repositories.sort()
+    return {'repos': repositories}
 
 
 @restfulgit.route('/repos/<repo_key>/git/refs/')

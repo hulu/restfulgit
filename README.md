@@ -165,6 +165,16 @@ Returns the raw file data for the file on the specified branch:
 
     /repos/:repo_key/raw/:branch_name/:file_path
 
+List Repositories
+----------
+Retrieves a list of the names of all the repos:
+
+    GET /repos/
+
+```
+{"repos": ["restfulgit.git"]}
+```
+
 Repository Descriptions
 -----------------
 Retrieve the description (if any) of the repo, as plain text:
