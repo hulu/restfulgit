@@ -125,6 +125,30 @@ def _lookup_ref(repo, ref_name):
             return None
 
 
+def _get_commit_for_refspec(repo, branch_or_tag_or_sha):
+    # Precedence order GitHub uses (& that we copy):
+    # 1. Branch  2. Tag  3. Commit SHA
+    commit_sha = None
+    # branch?
+    branch_ref = _lookup_ref(repo, branch_or_tag_or_sha)
+    if branch_ref is not None:
+        commit_sha = branch_ref.resolve().target.hex
+    # tag?
+    if commit_sha is None:
+        ref_to_tag = _lookup_ref(repo, "tags/" + branch_or_tag_or_sha)
+        if ref_to_tag is not None:
+            sha_of_tag_itself = ref_to_tag.resolve().target.hex
+            tag = _get_tag(repo, sha_of_tag_itself)
+            commit_sha = tag.target.hex
+    # commit?
+    if commit_sha is None:
+        commit_sha = branch_or_tag_or_sha
+    try:
+        return _get_commit(repo, commit_sha)
+    except ValueError:
+        raise NotFound("no such branch, tag, or commit SHA")
+
+
 def _convert_signature(sig):
     return {
         "name": sig.name,
@@ -452,17 +476,12 @@ def get_ref_list(repo_key, ref_path=None):
     return ref_data
 
 
-@restfulgit.route('/repos/<repo_key>/raw/<branch_name>/<path:file_path>')
+@restfulgit.route('/repos/<repo_key>/blob/<branch_or_tag_or_sha>/<path:file_path>')
 @corsify
-def get_raw(repo_key, branch_name, file_path):
+def get_raw(repo_key, branch_or_tag_or_sha, file_path):
     repo = _get_repo(repo_key)
-
-    ref = _lookup_ref(repo, branch_name)
-    if ref is None:
-        raise NotFound("branch not found")
-    commit_sha = ref.resolve().target.hex
-
-    tree = _get_tree(repo, _get_commit(repo, commit_sha).tree.hex)
+    commit = _get_commit_for_refspec(repo, branch_or_tag_or_sha)
+    tree = _get_tree(repo, commit.tree.hex)
     git_obj = _get_object_from_path(repo, tree, file_path)
 
     if git_obj.type != GIT_OBJ_BLOB:

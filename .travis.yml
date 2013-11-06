@@ -13,10 +13,12 @@ before_install:
   - "export LIBGIT2='/usr/local'"
   - "export LDFLAGS=\"-Wl,-rpath='$LIBGIT2/lib',--enable-new-dtags $LDFLAGS\""
 before_script:
-  - "git branch -v"
   - "pip install --use-mirrors pep8 'pylint<1.0.0' Flask-Testing nose"
   - "pip install --use-mirrors filemagic"
   - "git fetch --unshallow || true"
+  - "git fetch --all"
+  - "git branch ambiguous 1f51b91ac383806df9d322ae67bbad3364f50811"
+  - "git branch -v"
   - "git checkout -b master || true"
 script:
   - "pep8 *.py"
