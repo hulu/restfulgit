@@ -2,7 +2,7 @@
 # coding=utf-8
 from __future__ import print_function
 
-from flask import Flask, url_for, request, Response, Blueprint, safe_join, send_from_directory
+from flask import Flask, url_for, request, Response, current_app, Blueprint, safe_join, send_from_directory, make_response
 from werkzeug.exceptions import NotFound, BadRequest
 from werkzeug.routing import BaseConverter
 
@@ -51,6 +51,11 @@ except:  # pylint: disable=W0702
 
 REPO_BASE = CONFIG.get("repo_base_path", "/Code/")
 DEFAULT_COMMIT_LIST_LIMIT = CONFIG.get("default_commit_list_limit", 50)
+ENABLE_CORS = CONFIG.get("enable_cors", False)
+CORS_ALLOWED_HEADERS = CONFIG.get("cors_allowed_headers", [])
+CORS_ALLOW_CREDENTIALS = CONFIG.get("cors_allow_credentials", False)
+CORS_MAX_AGE = CONFIG.get("cors_max_age", timedelta(days=30))
+CORS_ALLOWED_ORIGIN = CONFIG.get("cors_allowed_origin", "*")
 
 
 def _get_repo(repo_key):
@@ -258,6 +263,31 @@ def jsonify(func):
     return wrapped
 
 
+def corsify(func):
+    # based on http://flask.pocoo.org/snippets/56/
+    if not ENABLE_CORS:
+        return func
+
+    @functools.wraps(func)
+    def wrapped(*args, **kwargs):
+        options_resp = current_app.make_default_options_response()
+        if request.method == 'OPTIONS':
+            resp = options_resp
+        else:
+            resp = make_response(func(*args, **kwargs))
+        headers = resp.headers
+        headers['Access-Control-Allow-Methods'] = options_resp.headers['allow']
+        headers['Access-Control-Allow-Origin'] = CORS_ALLOWED_ORIGIN
+        headers['Access-Control-Allow-Credentials'] = str(CORS_ALLOW_CREDENTIALS).lower()
+        if CORS_ALLOWED_HEADERS:
+            headers['Access-Control-Allow-Headers'] = ", ".join(CORS_ALLOWED_HEADERS)
+        if CORS_MAX_AGE is not None:
+            headers['Access-Control-Max-Age'] = str(int(CORS_MAX_AGE.total_seconds()))
+        return resp
+
+    return wrapped
+
+
 class FixedOffset(tzinfo):
     ZERO = timedelta(0)
 
@@ -291,6 +321,7 @@ register_converter(restfulgit, 'sha', SHAConverter)
 
 
 @restfulgit.route('/repos/<repo_key>/git/commits/')
+@corsify
 @jsonify
 def get_commit_list(repo_key):
     ref_name = request.args.get('ref_name') or None
@@ -328,6 +359,7 @@ def get_commit_list(repo_key):
 
 
 @restfulgit.route('/repos/<repo_key>/git/commits/<sha:sha>/')
+@corsify
 @jsonify
 def get_commit(repo_key, sha):
     repo = _get_repo(repo_key)
@@ -336,6 +368,7 @@ def get_commit(repo_key, sha):
 
 
 @restfulgit.route('/repos/<repo_key>/git/trees/<sha:sha>/')
+@corsify
 @jsonify
 def get_tree(repo_key, sha):
     repo = _get_repo(repo_key)
@@ -344,6 +377,7 @@ def get_tree(repo_key, sha):
 
 
 @restfulgit.route('/repos/<repo_key>/git/blobs/<sha:sha>/')
+@corsify
 @jsonify
 def get_blob(repo_key, sha):
     repo = _get_repo(repo_key)
@@ -357,6 +391,7 @@ def get_blob(repo_key, sha):
 
 
 @restfulgit.route('/repos/<repo_key>/git/tags/<sha:sha>/')
+@corsify
 @jsonify
 def get_tag(repo_key, sha):
     repo = _get_repo(repo_key)
@@ -368,6 +403,7 @@ PLAIN_TEXT = 'text/plain'
 
 
 @restfulgit.route('/repos/<repo_key>/description/')
+@corsify
 def get_description(repo_key):
     _get_repo(repo_key)  # check repo_key validity
     relative_paths = (
@@ -383,6 +419,7 @@ def get_description(repo_key):
 
 @restfulgit.route('/repos/<repo_key>/git/refs/')
 @restfulgit.route('/repos/<repo_key>/git/refs/<path:ref_path>')
+@corsify
 @jsonify
 def get_ref_list(repo_key, ref_path=None):
     if ref_path is not None:
@@ -403,6 +440,7 @@ def get_ref_list(repo_key, ref_path=None):
 
 
 @restfulgit.route('/repos/<repo_key>/raw/<branch_name>/<path:file_path>')
+@corsify
 def get_raw(repo_key, branch_name, file_path):
     repo = _get_repo(repo_key)
 
@@ -425,6 +463,7 @@ def get_raw(repo_key, branch_name, file_path):
 
 
 @restfulgit.route('/')
+@corsify
 @jsonify
 def index():  # pragma: no cover
     links = []
