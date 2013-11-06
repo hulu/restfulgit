@@ -274,6 +274,9 @@ class FixedOffset(tzinfo):
 ##### VIEWS #####
 
 
+OCTET_STREAM = 'application/octet-stream'
+
+
 def register_converter(blueprint, name, converter):
     @blueprint.record_once
     def registrator(state):  # pylint: disable=W0612
@@ -416,10 +419,9 @@ def get_raw(repo_key, branch_name, file_path):
 
     data = git_obj.data
     mime_type = guess_mime_type(os.path.basename(file_path), data)
-    if mime_type is not None:
-        return Response(data, mimetype=mime_type)
-    else:
-        return data
+    if mime_type is None:
+        mime_type = OCTET_STREAM
+    return Response(data, mimetype=mime_type)
 
 
 @restfulgit.route('/')
