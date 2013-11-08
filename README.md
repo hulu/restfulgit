@@ -171,7 +171,7 @@ Retrieves a list of the names of all the repos:
 
     GET /repos/
 
-```
+```json
 {"repos": ["restfulgit.git"]}
 ```
 
