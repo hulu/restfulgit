@@ -52,6 +52,16 @@ class RepoKeyTestCase(_GitApiTestCase):
         resp = self.client.get('/repos/../git/commits/')
         self.assert404(resp)
 
+    def test_list_repos(self):
+        resp = self.client.get('/repos/')
+        self.assert200(resp)
+        result = resp.json
+        self.assertIsInstance(result, dict)
+        self.assertEqual(result.viewkeys(), {'repos'})
+        repo_list = result['repos']
+        self.assertIsInstance(repo_list, list)
+        self.assertIn('restfulgit', repo_list)
+
 
 class SHAConverterTestCase(_GitApiTestCase):
     def test_empty_sha_rejected(self):
