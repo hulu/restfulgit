@@ -161,9 +161,9 @@ Retrieves a specific ref:
 
 Raw Files
 ----------
-Returns the raw file data for the file on the specified branch:
+Returns the raw file data for the file on the specified branch, tag, or commit SHA:
 
-    /repos/:repo_key/raw/:branch_name/:file_path
+    GET /repos/:repo_key/blob/:refspec/:file_path
 
 List Repositories
 ----------
