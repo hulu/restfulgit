@@ -1,0 +1,5 @@
+[run]
+source = restfulgit
+omit =
+    */tests/*
+    */__main__.py
