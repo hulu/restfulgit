@@ -1,6 +1,7 @@
 RestfulGit: A Restful API for Git data
 =======================================
 [![Build Status](https://travis-ci.org/hulu/restfulgit.png?branch=master)](https://travis-ci.org/hulu/restfulgit)
+[![Coverage Status](https://coveralls.io/repos/hulu/restfulgit/badge.png?branch=master)](https://coveralls.io/r/hulu/restfulgit?branch=master)
 [![Requirements Status](https://requires.io/github/hulu/restfulgit/requirements.png?branch=master)](https://requires.io/github/hulu/restfulgit/requirements/?branch=master)
 
 Provides a read-only restful interface for accessing data from Git repositories (local to the server).
@@ -16,10 +17,11 @@ Must modify: `config.conf` : `repo_base_path` (root path for repositories; note:
 Optional:
 - filemagic (= 1.6) (offers improved MIME-type guessing), which itself requires libmagic (= 5.11)
 
-`gitapi.py` is a valid WSGI application.
+The `restfulgit` package is a valid WSGI application.
 
-While the app can be run with `python gitapi.py` -- this runs Flask in debug mode and should NOT be used in production.
-Instead the app can be run with any WSGI server, such as gunicorn (`pip install gunicorn; gunicorn gitapi`)
+While the app can be run with `python -m restfulgit` -- this runs Flask in debug mode and should NOT be used in production.
+Instead, the app can be run with any WSGI server, such as gunicorn (`pip install gunicorn; gunicorn restfulgit`)
+(Note: If you haven't installed restfulgit into your Python environment, you may need to explicitly set `PYTHONPATH` when running the above commands.)
 
 --
 

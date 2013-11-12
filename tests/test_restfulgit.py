@@ -1,6 +1,7 @@
 # coding=utf-8
-from __future__ import unicode_literals
+from __future__ import absolute_import, unicode_literals
 
+import unittest
 from hashlib import sha512
 from os import remove as _delete_file
 import io
@@ -8,10 +9,10 @@ import os.path
 
 from flask.ext.testing import TestCase as _FlaskTestCase
 
-import gitapi
+import restfulgit
 
 
-RESTFULGIT_REPO = os.path.abspath(os.path.dirname(gitapi.__file__))
+RESTFULGIT_REPO = os.path.abspath(os.path.join(os.path.dirname(restfulgit.__file__), '..'))
 TEST_SUBDIR = os.path.join(RESTFULGIT_REPO, 'test')
 GIT_MIRROR_DESCRIPTION_FILEPATH = os.path.join(RESTFULGIT_REPO, 'description')
 NORMAL_CLONE_DESCRIPTION_FILEPATH = os.path.join(RESTFULGIT_REPO, '.git', 'description')
@@ -31,24 +32,24 @@ def delete_file_quietly(filepath):
         pass
 
 
-class _GitApiTestCase(_FlaskTestCase):
+class _RestfulGitTestCase(_FlaskTestCase):
     def create_app(self):
-        gitapi.REPO_BASE = PARENT_DIR_OF_RESTFULGIT_REPO
-        return gitapi.app
+        restfulgit.REPO_BASE = PARENT_DIR_OF_RESTFULGIT_REPO
+        return restfulgit.app
 
 
-class RepoKeyTestCase(_GitApiTestCase):
+class RepoKeyTestCase(_RestfulGitTestCase):
     def test_nonexistent_directory(self):
         resp = self.client.get('/repos/this-directory-does-not-exist/git/commits/')
         self.assert404(resp)
 
     def test_directory_is_not_git_repo(self):
-        gitapi.REPO_BASE = RESTFULGIT_REPO
+        restfulgit.REPO_BASE = RESTFULGIT_REPO
         resp = self.client.get('/repos/test/git/commits/')
         self.assert404(resp)
 
     def test_dot_dot_disallowed(self):
-        gitapi.REPO_BASE = TEST_SUBDIR
+        restfulgit.REPO_BASE = TEST_SUBDIR
         resp = self.client.get('/repos/../git/commits/')
         self.assert404(resp)
 
@@ -63,7 +64,7 @@ class RepoKeyTestCase(_GitApiTestCase):
         self.assertIn('restfulgit', repo_list)
 
 
-class SHAConverterTestCase(_GitApiTestCase):
+class SHAConverterTestCase(_RestfulGitTestCase):
     def test_empty_sha_rejected(self):
         resp = self.client.get('/repos/restfulgit/git/trees/')
         self.assert404(resp)
@@ -85,7 +86,7 @@ class SHAConverterTestCase(_GitApiTestCase):
         self.assert200(resp)
 
 
-class CommitsTestCase(_GitApiTestCase):
+class CommitsTestCase(_RestfulGitTestCase):
     """Tests the "commits" endpoint."""
     def test_nonexistent_start_sha(self):
         resp = self.client.get('/repos/restfulgit/git/commits/?start_sha=1234567890abcdef')
@@ -143,8 +144,8 @@ class CommitsTestCase(_GitApiTestCase):
                     },
                     'message': 'add file mode\n',
                     'parents': [{
-                            'sha': '326d80cd68ec3413fe6eaca99c52c59ca428a0d0',
-                            'url': 'http://localhost/repos/restfulgit/git/commits/326d80cd68ec3413fe6eaca99c52c59ca428a0d0/'
+                        'sha': '326d80cd68ec3413fe6eaca99c52c59ca428a0d0',
+                        'url': 'http://localhost/repos/restfulgit/git/commits/326d80cd68ec3413fe6eaca99c52c59ca428a0d0/'
                     }],
                     'sha': 'c04112733fe2db2cb2f179fca1a19365cf15fef5',
                     'tree': {
@@ -166,8 +167,8 @@ class CommitsTestCase(_GitApiTestCase):
                     },
                     'message': 'Now using a jsonify decorator which returns the correct content-type\n',
                     'parents': [{
-                            'sha': '1f51b91ac383806df9d322ae67bbad3364f50811',
-                            'url': 'http://localhost/repos/restfulgit/git/commits/1f51b91ac383806df9d322ae67bbad3364f50811/'
+                        'sha': '1f51b91ac383806df9d322ae67bbad3364f50811',
+                        'url': 'http://localhost/repos/restfulgit/git/commits/1f51b91ac383806df9d322ae67bbad3364f50811/'
                     }],
                     'sha': '326d80cd68ec3413fe6eaca99c52c59ca428a0d0',
                     'tree': {
@@ -205,7 +206,7 @@ class CommitsTestCase(_GitApiTestCase):
     #FIXME: test combos
 
 
-class SimpleSHATestCase(_GitApiTestCase):
+class SimpleSHATestCase(_RestfulGitTestCase):
     def test_get_commit_with_non_commit_sha(self):
         resp = self.client.get('/repos/restfulgit/git/commits/{}/'.format(BLOB_FROM_FIRST_COMMIT))
         self.assert404(resp)
@@ -331,7 +332,7 @@ class SimpleSHATestCase(_GitApiTestCase):
         )
 
 
-class RefsTestCase(_GitApiTestCase):
+class RefsTestCase(_RestfulGitTestCase):
     def test_get_ref_list_works(self):
         resp = self.client.get('/repos/restfulgit/git/refs/')
         self.assert200(resp)
@@ -373,7 +374,7 @@ class RefsTestCase(_GitApiTestCase):
         )
 
 
-class RawFileTestCase(_GitApiTestCase):
+class RawFileTestCase(_RestfulGitTestCase):
     def test_nonexistent_branch(self):
         resp = self.client.get('/repos/restfulgit/blob/this-branch-does-not-exist/LICENSE.md')
         self.assert404(resp)
@@ -423,7 +424,7 @@ class RawFileTestCase(_GitApiTestCase):
         )
 
 
-class DescriptionTestCase(_GitApiTestCase):
+class DescriptionTestCase(_RestfulGitTestCase):
     def test_no_description_file(self):
         delete_file_quietly(NORMAL_CLONE_DESCRIPTION_FILEPATH)
         delete_file_quietly(GIT_MIRROR_DESCRIPTION_FILEPATH)
@@ -432,12 +433,12 @@ class DescriptionTestCase(_GitApiTestCase):
         self.assertEqual(resp.data, "")
 
     def test_dot_dot_disallowed(self):
-        gitapi.REPO_BASE = TEST_SUBDIR
+        restfulgit.REPO_BASE = TEST_SUBDIR
         resp = self.client.get('/repos/../description/')
         self.assert404(resp)
 
     def test_nonexistent_repo(self):
-        gitapi.REPO_BASE = RESTFULGIT_REPO
+        restfulgit.REPO_BASE = RESTFULGIT_REPO
         resp = self.client.get('/repos/test/description/')
         self.assert404(resp)
 
@@ -460,3 +461,7 @@ class DescriptionTestCase(_GitApiTestCase):
             self.assertEqual(resp.data, description)
         finally:
             delete_file_quietly(GIT_MIRROR_DESCRIPTION_FILEPATH)
+
+
+if __name__ == '__main__':
+    unittest.main()

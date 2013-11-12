@@ -1,4 +1,3 @@
-#!/usr/bin/env python2.7
 # coding=utf-8
 from __future__ import print_function
 
@@ -506,10 +505,5 @@ def index():  # pragma: no cover
 
 
 app.register_blueprint(restfulgit)
-
-if __name__ == '__main__':  # pragma: no cover
-    app.debug = True
-    app.run(host="0.0.0.0")
-
 
 application = app
