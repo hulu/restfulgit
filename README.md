@@ -30,7 +30,7 @@ If the `$RESTFULGIT_CONFIG` environment variable is set, RestfulGit will assume 
 If the variable is not set or the loading attempt fails, RestfulGit will then attempt to load its config from `/etc/restfulgit.conf.py`.
 
 | Config parameter                     | Default value     | Description                                                                                                                                         |
------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------|
+|--------------------------------------|-------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------|
 | RESTFULGIT_REPO_BASE_PATH            | (none)            | Root path for Git repositories. Note: only repositories immediately under this path are currently supported.                                        |
 | RESTFULGIT_DEFAULT_COMMIT_LIST_LIMIT | 50                | Number of most recent commits to return by default from the "commits" API endpoint.                                                                 |
 | RESTFULGIT_ENABLE_CORS               | False             | Whether to enable [cross-origin resource sharing (CORS)](http://en.wikipedia.org/wiki/Cross-origin_resource_sharing) headers for the API endpoints. |
