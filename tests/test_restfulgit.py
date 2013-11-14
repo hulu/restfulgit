@@ -3,20 +3,24 @@ from __future__ import absolute_import, unicode_literals
 
 import unittest
 from hashlib import sha512
-from os import remove as _delete_file
-import io
+import os
 import os.path
+import io
+from contextlib import contextmanager
+from datetime import timedelta
 
 from flask.ext.testing import TestCase as _FlaskTestCase
 
+
+RESTFULGIT_REPO = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+PARENT_DIR_OF_RESTFULGIT_REPO = os.path.abspath(os.path.join(RESTFULGIT_REPO, '..'))
+os.environ[b'RESTFULGIT_CONFIG'] = os.path.join(RESTFULGIT_REPO, 'example_config.py')
 import restfulgit
 
 
-RESTFULGIT_REPO = os.path.abspath(os.path.join(os.path.dirname(restfulgit.__file__), '..'))
 TEST_SUBDIR = os.path.join(RESTFULGIT_REPO, 'test')
 GIT_MIRROR_DESCRIPTION_FILEPATH = os.path.join(RESTFULGIT_REPO, 'description')
 NORMAL_CLONE_DESCRIPTION_FILEPATH = os.path.join(RESTFULGIT_REPO, '.git', 'description')
-PARENT_DIR_OF_RESTFULGIT_REPO = os.path.join(os.path.abspath(os.path.join(RESTFULGIT_REPO, '..')), '')
 FIRST_COMMIT = "07b9bf1540305153ceeb4519a50b588c35a35464"
 TREE_OF_FIRST_COMMIT = "6ca22167185c31554aa6157306e68dfd612d6345"
 BLOB_FROM_FIRST_COMMIT = "ae9d90706c632c26023ce599ac96cb152673da7c"
@@ -27,15 +31,24 @@ IMPROBABLE_SHA = "f" * 40
 
 def delete_file_quietly(filepath):
     try:
-        _delete_file(filepath)
+        os.remove(filepath)
     except EnvironmentError as err:
         pass
 
 
 class _RestfulGitTestCase(_FlaskTestCase):
     def create_app(self):
-        restfulgit.REPO_BASE = PARENT_DIR_OF_RESTFULGIT_REPO
+        restfulgit.app.config['RESTFULGIT_REPO_BASE_PATH'] = PARENT_DIR_OF_RESTFULGIT_REPO
         return restfulgit.app
+
+    @contextmanager
+    def config_override(self, key, val):
+        orig_val = self.app.config[key]
+        self.app.config[key] = val
+        try:
+            yield
+        finally:
+            self.app.config[key] = orig_val
 
 
 class RepoKeyTestCase(_RestfulGitTestCase):
@@ -461,6 +474,91 @@ class DescriptionTestCase(_RestfulGitTestCase):
             self.assertEqual(resp.data, description)
         finally:
             delete_file_quietly(GIT_MIRROR_DESCRIPTION_FILEPATH)
+
+
+class CorsTestCase(_RestfulGitTestCase):
+    @property
+    @contextmanager
+    def cors_enabled(self):
+        with self.config_override('RESTFULGIT_ENABLE_CORS', True):
+            yield
+
+    @property
+    def arbitrary_response(self):
+        resp = self.client.get('/repos/restfulgit/blob/master/LICENSE.md')
+        self.assert200(resp)
+        return resp
+
+    def assert_header_equal(self, header, value):
+        resp = self.arbitrary_response
+        headers = resp.headers
+        self.assertIn(header, headers)
+        self.assertEqual(headers[header], value)
+
+    def assert_cors_enabled_for(self, resp):
+        self.assertIn('Access-Control-Allow-Methods', resp.headers)
+        self.assertIn('Access-Control-Allow-Origin', resp.headers)
+        self.assertIn('Access-Control-Allow-Credentials', resp.headers)
+
+    def assert_cors_disabled_for(self, resp):
+        for header in resp.headers.keys():
+            self.assertFalse(header.lower().startswith('access-control'), msg="CORS-related header present")
+
+    def test_disabled_really_disables(self):
+        with self.config_override('RESTFULGIT_ENABLE_CORS', False):
+            self.assert_cors_disabled_for(self.arbitrary_response)
+
+    def test_enabled_really_enables(self):
+        with self.config_override('RESTFULGIT_ENABLE_CORS', True):
+            self.assert_cors_enabled_for(self.arbitrary_response)
+
+    def test_disabled_disables_preflight(self):
+        with self.config_override('RESTFULGIT_ENABLE_CORS', False):
+            resp = self.client.options('/repos/restfulgit/blob/master/LICENSE.md')
+            self.assert200(resp)
+            self.assert_cors_disabled_for(resp)
+
+    def test_enabled_enables_preflight(self):
+        with self.config_override('RESTFULGIT_ENABLE_CORS', True):
+            resp = self.client.options('/repos/restfulgit/blob/master/LICENSE.md')
+            self.assert200(resp)
+            self.assert_cors_enabled_for(resp)
+
+    def test_specific_allowed_origin_honored(self):
+        origin = 'https://foo.bar.baz:90'
+        with self.cors_enabled:
+            with self.config_override('RESTFULGIT_CORS_ALLOWED_ORIGIN', origin):
+                self.assert_header_equal('Access-Control-Allow-Origin', origin)
+
+    def test_star_allowed_origin_honored(self):
+        with self.cors_enabled:
+            with self.config_override('RESTFULGIT_CORS_ALLOWED_ORIGIN', '*'):
+                self.assert_header_equal('Access-Control-Allow-Origin', '*')
+
+    def test_max_age_honored(self):
+        max_age = timedelta(minutes=427)
+        with self.cors_enabled:
+            with self.config_override('RESTFULGIT_CORS_MAX_AGE', max_age):
+                self.assert_header_equal('Access-Control-Max-Age', unicode(int(max_age.total_seconds())))
+
+    def test_enabled_allow_credentials_honored(self):
+        with self.cors_enabled:
+            with self.config_override('RESTFULGIT_CORS_ALLOW_CREDENTIALS', True):
+                self.assert_header_equal('Access-Control-Allow-Credentials', 'true')
+
+    def test_disabled_allow_credentials_honored(self):
+        with self.cors_enabled:
+            with self.config_override('RESTFULGIT_CORS_ALLOW_CREDENTIALS', False):
+                self.assert_header_equal('Access-Control-Allow-Credentials', 'false')
+
+    def test_allowed_headers_honored(self):
+        with self.cors_enabled:
+            with self.config_override('RESTFULGIT_CORS_ALLOWED_HEADERS', ['X-Foo', 'X-Bar']):
+                self.assert_header_equal('Access-Control-Allow-Headers', "X-Foo, X-Bar")
+
+    def test_allowed_methods(self):
+        with self.cors_enabled:
+            self.assert_header_equal('Access-Control-Allow-Methods', 'HEAD, OPTIONS, GET')
 
 
 if __name__ == '__main__':

@@ -23,7 +23,7 @@ before_script:
 script:
   - "pep8 restfulgit"
   - "pylint --rcfile=pylint.rc restfulgit"
-  - "nosetests --with-xunit --failure-detail"
+  - "nosetests --with-xunit --failure-detail tests"
   - "PYTHONPATH=. coverage run tests/test_restfulgit.py"
 after_success:
   - coveralls
