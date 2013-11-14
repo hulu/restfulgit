@@ -300,6 +300,30 @@ class SimpleSHATestCase(_RestfulGitTestCase):
             }
         )
 
+    def test_get_nested_tree_works(self):
+        resp = self.client.get('/repos/restfulgit/git/trees/fc0fddc986c93f8444d754c7ec93c8b87f3d7c7e/')
+        self.assert200(resp)
+        self.assertEqual(
+            resp.json,
+            {
+                "url": "http://localhost/repos/restfulgit/git/trees/fc0fddc986c93f8444d754c7ec93c8b87f3d7c7e/",
+                "sha": "fc0fddc986c93f8444d754c7ec93c8b87f3d7c7e",
+                "tree": [
+                    {"url": "http://localhost/repos/restfulgit/git/blobs/b5d2ce6a7246f37aaa41e7ce3403b5acd6369914/", "sha": "b5d2ce6a7246f37aaa41e7ce3403b5acd6369914", "mode": "0100644", "path": ".coveragerc", "type": "blob", "size": 65},
+                    {"url": "http://localhost/repos/restfulgit/git/blobs/cae6643e19e7a8198a26a449f556db6d1909aec8/", "sha": "cae6643e19e7a8198a26a449f556db6d1909aec8", "mode": "0100644", "path": ".gitignore", "type": "blob", "size": 22},
+                    {"url": "http://localhost/repos/restfulgit/git/blobs/f93712aaf5fcc4c0d44dc472d86abad40fdb0ec3/", "sha": "f93712aaf5fcc4c0d44dc472d86abad40fdb0ec3", "mode": "0100644", "path": ".pep8", "type": "blob", "size": 19},
+                    {"url": "http://localhost/repos/restfulgit/git/blobs/14e6bf5b229127a5495d9c176f50e3ef1922f0f2/", "sha": "14e6bf5b229127a5495d9c176f50e3ef1922f0f2", "mode": "0100644", "path": ".travis.yml", "type": "blob", "size": 985},
+                    {"url": "http://localhost/repos/restfulgit/git/blobs/bb27aa0a502f73c19837b96d1bd514ba95e0d404/", "sha": "bb27aa0a502f73c19837b96d1bd514ba95e0d404", "mode": "0100644", "path": "LICENSE.md", "type": "blob", "size": 1056},
+                    {"url": "http://localhost/repos/restfulgit/git/blobs/342f0ffead9243f5a3514505b83b918e61247ae2/", "sha": "342f0ffead9243f5a3514505b83b918e61247ae2", "mode": "0100644", "path": "README.md", "type": "blob", "size": 5655},
+                    {"url": "http://localhost/repos/restfulgit/git/blobs/20ff5b895391daa7335cc55be7e3a4da601982da/", "sha": "20ff5b895391daa7335cc55be7e3a4da601982da", "mode": "0100644", "path": "config.conf", "type": "blob", "size": 398},
+                    {"url": "http://localhost/repos/restfulgit/git/blobs/3e4025298468787af1123191bdddfb72df19061a/", "sha": "3e4025298468787af1123191bdddfb72df19061a", "mode": "0100644", "path": "pylint.rc", "type": "blob", "size": 8529},
+                    {"url": "http://localhost/repos/restfulgit/git/blobs/77b71e4967983b090aef88ba358724ef4703b01b/", "sha": "77b71e4967983b090aef88ba358724ef4703b01b", "mode": "0100644", "path": "requirements.txt", "type": "blob", "size": 29},
+                    {"url": "http://localhost/repos/restfulgit/git/trees/dd8a3571820936595e553c9ba9f776a5c77b1a53/", "path": "restfulgit", "type": "tree", "mode": "040000", "sha": "dd8a3571820936595e553c9ba9f776a5c77b1a53"},
+                    {"url": "http://localhost/repos/restfulgit/git/trees/bdcb3627ba5b29da20f01d9c4571b0ebc6a8b2bd/", "path": "tests", "type": "tree", "mode": "040000", "sha": "bdcb3627ba5b29da20f01d9c4571b0ebc6a8b2bd"}
+                ]
+            }
+        )
+
     def test_get_blob_works(self):
         resp = self.client.get('/repos/restfulgit/git/blobs/{}/'.format(BLOB_FROM_FIRST_COMMIT))
         self.assert200(resp)
