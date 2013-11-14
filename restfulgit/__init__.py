@@ -284,6 +284,9 @@ def jsonify(func):
 
 def corsify(func):
     # based on http://flask.pocoo.org/snippets/56/
+    func.provide_automatic_options = False
+    func.required_methods = set(getattr(func, 'required_methods', ())) | {'OPTIONS'}
+
     @functools.wraps(func)
     def wrapped(*args, **kwargs):
         if not current_app.config['RESTFULGIT_ENABLE_CORS']:
