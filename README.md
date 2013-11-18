@@ -12,8 +12,6 @@ Requires:
 - Flask
 - pygit2 (= 0.19.1), which itself requires libgit2 (= 0.19.0)
 
-Must modify: `config.conf` : `repo_base_path` (root path for repositories; note: only repositories immediately under this path are currently supported).
-
 Optional:
 - filemagic (= 1.6) (offers improved MIME-type guessing), which itself requires libmagic (= 5.11)
 
