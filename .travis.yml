@@ -6,7 +6,7 @@ before_install:
   - "tar xf libgit2.tar.gz"
   - "cd libgit2-*"
   - "mkdir build && cd build"
-  - "cmake .. && cmake --build ."
+  - "cmake .. -DBUILD_CLAR=OFF && cmake --build ."
   - "sudo cmake --build . --target install"
   - "cd .."
   - "cd .. && rm -rf libgit2-*"
