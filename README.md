@@ -108,6 +108,8 @@ Retrieves a specific tree object:
 
     GET /repos/:repo_key/git/trees/:sha/
 
+    optional: ?recursive=:zero_or_one (default=0, non-recursive)
+
 ```json
 {
     "url": "http://localhost:5000/repos/restfulgit.git/git/trees/4c392547aa3d644877f3b22e198a5caac99a69a3/",

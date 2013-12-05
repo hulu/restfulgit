@@ -172,30 +172,44 @@ def _convert_commit(repo_key, commit):
         } for c in commit.parents]
     }
 
-
-def _convert_tree(repo_key, repo, tree):
+def _tree_entries(repo_key, repo, tree, recursive=False, path=''):
     entry_list = []
     for entry in tree:
-        entry_data = {
-            "path": entry.name,
-            "sha": entry.hex,
-        }
         if entry.filemode == GIT_MODE_SUBMODULE:
-            entry_data['type'] = "submodule"
+            entry_data = {
+                "path": entry.name,
+                "sha": entry.hex,
+                "type": "submodule",
+            }
         else:
             obj = repo[entry.oid]
             if obj.type == GIT_OBJ_BLOB:
-                entry_data['type'] = "blob"
-                entry_data['size'] = obj.size
-                entry_data['url'] = url_for('.get_blob', _external=True,
-                                            repo_key=repo_key, sha=entry.hex)
+                entry_data = {
+                    "path": '%s%s' % (path, entry.name),
+                    "sha": entry.hex,
+                    "type": "blob",
+                    "size": obj.size,
+                    "url": url_for('.get_blob', _external=True,
+                                   repo_key=repo_key, sha=entry.hex),
+                }
             elif obj.type == GIT_OBJ_TREE:
-                entry_data['type'] = "tree"
-                entry_data['url'] = url_for('.get_tree', _external=True,
-                                            repo_key=repo_key, sha=entry.hex)
+                if recursive:
+                    entry_list += _tree_entries(repo_key, repo, obj, 
+                                                True, '%s%s/' % (path, entry.name))
+                entry_data = {
+                    "path": "%s%s" % (path, entry.name),
+                    "sha": entry.hex,
+                    "type": "tree",
+                    "url": url_for('.get_tree', _external=True,
+                                   repo_key=repo_key, sha=entry.hex)
+                }
         entry_data['mode'] = oct(entry.filemode)
         entry_list.append(entry_data)
+    return entry_list
 
+
+def _convert_tree(repo_key, repo, tree, recursive=False):
+    entry_list = _tree_entries(repo_key, repo, tree, recursive=recursive)
     return {
         "url": url_for('.get_tree', _external=True,
                        repo_key=repo_key, sha=tree.hex),
@@ -394,9 +408,10 @@ def get_commit(repo_key, sha):
 @corsify
 @jsonify
 def get_tree(repo_key, sha):
+    recursive =  'recursive' in request.args and request.args['recursive'] == '1'
     repo = _get_repo(repo_key)
     tree = _get_tree(repo, sha)
-    return _convert_tree(repo_key, repo, tree)
+    return _convert_tree(repo_key, repo, tree, recursive)
 
 
 @restfulgit.route('/repos/<repo_key>/git/blobs/<sha:sha>/')
