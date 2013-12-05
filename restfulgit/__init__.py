@@ -172,6 +172,7 @@ def _convert_commit(repo_key, commit):
         } for c in commit.parents]
     }
 
+
 def _tree_entries(repo_key, repo, tree, recursive=False, path=''):
     entry_list = []
     for entry in tree:
@@ -408,7 +409,7 @@ def get_commit(repo_key, sha):
 @corsify
 @jsonify
 def get_tree(repo_key, sha):
-    recursive =  'recursive' in request.args and request.args['recursive'] == '1'
+    recursive = 'recursive' in request.args and request.args['recursive'] == '1'
     repo = _get_repo(repo_key)
     tree = _get_tree(repo, sha)
     return _convert_tree(repo_key, repo, tree, recursive)
