@@ -324,6 +324,33 @@ class SimpleSHATestCase(_RestfulGitTestCase):
             }
         )
 
+    def test_get_recursive_tree_works(self):
+        resp = self.client.get('/repos/restfulgit/git/trees/fc36ceb418b0b9e945ffd3706dd8544dd988500a/?recursive=1')
+        self.assert200(resp)
+        self.assertEqual(
+            resp.json,
+            {
+                "url": "http://localhost/repos/restfulgit/git/trees/fc36ceb418b0b9e945ffd3706dd8544dd988500a/",
+                "sha": "fc36ceb418b0b9e945ffd3706dd8544dd988500a",
+                "tree": [
+                    {"url": "http://localhost/repos/restfulgit/git/blobs/b5d2ce6a7246f37aaa41e7ce3403b5acd6369914/", "sha": "b5d2ce6a7246f37aaa41e7ce3403b5acd6369914", "mode": "0100644", "path": ".coveragerc", "type": "blob", "size": 65},
+                    {"url": "http://localhost/repos/restfulgit/git/blobs/cae6643e19e7a8198a26a449f556db6d1909aec8/", "sha": "cae6643e19e7a8198a26a449f556db6d1909aec8", "mode": "0100644", "path": ".gitignore", "type": "blob", "size": 22},
+                    {"url": "http://localhost/repos/restfulgit/git/blobs/f93712aaf5fcc4c0d44dc472d86abad40fdb0ec3/", "sha": "f93712aaf5fcc4c0d44dc472d86abad40fdb0ec3", "mode": "0100644", "path": ".pep8", "type": "blob", "size": 19},
+                    {"url": "http://localhost/repos/restfulgit/git/blobs/b3e1e0f2b569fef46e7413cadb6778504c19c87f/", "sha": "b3e1e0f2b569fef46e7413cadb6778504c19c87f", "mode": "0100644", "path": ".travis.yml", "type": "blob", "size": 1008},
+                    {"url": "http://localhost/repos/restfulgit/git/blobs/bb27aa0a502f73c19837b96d1bd514ba95e0d404/", "sha": "bb27aa0a502f73c19837b96d1bd514ba95e0d404", "mode": "0100644", "path": "LICENSE.md", "type": "blob", "size": 1056},
+                    {"url": "http://localhost/repos/restfulgit/git/blobs/ee655c4baa251fad0a67dd74b2c390b4a4f9ac53/", "sha": "ee655c4baa251fad0a67dd74b2c390b4a4f9ac53", "mode": "0100644", "path": "README.md", "type": "blob", "size": 7855},
+                    {"url": "http://localhost/repos/restfulgit/git/blobs/7186d8fab5c4bb492cbcfe1383b2270651e13c2e/", "sha": "7186d8fab5c4bb492cbcfe1383b2270651e13c2e", "mode": "0100644", "path": "example_config.py", "type": "blob", "size": 489},
+                    {"url": "http://localhost/repos/restfulgit/git/blobs/abb1a23bc0fad8f7fe1dc5996a8e4c7c4cb9903e/", "sha": "abb1a23bc0fad8f7fe1dc5996a8e4c7c4cb9903e", "mode": "0100644", "path": "pylint.rc", "type": "blob", "size": 8517},
+                    {"url": "http://localhost/repos/restfulgit/git/blobs/77b71e4967983b090aef88ba358724ef4703b01b/", "sha": "77b71e4967983b090aef88ba358724ef4703b01b", "mode": "0100644", "path": "requirements.txt", "type": "blob", "size": 29},
+                    {"url": "http://localhost/repos/restfulgit/git/blobs/7fe178c5687eae1e2c04d9d21b6a429c93a28e6a/", "sha": "7fe178c5687eae1e2c04d9d21b6a429c93a28e6a", "mode": "0100644", "path": "restfulgit/__init__.py", "type": "blob", "size": 15986},
+                    {"url": "http://localhost/repos/restfulgit/git/blobs/e067d7f361bd3b0f227ba1914c227ebf9539f59d/", "sha": "e067d7f361bd3b0f227ba1914c227ebf9539f59d", "mode": "0100644", "path": "restfulgit/__main__.py", "type": "blob", "size": 110},
+                    {"url": "http://localhost/repos/restfulgit/git/trees/c0dcf8f58a3c5bf42f07e880d5e442ef124c9370/", "path": "restfulgit", "type": "tree", "mode": "040000", "sha": "c0dcf8f58a3c5bf42f07e880d5e442ef124c9370"},
+                    {"url": "http://localhost/repos/restfulgit/git/blobs/2d500fea50b6c1a38d972c1a22b5cb5b5673167a/", "sha": "2d500fea50b6c1a38d972c1a22b5cb5b5673167a", "mode": "0100644", "path": "tests/test_restfulgit.py", "type": "blob", "size": 26725},
+                    {"url": "http://localhost/repos/restfulgit/git/trees/803c8592dd96cb0a6fc041ebb6af71fbf1f7551c/", "path": "tests", "type": "tree", "mode": "040000", "sha": "803c8592dd96cb0a6fc041ebb6af71fbf1f7551c"}
+                ]
+            }
+        )
+
     def test_get_blob_works(self):
         resp = self.client.get('/repos/restfulgit/git/blobs/{}/'.format(BLOB_FROM_FIRST_COMMIT))
         self.assert200(resp)

@@ -187,6 +187,7 @@ def _tree_entries(repo_key, repo, tree, recursive=False, path=''):
                 entry_data = {
                     "path": '%s%s' % (path, entry.name),
                     "sha": entry.hex,
+                    "type": "blob",
                     "size": obj.size,
                     "url": url_for('.get_blob', _external=True,
                                    repo_key=repo_key, sha=entry.hex),
