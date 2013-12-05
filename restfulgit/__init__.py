@@ -195,7 +195,7 @@ def _tree_entries(repo_key, repo, tree, recursive=False, path=''):
                 }
             elif obj.type == GIT_OBJ_TREE:
                 if recursive:
-                    entry_list += _tree_entries(repo_key, repo, obj, 
+                    entry_list += _tree_entries(repo_key, repo, obj,
                                                 True, '%s%s/' % (path, entry.name))
                 entry_data = {
                     "path": "%s%s" % (path, entry.name),
