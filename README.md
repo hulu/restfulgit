@@ -1,8 +1,8 @@
 RestfulGit: A Restful API for Git data
 =======================================
-[![Build Status](https://travis-ci.org/hulu/restfulgit.png?branch=master)](https://travis-ci.org/hulu/restfulgit)
-[![Coverage Status](https://coveralls.io/repos/hulu/restfulgit/badge.png?branch=master)](https://coveralls.io/r/hulu/restfulgit?branch=master)
-[![Requirements Status](https://requires.io/github/hulu/restfulgit/requirements.png?branch=master)](https://requires.io/github/hulu/restfulgit/requirements/?branch=master)
+[![Build Status](https://travis-ci.org/kainswor/restfulgit.png?branch=master)](https://travis-ci.org/hulu/restfulgit)
+[![Coverage Status](https://coveralls.io/repos/kainswor/restfulgit/badge.png?branch=master)](https://coveralls.io/r/hulu/restfulgit?branch=master)
+[![Requirements Status](https://requires.io/github/kainswor/restfulgit/requirements.png?branch=master)](https://requires.io/github/hulu/restfulgit/requirements/?branch=master)
 
 Provides a read-only restful interface for accessing data from Git repositories (local to the server).
 Modeled off the GitHub Git DB API for compatibility (see http://developer.github.com/v3/git/).
