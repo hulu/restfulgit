@@ -16,6 +16,7 @@ from itertools import islice, ifilter
 import json
 import os
 import functools
+import re
 
 # Optionally use better libmagic-based MIME-type guessing
 try:
@@ -142,6 +143,27 @@ def _get_commit_for_refspec(repo, branch_or_tag_or_sha):
         raise NotFound("no such branch, tag, or commit SHA")
 
 
+def _get_diff(repo, commit):
+    if commit.parents:
+        diff = repo.diff(commit.parents[0], commit)
+        diff.find_similar()
+    else:
+        diff = commit.tree.diff_to_tree(swap=True)
+    return diff
+
+
+def _get_patches(diff):
+    return [patch for patch in diff]
+
+
+SPLIT_PATCH_TXT_RE = re.compile(r'^\+\+\+\ b\/(.*?)\n(@@.*?)(?=\n^diff|\n\Z)', re.M | re.S)
+
+
+def _get_patches_txt(diff):
+    matches = re.findall(SPLIT_PATCH_TXT_RE, diff.patch)
+    return dict(m for m in matches)
+
+
 DEFAULT_GIT_DESCRIPTION = "Unnamed repository; edit this file 'description' to name the repository.\n"
 
 
@@ -182,7 +204,16 @@ def _convert_signature(sig):
     }
 
 
-def _convert_commit(repo_key, commit):
+def _convert_commit(repo_key, commit, porcelain=False):
+    if porcelain:
+        def commit_url_for(sha):
+            return url_for('.get_repos_commit', _external=True,
+                           repo_key=repo_key, branch_or_tag_or_sha=sha)
+    else:
+        def commit_url_for(sha):
+            return url_for('.get_commit', _external=True,
+                           repo_key=repo_key, sha=sha)
+
     return {
         "url": url_for('.get_commit', _external=True,
                        repo_key=repo_key, sha=commit.hex),
@@ -197,10 +228,75 @@ def _convert_commit(repo_key, commit):
         },
         "parents": [{
             "sha": c.hex,
-            "url": url_for('.get_commit', _external=True,
-                           repo_key=repo_key, sha=c.hex)
+            "url": commit_url_for(c.hex),
         } for c in commit.parents]
     }
+
+
+GIT_STATUS_TO_NAME = {
+    'M': 'modified',
+    'A': 'added',
+    'R': 'renamed',
+    'D': 'removed',
+}
+
+
+def _convert_patch(repo_key, commit, patch, patches_txt):
+    deleted = patch.status == 'D'
+    commit_sha = (commit.hex if not deleted else commit.parents[0].hex)
+    result = {
+        "sha": patch.new_oid if not deleted else patch.old_oid,
+        "status": GIT_STATUS_TO_NAME[patch.status],
+        "filename": patch.new_file_path,
+        "additions": patch.additions,
+        "deletions": patch.deletions,
+        "changes": patch.additions + patch.deletions,
+        "raw_url": url_for('.get_raw',
+                           _external=True,
+                           repo_key=repo_key,
+                           branch_or_tag_or_sha=commit_sha,
+                           file_path=patch.new_file_path),
+        "contents_url": url_for('.get_contents',
+                                _external=True,
+                                repo_key=repo_key,
+                                file_path=patch.new_file_path,
+                                ref=commit_sha),
+    }
+    if patch.new_file_path in patches_txt:
+        result['patch'] = patches_txt[patch.new_file_path]
+    return result
+
+
+def _repos_convert_commit(repo_key, repo, commit, include_diff=False):
+    plain_commit_json = _convert_commit(repo_key, commit, porcelain=True)
+    result = {
+        "commit": plain_commit_json,
+        "sha": plain_commit_json['sha'],
+        "author": plain_commit_json['author'],
+        "committer": plain_commit_json['committer'],
+        "url": url_for('.get_repos_commit', _external=True,
+                       repo_key=repo_key, branch_or_tag_or_sha=commit.hex),
+        "parents": [{
+            "sha": c.hex,
+            "url": url_for('.get_repos_commit', _external=True,
+                           repo_key=repo_key, branch_or_tag_or_sha=c.hex)
+        } for c in commit.parents],
+    }
+    if include_diff:
+        diff = _get_diff(repo, commit)
+        patches = _get_patches(diff)
+        patches_txt = _get_patches_txt(diff)
+        patches_additions = sum(patch.additions for patch in patches)
+        patches_deletions = sum(patch.deletions for patch in patches)
+        result.update({
+            "stats": {
+                "additions": patches_additions,
+                "deletions": patches_deletions,
+                "total": patches_additions + patches_deletions,
+            },
+            "files": [_convert_patch(repo_key, commit, patch, patches_txt) for patch in patches],
+        })
+    return result
 
 
 def _tree_entries(repo_key, repo, tree, recursive=False, path=''):
@@ -457,6 +553,15 @@ def get_commit(repo_key, sha):
     repo = _get_repo(repo_key)
     commit = _get_commit(repo, sha)
     return _convert_commit(repo_key, commit)
+
+
+@restfulgit.route('/repos/<repo_key>/commits/<branch_or_tag_or_sha>/')
+@corsify
+@jsonify
+def get_repos_commit(repo_key, branch_or_tag_or_sha):
+    repo = _get_repo(repo_key)
+    commit = _get_commit_for_refspec(repo, branch_or_tag_or_sha)
+    return _repos_convert_commit(repo_key, repo, commit, include_diff=True)
 
 
 @restfulgit.route('/repos/<repo_key>/git/trees/<sha:sha>/')
