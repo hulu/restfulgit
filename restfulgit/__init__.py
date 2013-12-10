@@ -7,12 +7,13 @@ from werkzeug.routing import BaseConverter
 
 from pygit2 import (Repository,
                     GIT_OBJ_COMMIT, GIT_OBJ_TREE, GIT_OBJ_BLOB, GIT_OBJ_TAG,
-                    GIT_REF_SYMBOLIC, GIT_SORT_TIME)
+                    GIT_REF_SYMBOLIC, GIT_SORT_TIME,
+                    GIT_BLAME_TRACK_COPIES_SAME_COMMIT_MOVES, GIT_BLAME_TRACK_COPIES_SAME_COMMIT_COPIES)
 GIT_MODE_SUBMODULE = int('0160000', 8)
 
 from datetime import datetime, tzinfo, timedelta
 from base64 import b64encode
-from itertools import islice, ifilter
+from itertools import islice, ifilter, izip, count
 import json
 import os
 import functools
@@ -106,6 +107,13 @@ def _get_object_from_path(repo, tree, path):
         except KeyError:
             raise NotFound("invalid path")
     return ctree
+
+
+def _get_raw_file_contents(repo, tree, path):
+    git_obj = _get_object_from_path(repo, tree, path)
+    if git_obj.type != GIT_OBJ_BLOB:
+        raise BadRequest("path resolved to non-blob object")
+    return git_obj.data
 
 
 def _lookup_ref(repo, ref_name):
@@ -780,12 +788,7 @@ def get_raw(repo_key, branch_or_tag_or_sha, file_path):
     repo = _get_repo(repo_key)
     commit = _get_commit_for_refspec(repo, branch_or_tag_or_sha)
     tree = _get_tree(repo, commit.tree.hex)
-    git_obj = _get_object_from_path(repo, tree, file_path)
-
-    if git_obj.type != GIT_OBJ_BLOB:
-        return "not a file", 406
-
-    data = git_obj.data
+    data = _get_raw_file_contents(repo, tree, file_path)
     mime_type = guess_mime_type(os.path.basename(file_path), data)
     if mime_type is None:
         mime_type = OCTET_STREAM
@@ -797,6 +800,65 @@ def get_raw(repo_key, branch_or_tag_or_sha, file_path):
 def get_contents(repo_key, path):  # pylint: disable=W0613
     ref = request.args.get('ref')  # pylint: disable=W0612
     raise NotImplementedError()
+
+
+@restfulgit.route('/repos/<repo_key>/blame/<branch_or_tag_or_sha>/<path:file_path>')
+@corsify
+@jsonify
+def get_blame(repo_key, branch_or_tag_or_sha, file_path):
+    min_line = request.args.get('firstLine')
+    if min_line is None:
+        min_line = 1
+    try:
+        min_line = int(min_line)
+    except ValueError:
+        raise BadRequest("firstLine was not a valid integer")
+    if min_line < 1:
+        raise BadRequest("firstLine must be positive")
+
+    max_line = request.args.get('lastLine')
+    if max_line is not None:
+        try:
+            max_line = int(max_line)
+        except ValueError:
+            raise BadRequest("lastLine was not a valid integer")
+        if max_line < 1:
+            raise BadRequest("lastLine must be positive")
+
+        if min_line > max_line:
+            raise BadRequest("line range start cannot be greater than line range end")
+
+    repo = _get_repo(repo_key)
+    newest_commit = _get_commit_for_refspec(repo, branch_or_tag_or_sha)
+    tree = _get_tree(repo, newest_commit.tree.hex)
+
+    flags = GIT_BLAME_TRACK_COPIES_SAME_COMMIT_MOVES | GIT_BLAME_TRACK_COPIES_SAME_COMMIT_COPIES
+    oldest_commit = request.args.get('oldest')
+    # FIX ME: enable once next pygit2 version is released
+    # FIX ME: add tests
+    # FIX ME: document
+    # pylint: disable=W0101
+    raise NotImplementedError("Blocked pending a new pygit2 release with a fixed version of the Blame API.")
+    blame = repo.blame(
+        file_path,
+        flags,
+        newest_commit=newest_commit,
+        oldest_commit=oldest_commit,
+        min_line=min_line,
+        max_line=max_line
+    )
+    raw_lines = _get_raw_file_contents(repo, tree, file_path).splitlines()
+
+    return {
+        'lines': [
+            {
+                'commit': _convert_commit(repo_key, _get_commit(repo, hunk.final_commit_id)),
+                'origPath': hunk.orig_path,
+                'lineNum': line_num,
+                'line': raw_lines[line_num - 1],
+            } for line_num, hunk in izip(count(min_line), blame)
+        ]
+    }
 
 
 @restfulgit.route('/')
