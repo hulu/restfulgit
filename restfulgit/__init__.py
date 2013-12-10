@@ -16,6 +16,7 @@ from itertools import islice, ifilter
 import json
 import os
 import functools
+import re
 
 # Optionally use better libmagic-based MIME-type guessing
 try:
@@ -150,7 +151,15 @@ def _get_patches(repo, commit):
         diff.find_similar()
     else:
         diff = commit.tree.diff_to_tree(swap=True)
-    return [patch for patch in diff]
+    return diff, [patch for patch in diff]
+
+
+SPLIT_PATCH_TXT_RE = re.compile(r'^\+\+\+\ b\/(.*?)\n(@@.*?)(?=\n^diff|\n\Z)', re.M | re.S)
+
+
+def _get_patches_txt(diff):
+    matches = re.findall(SPLIT_PATCH_TXT_RE, diff.patch)
+    return dict(m for m in matches)
 
 
 def _convert_signature(sig):
@@ -190,9 +199,9 @@ GIT_STATUS_TO_NAME = {
 }
 
 
-def _convert_patch(repo_key, commit, patch):
+def _convert_patch(repo_key, commit, patch, patches_txt):
     deleted = patch.status == 'D'
-    return {
+    result = {
         "sha": patch.new_oid if not deleted else patch.old_oid,
         "status": GIT_STATUS_TO_NAME[patch.status],
         "filename": patch.new_file_path,
@@ -205,10 +214,14 @@ def _convert_patch(repo_key, commit, patch):
                            branch_or_tag_or_sha=commit.hex if not deleted else commit.parents[0].hex,
                            file_path=patch.new_file_path),
     }
+    if patch.new_file_path in patches_txt:
+        result['patch'] = patches_txt[patch.new_file_path]
+    return result
 
 
 def _repos_convert_commit(repo_key, repo, commit):
-    patches = _get_patches(repo, commit)
+    diff, patches = _get_patches(repo, commit)
+    patches_txt = _get_patches_txt(diff)
     patches_additions = sum(patch.additions for patch in patches)
     patches_deletions = sum(patch.deletions for patch in patches)
     return {
@@ -225,7 +238,7 @@ def _repos_convert_commit(repo_key, repo, commit):
             "deletions": patches_deletions,
             "total": patches_additions + patches_deletions,
         },
-        "files": [_convert_patch(repo_key, commit, patch) for patch in patches],
+        "files": [_convert_patch(repo_key, commit, patch, patches_txt) for patch in patches],
     }
 
 
