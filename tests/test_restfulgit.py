@@ -41,6 +41,19 @@ class _RestfulGitTestCase(_FlaskTestCase):
         restfulgit.app.config['RESTFULGIT_REPO_BASE_PATH'] = PARENT_DIR_OF_RESTFULGIT_REPO
         return restfulgit.app
 
+    def assertJsonError(self, resp):
+        json = resp.json
+        self.assertIsInstance(json, dict)
+        self.assertIsInstance(json.get('error'), unicode)
+
+    def assertJson400(self, resp):
+        self.assert400(resp)
+        self.assertJsonError(resp)
+
+    def assertJson404(self, resp):
+        self.assert404(resp)
+        self.assertJsonError(resp)
+
     @contextmanager
     def config_override(self, key, val):
         orig_val = self.app.config[key]
@@ -54,17 +67,17 @@ class _RestfulGitTestCase(_FlaskTestCase):
 class RepoKeyTestCase(_RestfulGitTestCase):
     def test_nonexistent_directory(self):
         resp = self.client.get('/repos/this-directory-does-not-exist/git/commits/')
-        self.assert404(resp)
+        self.assertJson404(resp)
 
     def test_directory_is_not_git_repo(self):
         restfulgit.REPO_BASE = RESTFULGIT_REPO
         resp = self.client.get('/repos/test/git/commits/')
-        self.assert404(resp)
+        self.assertJson404(resp)
 
     def test_dot_dot_disallowed(self):
         restfulgit.REPO_BASE = TEST_SUBDIR
         resp = self.client.get('/repos/../git/commits/')
-        self.assert404(resp)
+        self.assertJson404(resp)
 
     def test_list_repos(self):
         resp = self.client.get('/repos/')
@@ -80,15 +93,15 @@ class RepoKeyTestCase(_RestfulGitTestCase):
 class SHAConverterTestCase(_RestfulGitTestCase):
     def test_empty_sha_rejected(self):
         resp = self.client.get('/repos/restfulgit/git/trees/')
-        self.assert404(resp)
+        self.assertJson404(resp)
 
     def test_too_long_sha_rejected(self):
         resp = self.client.get('/repos/restfulgit/git/trees/{}0/'.format(TREE_OF_FIRST_COMMIT))
-        self.assert404(resp)
+        self.assertJson404(resp)
 
     def test_malformed_sha_rejected(self):
         resp = self.client.get('/repos/restfulgit/git/trees/0123456789abcdefghijklmnopqrstuvwxyzABCD/')
-        self.assert404(resp)
+        self.assertJson404(resp)
 
     def test_full_sha_accepted(self):
         resp = self.client.get('/repos/restfulgit/git/trees/{}/'.format(TREE_OF_FIRST_COMMIT))
@@ -103,15 +116,15 @@ class CommitsTestCase(_RestfulGitTestCase):
     """Tests the "commits" endpoint."""
     def test_nonexistent_start_sha(self):
         resp = self.client.get('/repos/restfulgit/git/commits/?start_sha=1234567890abcdef')
-        self.assert404(resp)
+        self.assertJson404(resp)
 
     def test_non_commit_start_sha(self):
         resp = self.client.get('/repos/restfulgit/git/commits/?start_sha={}'.format(TREE_OF_FIRST_COMMIT))
-        self.assert400(resp)
+        self.assertJson400(resp)
 
     def test_malformed_start_sha(self):
         resp = self.client.get('/repos/restfulgit/git/commits/?start_sha=thisIsNotHexHash')
-        self.assert400(resp)
+        self.assertJson400(resp)
 
     def test_start_sha_works_basic(self):
         resp = self.client.get('/repos/restfulgit/git/commits?start_sha={}'.format(FIRST_COMMIT), follow_redirects=True)
@@ -119,7 +132,7 @@ class CommitsTestCase(_RestfulGitTestCase):
 
     def test_nonexistent_ref_name(self):
         resp = self.client.get('/repos/restfulgit/git/commits/?ref_name=doesNotExist')
-        self.assert404(resp)
+        self.assertJson404(resp)
 
     def test_ref_name_works(self):
         resp = self.client.get('/repos/restfulgit/git/commits?ref_name=master', follow_redirects=True)
@@ -128,11 +141,11 @@ class CommitsTestCase(_RestfulGitTestCase):
 
     def test_non_integer_limit_rejected(self):
         resp = self.client.get('/repos/restfulgit/git/commits/?limit=abc123')
-        self.assert400(resp)
+        self.assertJson400(resp)
 
     def test_negative_limit_rejected(self):
         resp = self.client.get('/repos/restfulgit/git/commits/?limit=-1')
-        self.assert400(resp)
+        self.assertJson400(resp)
 
     def test_limit_works_basic(self):
         resp = self.client.get('/repos/restfulgit/git/commits?limit=3', follow_redirects=True)
@@ -222,35 +235,35 @@ class CommitsTestCase(_RestfulGitTestCase):
 class SimpleSHATestCase(_RestfulGitTestCase):
     def test_get_commit_with_non_commit_sha(self):
         resp = self.client.get('/repos/restfulgit/git/commits/{}/'.format(BLOB_FROM_FIRST_COMMIT))
-        self.assert404(resp)
+        self.assertJson404(resp)
 
     def test_get_tree_with_non_tree_sha(self):
         resp = self.client.get('/repos/restfulgit/git/trees/{}/'.format(BLOB_FROM_FIRST_COMMIT))
-        self.assert404(resp)
+        self.assertJson404(resp)
 
     def test_get_blob_with_non_blob_sha(self):
         resp = self.client.get('/repos/restfulgit/git/blobs/{}/'.format(FIRST_COMMIT))
-        self.assert404(resp)
+        self.assertJson404(resp)
 
     def test_get_tag_with_non_tag_sha(self):
         resp = self.client.get('/repos/restfulgit/git/tags/{}/'.format(BLOB_FROM_FIRST_COMMIT))
-        self.assert404(resp)
+        self.assertJson404(resp)
 
     def test_get_commit_with_nonexistent_sha(self):
         resp = self.client.get('/repos/restfulgit/git/commits/{}/'.format(IMPROBABLE_SHA))
-        self.assert404(resp)
+        self.assertJson404(resp)
 
     def test_get_tree_with_nonexistent_sha(self):
         resp = self.client.get('/repos/restfulgit/git/trees/{}/'.format(IMPROBABLE_SHA))
-        self.assert404(resp)
+        self.assertJson404(resp)
 
     def test_get_blob_with_nonexistent_sha(self):
         resp = self.client.get('/repos/restfulgit/git/blobs/{}/'.format(IMPROBABLE_SHA))
-        self.assert404(resp)
+        self.assertJson404(resp)
 
     def test_get_tag_with_nonexistent_sha(self):
         resp = self.client.get('/repos/restfulgit/git/tags/{}/'.format(IMPROBABLE_SHA))
-        self.assert404(resp)
+        self.assertJson404(resp)
 
     def test_get_commit_works(self):
         resp = self.client.get('/repos/restfulgit/git/commits/{}/'.format(FIRST_COMMIT))
@@ -441,11 +454,11 @@ class RefsTestCase(_RestfulGitTestCase):
 class RawFileTestCase(_RestfulGitTestCase):
     def test_nonexistent_branch(self):
         resp = self.client.get('/repos/restfulgit/blob/this-branch-does-not-exist/LICENSE.md')
-        self.assert404(resp)
+        self.assertJson404(resp)
 
     def test_nonexistent_file_path(self):
         resp = self.client.get('/repos/restfulgit/blob/master/this_path/does_not/exist.txt')
-        self.assert404(resp)
+        self.assertJson404(resp)
 
     def test_mime_type_logic(self):
         # FIXME: implement
@@ -499,12 +512,12 @@ class DescriptionTestCase(_RestfulGitTestCase):
     def test_dot_dot_disallowed(self):
         restfulgit.REPO_BASE = TEST_SUBDIR
         resp = self.client.get('/repos/../description/')
-        self.assert404(resp)
+        self.assertJson404(resp)
 
     def test_nonexistent_repo(self):
         restfulgit.REPO_BASE = RESTFULGIT_REPO
         resp = self.client.get('/repos/test/description/')
-        self.assert404(resp)
+        self.assertJson404(resp)
 
     def test_works_normal_clone(self):
         description = "REST API for Git data\n"

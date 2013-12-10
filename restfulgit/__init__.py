@@ -2,7 +2,7 @@
 from __future__ import print_function
 
 from flask import Flask, url_for, request, Response, current_app, Blueprint, safe_join, send_from_directory, make_response
-from werkzeug.exceptions import NotFound, BadRequest
+from werkzeug.exceptions import NotFound, BadRequest, HTTPException, default_exceptions
 from werkzeug.routing import BaseConverter
 
 from pygit2 import (Repository,
@@ -342,6 +342,27 @@ class FixedOffset(tzinfo):
 
 
 OCTET_STREAM = 'application/octet-stream'
+
+
+# JSON error pages based on http://flask.pocoo.org/snippets/83/
+def register_general_error_handler(blueprint_or_app, handler):
+    error_codes = default_exceptions.keys()
+    if isinstance(blueprint_or_app, Blueprint):
+        error_codes.remove(500)  # Flask doesn't currently allow per-Blueprint HTTP 500 error handlers
+
+    for err_code in error_codes:
+        blueprint_or_app.errorhandler(err_code)(handler)
+
+
+def json_error_page(error):
+    err_msg = error.description if isinstance(error, HTTPException) else unicode(error)
+    resp = Response(json.dumps({'error': err_msg}), mimetype='application/json')
+    resp.status_code = (error.code if isinstance(error, HTTPException) else 500)
+    return resp
+
+
+register_general_error_handler(restfulgit, json_error_page)
+register_general_error_handler(app, json_error_page)
 
 
 def register_converter(blueprint, name, converter):
