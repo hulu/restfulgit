@@ -382,6 +382,47 @@ register_converter(restfulgit, 'sha', SHAConverter)
 @corsify
 @jsonify
 def get_commit_list(repo_key):
+    """
+    Retrieves a list of commit objects.
+
+    :query start_sha: (optional) XXX
+    :query ref_name: (optional) XXX
+    :query limit: (optional) (default=50, or as specified by the config)
+    :status 400: ``limit`` was not a valid non-negative integer, or ``start_sha`` was not a valid commit SHA
+
+    **Example response**:
+
+    .. sourcecode:: json
+
+        [
+            {
+                "committer": {
+                    "date": "2013-05-20T16:11:30-07:00",
+                    "name": "Rajiv Makhijani",
+                    "email": "rajiv@hulu.com"
+                },
+                "author": {
+                    "date": "2013-05-20T16:11:30-07:00",
+                    "name": "Rajiv Makhijani",
+                    "email": "rajiv@hulu.com"
+                },
+                "url": "http://localhost:5000/repos/restfulgit.git/git/commits/f85df530d8413b0390364b291eb97d1cc5798dee/",
+                "tree": {
+                    "url": "http://localhost:5000/repos/restfulgit.git/git/trees/4c392547aa3d644877f3b22e198a5caac99a69a3/",
+                    "sha": "4c392547aa3d644877f3b22e198a5caac99a69a3"
+                },
+                "sha": "f85df530d8413b0390364b291eb97d1cc5798dee",
+                "parents": [
+                    {
+                        "url": "http://localhost:5000/repos/restfulgit.git/git/commits/7b3f40ff9aba370a59732522420201b744297317/",
+                        "sha": "7b3f40ff9aba370a59732522420201b744297317"
+                    }
+                ],
+                "message": "Renamed main api file, added production recommendation to README"
+            },
+            ...
+        ]
+    """
     ref_name = request.args.get('ref_name') or None
     start_sha = request.args.get('start_sha') or None
     limit = request.args.get('limit') or current_app.config['RESTFULGIT_DEFAULT_COMMIT_LIST_LIMIT']
@@ -420,6 +461,9 @@ def get_commit_list(repo_key):
 @corsify
 @jsonify
 def get_commit(repo_key, sha):
+    """
+    Retrieves a specific commit object.
+    """
     repo = _get_repo(repo_key)
     commit = _get_commit(repo, sha)
     return _convert_commit(repo_key, commit)
@@ -429,6 +473,31 @@ def get_commit(repo_key, sha):
 @corsify
 @jsonify
 def get_tree(repo_key, sha):
+    """
+    Retrieves a specific tree object.
+
+    :query recursive: (optional) zero_or_one (default=0, non-recursive)
+
+    **Example response**:
+
+    .. sourcecode:: json
+
+        {
+            "url": "http://localhost:5000/repos/restfulgit.git/git/trees/4c392547aa3d644877f3b22e198a5caac99a69a3/",
+            "sha": "4c392547aa3d644877f3b22e198a5caac99a69a3",
+            "tree": [
+                {
+                    "url": "http://localhost:5000/repos/restfulgit.git/git/blobs/0d20b6487c61e7d1bde93acf4a14b7a89083a16d/",
+                    "sha": "0d20b6487c61e7d1bde93acf4a14b7a89083a16d",
+                    "mode": "0100644",
+                    "path": ".gitignore",
+                    "type": "blob",
+                    "size": 6
+                },
+                ...
+            ]
+        }
+    """
     recursive = request.args.get('recursive') == '1'
     repo = _get_repo(repo_key)
     tree = _get_tree(repo, sha)
@@ -439,6 +508,23 @@ def get_tree(repo_key, sha):
 @corsify
 @jsonify
 def get_blob(repo_key, sha):
+    """
+    Retrieves a specific blob object.
+
+    :status 400: ``sha`` was the SHA of a non-blob Git object
+
+    **Example response**:
+
+    .. sourcecode:: json
+
+        {
+            "url": "http://localhost:5000/repos/restfulgit.git/git/blobs/0d20b6487c61e7d1bde93acf4a14b7a89083a16d/",
+            "sha": "0d20b6487c61e7d1bde93acf4a14b7a89083a16d",
+            "encoding": "utf-8",
+            "data": "*.pyc ",
+            "size": 6
+        }
+    """
     repo = _get_repo(repo_key)
     try:
         blob = repo[unicode(sha)]
@@ -453,6 +539,30 @@ def get_blob(repo_key, sha):
 @corsify
 @jsonify
 def get_tag(repo_key, sha):
+    """
+    Retrieves a specific tag object.
+
+    **Example response**:
+
+    .. sourcecode:: json
+
+        {
+            "url": "http://localhost:5000/repos/restfulgit.git/git/tags/89571737c474fae7ea4c092b5ed94e4eccb11b2a/",
+            "object": {
+                "url": "http://localhost:5000/repos/restfulgit.git/git/commits/b6b05bb0f230b591d82fcc07d169b7453e04cf89/",
+                "sha": "b6b05bb0f230b591d82fcc07d169b7453e04cf89",
+                "type": "commit"
+            },
+            "sha": "89571737c474fae7ea4c092b5ed94e4eccb11b2a",
+            "tag": "v0.1",
+            "tagger": {
+                "date": "2013-09-12T21:00:28-07:00",
+                "name": "Rajiv Makhijani",
+                "email": "rajiv@hulu.com"
+            },
+            "message": "this is our first release"
+        }
+    """
     repo = _get_repo(repo_key)
     tag = _get_tag(repo, sha)
     return _convert_tag(repo_key, repo, tag)
@@ -464,6 +574,14 @@ PLAIN_TEXT = 'text/plain'
 @restfulgit.route('/repos/<repo_key>/description/')
 @corsify
 def get_description(repo_key):
+    """
+    Retrieve the description (if any) of the repo, as plain text.
+    If there is no description, the result will be blank.
+
+```
+REST API for Git data
+```
+    """
     _get_repo(repo_key)  # check repo_key validity
     relative_paths = (
         os.path.join(repo_key, 'description'),
@@ -484,6 +602,15 @@ def get_description(repo_key):
 @corsify
 @jsonify
 def get_repo_list():
+    """
+    Retrieves a list of the names of all the repos.
+
+    **Example response**:
+
+    .. sourcecode:: json
+
+        {"repos": ["restfulgit.git"]}
+    """
     children = (
         (name, safe_join(current_app.config['RESTFULGIT_REPO_BASE_PATH'], name))
         for name in os.listdir(current_app.config['RESTFULGIT_REPO_BASE_PATH'])
@@ -521,6 +648,9 @@ def get_ref_list(repo_key, ref_path=None):
 @restfulgit.route('/repos/<repo_key>/blob/<branch_or_tag_or_sha>/<path:file_path>')
 @corsify
 def get_raw(repo_key, branch_or_tag_or_sha, file_path):
+    """
+    Returns the raw file data for the file on the specified branch, tag, or commit SHA.
+    """
     repo = _get_repo(repo_key)
     commit = _get_commit_for_refspec(repo, branch_or_tag_or_sha)
     tree = _get_tree(repo, commit.tree.hex)

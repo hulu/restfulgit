@@ -13,6 +13,28 @@ Contents:
 
 
 
+API endpoints
+=============
+.. autoflask:: restfulgit:app
+   :endpoints: restfulgit.get_commit_list
+.. autoflask:: restfulgit:app
+   :endpoints: restfulgit.get_commit
+.. autoflask:: restfulgit:app
+   :endpoints: restfulgit.get_blob
+.. autoflask:: restfulgit:app
+   :endpoints: restfulgit.get_tree
+.. autoflask:: restfulgit:app
+   :endpoints: restfulgit.get_tag
+.. autoflask:: restfulgit:app
+   :endpoints: restfulgit.get_ref_list
+.. autoflask:: restfulgit:app
+   :endpoints: restfulgit.get_raw
+.. autoflask:: restfulgit:app
+   :endpoints: restfulgit.get_repo_list
+.. autoflask:: restfulgit:app
+   :endpoints: restfulgit.get_description
+
+
 Indices and tables
 ==================
 
