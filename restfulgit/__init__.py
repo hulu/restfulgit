@@ -112,6 +112,13 @@ def _lookup_ref(repo, ref_name):
 #### PORCELAIN RETRIEVE OBJECTS ####
 
 
+def _get_branch(repo, branch_name):
+    branch = repo.lookup_branch(branch_name)
+    if branch is None:
+        raise NotFound("branch not found")
+    return branch
+
+
 def _get_object_from_path(repo, tree, path):
     path_segments = path.split("/")
 
@@ -374,12 +381,8 @@ def _convert_patch(repo_key, commit, patch, patches_txt):
     return result
 
 
-def _repos_convert_commit(repo_key, repo, commit):
-    diff, patches = _get_patches(repo, commit)
-    patches_txt = _get_patches_txt(diff)
-    patches_additions = sum(patch.additions for patch in patches)
-    patches_deletions = sum(patch.deletions for patch in patches)
-    return {
+def _repos_convert_commit(repo_key, repo, commit, include_diff=False):
+    result = {
         "commit" : _convert_commit(repo_key, commit),
         "url": url_for('.get_repos_commit', _external=True,
                        repo_key=repo_key, sha=commit.hex),
@@ -388,12 +391,35 @@ def _repos_convert_commit(repo_key, repo, commit):
             "url": url_for('.get_repos_commit', _external=True,
                            repo_key=repo_key, sha=c.hex)
         } for c in commit.parents],
-        "stats": {
-            "additions": patches_additions,
-            "deletions": patches_deletions,
-            "total": patches_additions + patches_deletions,
-        },
-        "files": [_convert_patch(repo_key, commit, patch, patches_txt) for patch in patches],
+    }
+    if include_diff:
+        diff, patches = _get_patches(repo, commit)
+        patches_txt = _get_patches_txt(diff)
+        patches_additions = sum(patch.additions for patch in patches)
+        patches_deletions = sum(patch.deletions for patch in patches)
+        result.update({
+            "stats": {
+                "additions": patches_additions,
+                "deletions": patches_deletions,
+                "total": patches_additions + patches_deletions,
+            },
+            "files": [_convert_patch(repo_key, commit, patch, patches_txt) for patch in patches],
+        })
+    return result
+
+
+def _convert_branch(repo_key, repo, branch):
+    return {
+        "name": branch.branch_name,
+        "commit": _repos_convert_commit(repo_key, repo, branch.get_object()),
+        "url": url_for('.get_branch', _external=True,
+                        repo_key=repo_key, branch_name=branch.branch_name),
+        "_links": {
+            # For some reason GitHub API for branch does the self-link like this
+            # instead of with "url" as everywhere else.
+            "self": url_for('.get_branch', _external=True,
+                            repo_key=repo_key, branch_name=branch.branch_name),
+        }
     }
 
 
@@ -548,7 +574,7 @@ def get_commit(repo_key, sha):
 def get_repos_commit(repo_key, sha):
     repo = _get_repo(repo_key)
     commit = _get_commit(repo, sha)
-    return _repos_convert_commit(repo_key, repo, commit)
+    return _repos_convert_commit(repo_key, repo, commit, include_diff=True)
 
 
 @restfulgit.route('/repos/<repo_key>/git/trees/<sha:sha>/')
@@ -648,6 +674,16 @@ def get_branches(repo_key):
                            repo_key=repo_key, sha=branch.target.hex),
         },
     } for branch in branches]
+
+
+
+@restfulgit.route('/repos/<repo_key>/branches/<branch_name>')
+@corsify
+@jsonify
+def get_branch(repo_key, branch_name):
+    repo = _get_repo(repo_key)
+    branch = _get_branch(repo, branch_name)
+    return _convert_branch(repo_key, repo, branch)
 
 
 @restfulgit.route('/repos/<repo_key>/blob/<branch_or_tag_or_sha>/<path:file_path>')
