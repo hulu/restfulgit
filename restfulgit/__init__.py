@@ -159,7 +159,7 @@ def _get_diff(repo, commit):
     if commit.parents:
         diff = repo.diff(commit.parents[0], commit)
         diff.find_similar()
-    else:
+    else:  # NOTE: RestfulGit extension; GitHub gives a 404 in this case
         diff = commit.tree.diff_to_tree(swap=True)
     return diff
 
@@ -657,6 +657,15 @@ def get_repo_list():
     repositories = list(mirrors | working_copies)
     repositories.sort()
     return [_convert_repo(repo_key) for repo_key in repositories]
+
+
+@restfulgit.route('/repos/<repo_key>/commit/<branch_or_tag_or_sha>.diff')
+@corsify
+def get_repos_diff(repo_key, branch_or_tag_or_sha=None):
+    repo = _get_repo(repo_key)
+    commit = _get_commit_for_refspec(repo, branch_or_tag_or_sha)
+    diff = _get_diff(repo, commit)
+    return Response(diff.patch, mimetype="text/x-diff")
 
 
 @restfulgit.route('/repos/<repo_key>/branches/')
