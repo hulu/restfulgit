@@ -385,11 +385,11 @@ def _repos_convert_commit(repo_key, repo, commit, include_diff=False):
     result = {
         "commit" : _convert_commit(repo_key, commit),
         "url": url_for('.get_repos_commit', _external=True,
-                       repo_key=repo_key, sha=commit.hex),
+                       repo_key=repo_key, branch_or_tag_or_sha=commit.hex),
         "parents": [{
             "sha": c.hex,
             "url": url_for('.get_repos_commit', _external=True,
-                           repo_key=repo_key, sha=c.hex)
+                           repo_key=repo_key, branch_or_tag_or_sha=c.hex)
         } for c in commit.parents],
     }
     if include_diff:
@@ -651,12 +651,12 @@ def get_repo_list():
     return [_convert_repo(repo_key) for repo_key in repositories]
 
 
-@restfulgit.route('/repos/<repo_key>/commits/<sha:sha>/')
+@restfulgit.route('/repos/<repo_key>/commits/<branch_or_tag_or_sha>/')
 @corsify
 @jsonify
-def get_repos_commit(repo_key, sha):
+def get_repos_commit(repo_key, branch_or_tag_or_sha):
     repo = _get_repo(repo_key)
-    commit = _get_commit(repo, sha)
+    commit = _get_commit_for_refspec(repo, branch_or_tag_or_sha)
     return _repos_convert_commit(repo_key, repo, commit, include_diff=True)
 
 
@@ -671,7 +671,7 @@ def get_branches(repo_key):
         "commit": {
             "sha": branch.target.hex,
             "url": url_for('.get_repos_commit', _external=True,
-                           repo_key=repo_key, sha=branch.target.hex),
+                           repo_key=repo_key, branch_or_tag_or_sha=branch.target.hex),
         },
     } for branch in branches]
 
