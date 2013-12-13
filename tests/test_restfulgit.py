@@ -410,7 +410,7 @@ class SimpleSHATestCase(_RestfulGitTestCase):
 
 
 class RefsTestCase(_RestfulGitTestCase):
-    def test_get_ref_list_works(self):
+    def test_get_refs_works(self):
         resp = self.client.get('/repos/restfulgit/git/refs/')
         self.assert200(resp)
         ref_list = resp.json
@@ -434,7 +434,7 @@ class RefsTestCase(_RestfulGitTestCase):
         self.assert200(resp)
         self.assertEqual([], resp.json)
 
-    def test_valid_ref_path(self):
+    def test_valid_specific_ref_path(self):
         resp = self.client.get('/repos/restfulgit/git/refs/tags/initial')
         self.assert200(resp)
         self.assertEqual(
@@ -624,6 +624,28 @@ class CorsTestCase(_RestfulGitTestCase):
         with self.cors_enabled:
             self.assert_header_equal('Access-Control-Allow-Methods', 'HEAD, OPTIONS, GET')
 
+class ConditionalGetTestCase(_RestfulGitTestCase):
+    cache_control = 'max-age=60'
+    def cget_helper(self, url, guess=None):
+        with self.config_override('RESTFULGIT_CACHE_CONTROL', self.cache_control):
+            resp = self.client.get(url)
+            self.assert200(resp)
+            # Check that etag and cache-control headers are sent
+            self.assertEqual(resp.headers['Cache-Control'], self.cache_control)
+            self.assertIn('ETag', resp.headers)
+            self.etag = resp.headers['ETag']
+            if not guess is None:
+                self.assertEqual(resp.headers['ETag'], guess)
+        # Retry request, with If-None-Match and proper etag   
+        resp = self.client.get(url, headers={'If-None-Match': self.etag})
+        self.assertStatus(resp, 304)
+        # Retry request, with If-None-Match and invalid etag
+        resp = self.client.get(url, headers={'If-None-Match': self.etag.swapcase()})
+        self.assert200(resp)
+
+    def test_generic_cget_decorator(self):
+        self.cget_helper('http://localhost/repos/restfulgit/git/tags/1dffc031c9beda43ff94c526cbc00a30d231c079/',
+                         guess='"1dffc031c9beda43ff94c526cbc00a30d231c079"')
 
 if __name__ == '__main__':
     unittest.main()
