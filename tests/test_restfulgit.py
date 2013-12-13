@@ -83,11 +83,19 @@ class RepoKeyTestCase(_RestfulGitTestCase):
         resp = self.client.get('/repos/')
         self.assert200(resp)
         result = resp.json
-        self.assertIsInstance(result, dict)
-        self.assertEqual(result.viewkeys(), {'repos'})
-        repo_list = result['repos']
-        self.assertIsInstance(repo_list, list)
+        self.assertIsInstance(result, list)
+        repo_list = [repo['name'] for repo in result]
         self.assertIn('restfulgit', repo_list)
+        for repo in result:
+            if repo['name'] == 'restfulgit':
+                self.assertEqual(
+                    repo,
+                    {
+                        'name': 'restfulgit',
+                        'description': None,
+                        'url': 'http://localhost/repos/restfulgit/',
+                    }
+                )
 
 
 class SHAConverterTestCase(_RestfulGitTestCase):
@@ -501,22 +509,29 @@ class RawFileTestCase(_RestfulGitTestCase):
         )
 
 
-class DescriptionTestCase(_RestfulGitTestCase):
+class RepositoryInfoCase(_RestfulGitTestCase):
     def test_no_description_file(self):
         delete_file_quietly(NORMAL_CLONE_DESCRIPTION_FILEPATH)
         delete_file_quietly(GIT_MIRROR_DESCRIPTION_FILEPATH)
-        resp = self.client.get('/repos/restfulgit/description/')
+        resp = self.client.get('/repos/restfulgit/')
         self.assert200(resp)
-        self.assertEqual(resp.data, "")
+        self.assertEqual(
+            resp.json,
+            {
+                'name': 'restfulgit',
+                'description': None,
+                'url': 'http://localhost/repos/restfulgit/',
+            }
+        )
 
     def test_dot_dot_disallowed(self):
         restfulgit.REPO_BASE = TEST_SUBDIR
-        resp = self.client.get('/repos/../description/')
+        resp = self.client.get('/repos/../')
         self.assertJson404(resp)
 
     def test_nonexistent_repo(self):
         restfulgit.REPO_BASE = RESTFULGIT_REPO
-        resp = self.client.get('/repos/test/description/')
+        resp = self.client.get('/repos/test/')
         self.assertJson404(resp)
 
     def test_works_normal_clone(self):
@@ -524,8 +539,15 @@ class DescriptionTestCase(_RestfulGitTestCase):
         with io.open(NORMAL_CLONE_DESCRIPTION_FILEPATH, mode='wt', encoding='utf-8') as description_file:
             description_file.write(description)
         try:
-            resp = self.client.get('/repos/restfulgit/description/')
-            self.assertEqual(resp.data, description)
+            resp = self.client.get('/repos/restfulgit/')
+            self.assertEqual(
+                resp.json,
+                {
+                    'name': 'restfulgit',
+                    'description': description,
+                    'url': 'http://localhost/repos/restfulgit/',
+                }
+            )
         finally:
             delete_file_quietly(NORMAL_CLONE_DESCRIPTION_FILEPATH)
 
@@ -534,8 +556,15 @@ class DescriptionTestCase(_RestfulGitTestCase):
         with io.open(GIT_MIRROR_DESCRIPTION_FILEPATH, mode='wt', encoding='utf-8') as description_file:
             description_file.write(description)
         try:
-            resp = self.client.get('/repos/restfulgit/description/')
-            self.assertEqual(resp.data, description)
+            resp = self.client.get('/repos/restfulgit/')
+            self.assertEqual(
+                resp.json,
+                {
+                    'name': 'restfulgit',
+                    'description': description,
+                    'url': 'http://localhost/repos/restfulgit/',
+                }
+            )
         finally:
             delete_file_quietly(GIT_MIRROR_DESCRIPTION_FILEPATH)
 
