@@ -54,6 +54,8 @@ if not LOADED_CONFIG:
 restfulgit = Blueprint('restfulgit', __name__)  # pylint: disable=C0103
 
 
+### PLUMBING RETRIEVE OBJECTS ###
+
 def _get_repo(repo_key):
     path = safe_join(current_app.config['RESTFULGIT_REPO_BASE_PATH'], repo_key)
     try:
@@ -92,20 +94,6 @@ def _get_tag(repo, sha):
     return tag
 
 
-def _get_object_from_path(repo, tree, path):
-    path_segments = path.split("/")
-
-    ctree = tree
-    for path_seg in path_segments:
-        if ctree.type != GIT_OBJ_TREE:
-            raise NotFound("invalid path")
-        try:
-            ctree = repo[ctree[path_seg].oid]
-        except KeyError:
-            raise NotFound("invalid path")
-    return ctree
-
-
 def _lookup_ref(repo, ref_name):
     try:
         return repo.lookup_reference(ref_name)
@@ -119,6 +107,23 @@ def _lookup_ref(repo, ref_name):
             return repo.lookup_reference(ref_name)
         except (ValueError, KeyError):
             return None
+
+
+#### PORCELAIN RETRIEVE OBJECTS ####
+
+
+def _get_object_from_path(repo, tree, path):
+    path_segments = path.split("/")
+
+    ctree = tree
+    for path_seg in path_segments:
+        if ctree.type != GIT_OBJ_TREE:
+            raise NotFound("invalid path")
+        try:
+            ctree = repo[ctree[path_seg].oid]
+        except KeyError:
+            raise NotFound("invalid path")
+    return ctree
 
 
 def _get_commit_for_refspec(repo, branch_or_tag_or_sha):
@@ -185,6 +190,9 @@ def _get_repo_description(repo_key):
         return description
 
 
+#### PLUMBING OBJECT CONVERTORS ####
+
+
 def _convert_repo(repo_key):
     description = _get_repo_description(repo_key)
     return {
@@ -192,6 +200,7 @@ def _convert_repo(repo_key):
         "description": description,
         "url": url_for('.get_repo', _external=True, repo_key=repo_key)
     }
+
 
 def _convert_signature(sig):
     return {
@@ -221,56 +230,6 @@ def _convert_commit(repo_key, commit):
         } for c in commit.parents]
     }
 
-
-GIT_STATUS_TO_NAME = {
-    'M': 'modified',
-    'A': 'added',
-    'R': 'renamed',
-    'D': 'removed',
-}
-
-
-def _convert_patch(repo_key, commit, patch, patches_txt):
-    deleted = patch.status == 'D'
-    result = {
-        "sha": patch.new_oid if not deleted else patch.old_oid,
-        "status": GIT_STATUS_TO_NAME[patch.status],
-        "filename": patch.new_file_path,
-        "additions": patch.additions,
-        "deletions": patch.deletions,
-        "changes": patch.additions + patch.deletions,
-        "raw_url": url_for('.get_raw',
-                           _external=True,
-                           repo_key=repo_key,
-                           branch_or_tag_or_sha=commit.hex if not deleted else commit.parents[0].hex,
-                           file_path=patch.new_file_path),
-    }
-    if patch.new_file_path in patches_txt:
-        result['patch'] = patches_txt[patch.new_file_path]
-    return result
-
-
-def _repos_convert_commit(repo_key, repo, commit):
-    diff, patches = _get_patches(repo, commit)
-    patches_txt = _get_patches_txt(diff)
-    patches_additions = sum(patch.additions for patch in patches)
-    patches_deletions = sum(patch.deletions for patch in patches)
-    return {
-        "commit" : _convert_commit(repo_key, commit),
-        "url": url_for('.get_repos_commit', _external=True,
-                       repo_key=repo_key, sha=commit.hex),
-        "parents": [{
-            "sha": c.hex,
-            "url": url_for('.get_repos_commit', _external=True,
-                           repo_key=repo_key, sha=c.hex)
-        } for c in commit.parents],
-        "stats": {
-            "additions": patches_additions,
-            "deletions": patches_deletions,
-            "total": patches_additions + patches_deletions,
-        },
-        "files": [_convert_patch(repo_key, commit, patch, patches_txt) for patch in patches],
-    }
 
 
 def _tree_entries(repo_key, repo, tree, recursive=False, path=''):
@@ -384,6 +343,60 @@ def _convert_ref(repo_key, ref, obj):
     }
 
 
+#### PORCELAIN DATA CONVERTORS ####
+
+
+GIT_STATUS_TO_NAME = {
+    'M': 'modified',
+    'A': 'added',
+    'R': 'renamed',
+    'D': 'removed',
+}
+
+
+def _convert_patch(repo_key, commit, patch, patches_txt):
+    deleted = patch.status == 'D'
+    result = {
+        "sha": patch.new_oid if not deleted else patch.old_oid,
+        "status": GIT_STATUS_TO_NAME[patch.status],
+        "filename": patch.new_file_path,
+        "additions": patch.additions,
+        "deletions": patch.deletions,
+        "changes": patch.additions + patch.deletions,
+        "raw_url": url_for('.get_raw',
+                           _external=True,
+                           repo_key=repo_key,
+                           branch_or_tag_or_sha=commit.hex if not deleted else commit.parents[0].hex,
+                           file_path=patch.new_file_path),
+    }
+    if patch.new_file_path in patches_txt:
+        result['patch'] = patches_txt[patch.new_file_path]
+    return result
+
+
+def _repos_convert_commit(repo_key, repo, commit):
+    diff, patches = _get_patches(repo, commit)
+    patches_txt = _get_patches_txt(diff)
+    patches_additions = sum(patch.additions for patch in patches)
+    patches_deletions = sum(patch.deletions for patch in patches)
+    return {
+        "commit" : _convert_commit(repo_key, commit),
+        "url": url_for('.get_repos_commit', _external=True,
+                       repo_key=repo_key, sha=commit.hex),
+        "parents": [{
+            "sha": c.hex,
+            "url": url_for('.get_repos_commit', _external=True,
+                           repo_key=repo_key, sha=c.hex)
+        } for c in commit.parents],
+        "stats": {
+            "additions": patches_additions,
+            "deletions": patches_deletions,
+            "total": patches_additions + patches_deletions,
+        },
+        "files": [_convert_patch(repo_key, commit, patch, patches_txt) for patch in patches],
+    }
+
+
 def jsonify(func):
     def dthandler(obj):
         if hasattr(obj, 'isoformat'):
@@ -394,6 +407,9 @@ def jsonify(func):
         return Response(json.dumps(func(*args, **kwargs), default=dthandler),
                         mimetype='application/json')
     return wrapped
+
+
+#### VIEW UTILS ####
 
 
 def corsify(func):
@@ -438,8 +454,6 @@ class FixedOffset(tzinfo):
     def dst(self, dt):  # pylint: disable=W0613
         return self.ZERO
 
-##### VIEWS #####
-
 
 OCTET_STREAM = 'application/octet-stream'
 
@@ -476,6 +490,9 @@ class SHAConverter(BaseConverter):  # pylint: disable=W0232
 
 
 register_converter(restfulgit, 'sha', SHAConverter)
+
+
+##### PLUMBING API VIEWS #####
 
 
 @restfulgit.route('/repos/<repo_key>/git/commits/')
@@ -567,6 +584,32 @@ def get_tag(repo_key, sha):
     return _convert_tag(repo_key, repo, tag)
 
 
+@restfulgit.route('/repos/<repo_key>/git/refs/')
+@restfulgit.route('/repos/<repo_key>/git/refs/<path:ref_path>')
+@corsify
+@jsonify
+def get_refs(repo_key, ref_path=None):
+    if ref_path is not None:
+        ref_path = "refs/" + ref_path
+    else:
+        ref_path = ""
+    repo = _get_repo(repo_key)
+    ref_names = ifilter(lambda x: x.startswith(ref_path), repo.listall_references())
+    references = (repo.lookup_reference(ref_name) for ref_name in ref_names)
+    nonsymbolic_refs = ifilter(lambda x: x.type != GIT_REF_SYMBOLIC, references)
+    ref_data = [
+        _convert_ref(repo_key, reference, repo[reference.target])
+        for reference in nonsymbolic_refs
+    ]
+    if len(ref_data) == 1 and ref_data[0]['ref'] == ref_path:
+        # exact match
+        ref_data = ref_data[0]
+    return ref_data
+
+
+##### PORCELAIN API VIEWS #####
+
+
 @restfulgit.route('/repos/<repo_key>/')
 @corsify
 @jsonify
@@ -605,29 +648,6 @@ def get_branches(repo_key):
                            repo_key=repo_key, sha=branch.target.hex),
         },
     } for branch in branches]
-
-
-@restfulgit.route('/repos/<repo_key>/git/refs/')
-@restfulgit.route('/repos/<repo_key>/git/refs/<path:ref_path>')
-@corsify
-@jsonify
-def get_refs(repo_key, ref_path=None):
-    if ref_path is not None:
-        ref_path = "refs/" + ref_path
-    else:
-        ref_path = ""
-    repo = _get_repo(repo_key)
-    ref_names = ifilter(lambda x: x.startswith(ref_path), repo.listall_references())
-    references = (repo.lookup_reference(ref_name) for ref_name in ref_names)
-    nonsymbolic_refs = ifilter(lambda x: x.type != GIT_REF_SYMBOLIC, references)
-    ref_data = [
-        _convert_ref(repo_key, reference, repo[reference.target])
-        for reference in nonsymbolic_refs
-    ]
-    if len(ref_data) == 1 and ref_data[0]['ref'] == ref_path:
-        # exact match
-        ref_data = ref_data[0]
-    return ref_data
 
 
 @restfulgit.route('/repos/<repo_key>/blob/<branch_or_tag_or_sha>/<path:file_path>')
