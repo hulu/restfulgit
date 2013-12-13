@@ -680,9 +680,9 @@ def get_tags(repo_key):
     return [{
         "name": tag.shorthand,
         "commit": {
-            "sha": tag.target.hex,
+            "sha": tag.get_object().hex,
             "url": url_for('.get_repos_commit', _external=True,
-                           repo_key=repo_key, branch_or_tag_or_sha=tag.target.hex),
+                           repo_key=repo_key, branch_or_tag_or_sha=tag.get_object().hex),
         },
     } for tag in tags]
 
