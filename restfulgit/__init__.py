@@ -277,7 +277,7 @@ def _convert_blob(repo_key, blob):
 
 def _convert_ref(repo_key, ref, obj):
     return {
-        "url": url_for('.get_ref_list', _external=True,
+        "url": url_for('.get_refs', _external=True,
                        repo_key=repo_key, ref_path=ref.name[5:]),  # [5:] to cut off the redundant refs/
         "ref": ref.name,
         "object": _linkobj_for_gitobj(repo_key, obj, include_type=True),
@@ -500,7 +500,7 @@ def get_repo_list():
 @restfulgit.route('/repos/<repo_key>/git/refs/<path:ref_path>')
 @corsify
 @jsonify
-def get_ref_list(repo_key, ref_path=None):
+def get_refs(repo_key, ref_path=None):
     if ref_path is not None:
         ref_path = "refs/" + ref_path
     else:
@@ -513,7 +513,8 @@ def get_ref_list(repo_key, ref_path=None):
         _convert_ref(repo_key, reference, repo[reference.target])
         for reference in nonsymbolic_refs
     ]
-    if len(ref_data) == 1:
+    if len(ref_data) == 1 and ref_data[0]['ref'] == ref_path:
+        # exact match
         ref_data = ref_data[0]
     return ref_data
 

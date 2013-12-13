@@ -410,7 +410,7 @@ class SimpleSHATestCase(_RestfulGitTestCase):
 
 
 class RefsTestCase(_RestfulGitTestCase):
-    def test_get_ref_list_works(self):
+    def test_get_refs_works(self):
         resp = self.client.get('/repos/restfulgit/git/refs/')
         self.assert200(resp)
         ref_list = resp.json
@@ -434,7 +434,7 @@ class RefsTestCase(_RestfulGitTestCase):
         self.assert200(resp)
         self.assertEqual([], resp.json)
 
-    def test_valid_ref_path(self):
+    def test_valid_specific_ref_path(self):
         resp = self.client.get('/repos/restfulgit/git/refs/tags/initial')
         self.assert200(resp)
         self.assertEqual(
