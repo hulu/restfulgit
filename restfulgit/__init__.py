@@ -54,6 +54,8 @@ if not LOADED_CONFIG:
 restfulgit = Blueprint('restfulgit', __name__)  # pylint: disable=C0103
 
 
+### PLUMBING RETRIEVE OBJECTS ###
+
 def _get_repo(repo_key):
     path = safe_join(current_app.config['RESTFULGIT_REPO_BASE_PATH'], repo_key)
     try:
@@ -119,6 +121,16 @@ def _lookup_ref(repo, ref_name):
             return repo.lookup_reference(ref_name)
         except (ValueError, KeyError):
             return None
+
+
+#### PORCELAIN RETRIEVE OBJECTS ####
+
+
+def _get_branch(repo, branch_name):
+    branch = repo.lookup_branch(branch_name)
+    if branch is None:
+        raise NotFound("branch not found")
+    return branch
 
 
 def _get_commit_for_refspec(repo, branch_or_tag_or_sha):
@@ -187,12 +199,15 @@ def _get_repo_description(repo_key):
         return description
 
 
+#### PLUMBING OBJECT CONVERTERS ####
+
+
 def _convert_repo(repo_key):
     description = _get_repo_description(repo_key)
     return {
         "name": repo_key,
         "description": description,
-        "url": url_for('.get_repo', _external=True, repo_key=repo_key)
+        "url": url_for('.get_repo', _external=True, repo_key=repo_key),
     }
 
 
@@ -411,6 +426,23 @@ def _convert_ref(repo_key, ref, obj):
     }
 
 
+#### PORCELAIN DATA CONVERTERS ####
+
+
+def _convert_branch(repo_key, repo, branch):
+    url = url_for('.get_branch', _external=True, repo_key=repo_key, branch_name=branch.branch_name)
+    return {
+        "name": branch.branch_name,
+        "commit": _repos_convert_commit(repo_key, repo, branch.get_object()),
+        "url": url,
+        "_links": {
+            # For some reason GitHub API for branch does the self-link like this
+            # instead of with "url" as everywhere else.
+            "self": url,
+        }
+    }
+
+
 def jsonify(func):
     def dthandler(obj):
         if hasattr(obj, 'isoformat'):
@@ -421,6 +453,9 @@ def jsonify(func):
         return Response(json.dumps(func(*args, **kwargs), default=dthandler),
                         mimetype='application/json')
     return wrapped
+
+
+#### VIEW UTILS ####
 
 
 def corsify(func):
@@ -468,9 +503,6 @@ class FixedOffset(tzinfo):
 
 UTC = FixedOffset(0)
 
-##### VIEWS #####
-
-
 OCTET_STREAM = 'application/octet-stream'
 
 
@@ -506,6 +538,9 @@ class SHAConverter(BaseConverter):  # pylint: disable=W0232
 
 
 register_converter(restfulgit, 'sha', SHAConverter)
+
+
+##### PLUMBING API VIEWS #####
 
 
 @restfulgit.route('/repos/<repo_key>/git/commits/')
@@ -597,6 +632,9 @@ def get_tag(repo_key, sha):
     return _convert_tag(repo_key, repo, tag)
 
 
+##### PORCELAIN API VIEWS #####
+
+
 @restfulgit.route('/repos/<repo_key>/')
 @corsify
 @jsonify
@@ -619,6 +657,34 @@ def get_repo_list():
     repositories = list(mirrors | working_copies)
     repositories.sort()
     return [_convert_repo(repo_key) for repo_key in repositories]
+
+
+@restfulgit.route('/repos/<repo_key>/branches/')
+@corsify
+@jsonify
+def get_branches(repo_key):
+    repo = _get_repo(repo_key)
+    branches = [repo.lookup_branch(branch_name) for branch_name in repo.listall_branches()]
+    return [
+        {
+            "name": branch.branch_name,
+            "commit": {
+                "sha": branch.target.hex,
+                "url": url_for('.get_repos_commit', _external=True,
+                               repo_key=repo_key, branch_or_tag_or_sha=branch.target.hex),
+            },
+        }
+        for branch in branches
+    ]
+
+
+@restfulgit.route('/repos/<repo_key>/branches/<branch_name>/')
+@corsify
+@jsonify
+def get_branch(repo_key, branch_name):
+    repo = _get_repo(repo_key)
+    branch = _get_branch(repo, branch_name)
+    return _convert_branch(repo_key, repo, branch)
 
 
 @restfulgit.route('/repos/<repo_key>/git/refs/')

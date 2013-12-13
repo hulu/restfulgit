@@ -596,6 +596,87 @@ class SimpleSHATestCase(_RestfulGitTestCase):
             }
         )
 
+    def test_get_repo_branches_works(self):
+        # From https://api.github.com/repos/hulu/restfulgit/branches with necessary adjustments
+        reference_branch =  {
+            "name": "ambiguous",
+            "commit": {
+                "sha": "1f51b91ac383806df9d322ae67bbad3364f50811",
+                "url": "http://localhost/repos/restfulgit/commits/1f51b91ac383806df9d322ae67bbad3364f50811/"
+            }
+        }
+        resp = self.client.get('/repos/restfulgit/branches/')
+        self.assert200(resp)
+        json = resp.json
+        self.assertIsInstance(json, list)
+        for branch in json:
+            self.assertIsInstance(branch, dict)
+            self.assertIn('name', branch)
+        ambiguous_branches = [branch for branch in json if branch['name'] == 'ambiguous']
+        self.assertEqual(len(ambiguous_branches), 1)
+        ambiguous_branch = ambiguous_branches[0]
+        self.assertEqual(reference_branch, ambiguous_branch)
+
+    def test_get_repo_branch_works(self):
+        # From https://api.github.com/repos/hulu/restfulgit/branches/ambiguous with necessary adjustments
+        reference = {
+            "name": "ambiguous",
+            "commit": {
+                "sha": "1f51b91ac383806df9d322ae67bbad3364f50811",
+                "commit": {
+                    "author": {
+                      "name": "Rajiv Makhijani",
+                      "email": "rajiv@hulu.com",
+                      "date": "2013-02-25T12:35:29Z"
+                    },
+                    "committer": {
+                      "name": "Rajiv Makhijani",
+                      "email": "rajiv@hulu.com",
+                      "date": "2013-02-25T12:35:29Z"
+                    },
+                    "message": "Support submodule in tree-listings",
+                    "tree": {
+                      "sha": "1404e1766a3269f5a73b3d2ec8c81b7ea3ad6e09",
+                      "url": "http://localhost/repos/restfulgit/git/trees/1404e1766a3269f5a73b3d2ec8c81b7ea3ad6e09/"
+                    },
+                    "url": "http://localhost/repos/restfulgit/git/commits/1f51b91ac383806df9d322ae67bbad3364f50811/",
+                    "sha": "1f51b91ac383806df9d322ae67bbad3364f50811",  # NOTE: RestfulGit extension
+                    "parents": [  # NOTE: RestfulGit extension
+                        {
+                          "sha": "ff6405b71273b5c2c50d5c33d5cf962af5390542",
+                          "url": "http://localhost/repos/restfulgit/commits/ff6405b71273b5c2c50d5c33d5cf962af5390542/",
+                        }
+                    ]
+                },
+                "url": "http://localhost/repos/restfulgit/commits/1f51b91ac383806df9d322ae67bbad3364f50811/",
+                "author": {
+                    "name": "Rajiv Makhijani",
+                    "email": "rajiv@hulu.com",
+                    "date": "2013-02-25T12:35:29Z"
+                },
+                "committer": {
+                    "name": "Rajiv Makhijani",
+                    "email": "rajiv@hulu.com",
+                    "date": "2013-02-25T12:35:29Z"
+                },
+                "parents": [
+                    {
+                      "sha": "ff6405b71273b5c2c50d5c33d5cf962af5390542",
+                      "url": "http://localhost/repos/restfulgit/commits/ff6405b71273b5c2c50d5c33d5cf962af5390542/",
+                    }
+                ]
+            },
+            "_links": {
+                "self": "http://localhost/repos/restfulgit/branches/ambiguous/",
+            },
+            'url': 'http://localhost/repos/restfulgit/branches/ambiguous/'
+        }
+        resp = self.client.get('/repos/restfulgit/branches/ambiguous/')
+        self.assert200(resp)
+        json = resp.json
+        self.maxDiff = None
+        self.assertEqual(reference, json)
+
     def test_get_repo_commit(self):
         # From https://api.github.com/repos/hulu/restfulgit/commits/d408fc2428bc6444cabd7f7b46edbe70b6992b16 with necessary adjustments
         reference = {
