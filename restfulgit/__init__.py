@@ -662,7 +662,7 @@ def get_repos_commit(repo_key, sha=None, branch_or_tag_or_sha=None):
             commit = _get_commit(repo, sha)
         except NotFound:
             branch_or_tag_or_sha = sha
-    else:
+    if branch_or_tag_or_sha:
         commit = _get_commit_for_refspec(repo, branch_or_tag_or_sha)
     return _repos_convert_commit(repo_key, repo, commit, include_diff=True)
 
