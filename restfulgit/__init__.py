@@ -667,6 +667,27 @@ def get_repos_commit(repo_key, sha=None, branch_or_tag_or_sha=None):
     return _repos_convert_commit(repo_key, repo, commit, include_diff=True)
 
 
+TAG_REF_PREFIX = "refs/tags/"
+TAG_REF_PREFIX_LEN = len(TAG_REF_PREFIX)
+
+
+@restfulgit.route('/repos/<repo_key>/tags/')
+@corsify
+@jsonify
+def get_tags(repo_key):
+    repo = _get_repo(repo_key)
+    ref_names = ifilter(lambda x: x.startswith(TAG_REF_PREFIX), repo.listall_references())
+    tags = [repo.lookup_reference(ref_name) for ref_name in ref_names]
+    return [{
+        "name": tag.name[TAG_REF_PREFIX_LEN:],
+        "commit": {
+            "sha": tag.target.hex,
+            "url": url_for('.get_repos_commit', _external=True,
+                           repo_key=repo_key, branch_or_tag_or_sha=tag.target.hex),
+        },
+    } for tag in tags]
+
+
 @restfulgit.route('/repos/<repo_key>/branches/')
 @corsify
 @jsonify
