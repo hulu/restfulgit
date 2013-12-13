@@ -157,13 +157,17 @@ def _get_commit_for_refspec(repo, branch_or_tag_or_sha):
         raise NotFound("no such branch, tag, or commit SHA")
 
 
-def _get_patches(repo, commit):
+def _get_diff(repo, commit):
     if commit.parents:
         diff = repo.diff(commit.parents[0], commit)
         diff.find_similar()
     else:
         diff = commit.tree.diff_to_tree(swap=True)
-    return diff, [patch for patch in diff]
+    return diff
+
+
+def _get_patches(diff):
+    return [patch for patch in diff]
 
 
 SPLIT_PATCH_TXT_RE = re.compile(r'^\+\+\+\ b\/(.*?)\n(@@.*?)(?=\n^diff|\n\Z)', re.M | re.S)
@@ -393,7 +397,8 @@ def _repos_convert_commit(repo_key, repo, commit, include_diff=False):
         } for c in commit.parents],
     }
     if include_diff:
-        diff, patches = _get_patches(repo, commit)
+        diff = _get_diff(repo, commit)
+        patches = _get_patches(diff)
         patches_txt = _get_patches_txt(diff)
         patches_additions = sum(patch.additions for patch in patches)
         patches_deletions = sum(patch.deletions for patch in patches)
@@ -665,6 +670,22 @@ def get_repos_commit(repo_key, sha=None, branch_or_tag_or_sha=None):
     if branch_or_tag_or_sha:
         commit = _get_commit_for_refspec(repo, branch_or_tag_or_sha)
     return _repos_convert_commit(repo_key, repo, commit, include_diff=True)
+
+
+@restfulgit.route('/repos/<repo_key>/commit/<branch_or_tag_or_sha>.diff')
+@restfulgit.route('/repos/<repo_key>/commit/<sha:sha>.diff')
+@corsify
+def get_repos_diff(repo_key, sha=None, branch_or_tag_or_sha=None):
+    repo = _get_repo(repo_key)
+    if sha:
+        try:
+            commit = _get_commit(repo, sha)
+        except NotFound:
+            branch_or_tag_or_sha = sha
+    if branch_or_tag_or_sha:
+        commit = _get_commit_for_refspec(repo, branch_or_tag_or_sha)
+    diff = _get_diff(repo, commit)
+    return Response(diff.patch, mimetype="text/x-diff")
 
 
 TAG_REF_PREFIX = "refs/tags/"
