@@ -162,6 +162,37 @@ def _get_patches_txt(diff):
     return dict(m for m in matches)
 
 
+DEFAULT_GIT_DESCRIPTION = "Unnamed repository; edit this file 'description' to name the repository.\n"
+
+
+def _get_repo_description(repo_key):
+    relative_paths = (
+        os.path.join(repo_key, 'description'),
+        os.path.join(repo_key, '.git', 'description'),
+    )
+    extant_relative_paths = (
+        relative_path
+        for relative_path in relative_paths
+        if os.path.isfile(safe_join(current_app.config['RESTFULGIT_REPO_BASE_PATH'], relative_path))
+    )
+    extant_relative_path = next(extant_relative_paths, None)
+    if extant_relative_path is None:
+        return None
+    with open(os.path.join(current_app.config['RESTFULGIT_REPO_BASE_PATH'], extant_relative_path), 'r') as content_file:
+        description = content_file.read()
+        if description == DEFAULT_GIT_DESCRIPTION:
+            description = None
+        return description
+
+
+def _convert_repo(repo_key):
+    description = _get_repo_description(repo_key)
+    return {
+        "name": repo_key,
+        "description": description,
+        "url": url_for('.get_repo', _external=True, repo_key=repo_key)
+    }
+
 def _convert_signature(sig):
     return {
         "name": sig.name,
@@ -536,26 +567,12 @@ def get_tag(repo_key, sha):
     return _convert_tag(repo_key, repo, tag)
 
 
-PLAIN_TEXT = 'text/plain'
-
-
-@restfulgit.route('/repos/<repo_key>/description/')
+@restfulgit.route('/repos/<repo_key>/')
 @corsify
-def get_description(repo_key):
+@jsonify
+def get_repo(repo_key):
     _get_repo(repo_key)  # check repo_key validity
-    relative_paths = (
-        os.path.join(repo_key, 'description'),
-        os.path.join(repo_key, '.git', 'description'),
-    )
-    extant_relative_paths = (
-        relative_path
-        for relative_path in relative_paths
-        if os.path.isfile(safe_join(current_app.config['RESTFULGIT_REPO_BASE_PATH'], relative_path))
-    )
-    extant_relative_path = next(extant_relative_paths, None)
-    if extant_relative_path is None:
-        return Response("", mimetype=PLAIN_TEXT)
-    return send_from_directory(current_app.config['RESTFULGIT_REPO_BASE_PATH'], extant_relative_path, mimetype=PLAIN_TEXT)
+    return _convert_repo(repo_key)
 
 
 @restfulgit.route('/repos/')
@@ -571,7 +588,7 @@ def get_repo_list():
     working_copies = set(name for name, full_path in subdirs if os.path.isdir(safe_join(full_path, '.git')))
     repositories = list(mirrors | working_copies)
     repositories.sort()
-    return {'repos': repositories}
+    return [_convert_repo(repo_key) for repo_key in repositories]
 
 
 @restfulgit.route('/repos/<repo_key>/git/refs/')
