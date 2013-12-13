@@ -672,8 +672,8 @@ def get_repos_commit(repo_key, sha=None, branch_or_tag_or_sha=None):
     return _repos_convert_commit(repo_key, repo, commit, include_diff=True)
 
 
-@restfulgit.route('/repos/<repo_key>/commit/<branch_or_tag_or_sha>.diff')
-@restfulgit.route('/repos/<repo_key>/commit/<sha:sha>.diff')
+@restfulgit.route('/repos/<repo_key>/commits/<branch_or_tag_or_sha>.diff')
+@restfulgit.route('/repos/<repo_key>/commits/<sha:sha>.diff')
 @corsify
 def get_repos_diff(repo_key, sha=None, branch_or_tag_or_sha=None):
     repo = _get_repo(repo_key)
