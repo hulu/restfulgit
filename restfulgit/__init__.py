@@ -591,6 +591,22 @@ def get_repo_list():
     return [_convert_repo(repo_key) for repo_key in repositories]
 
 
+@restfulgit.route('/repos/<repo_key>/branches/')
+@corsify
+@jsonify
+def get_branches(repo_key):
+    repo = _get_repo(repo_key)
+    branches = [repo.lookup_branch(branch_name) for branch_name in repo.listall_branches()]
+    return [{
+        "name": branch.branch_name,
+        "commit": {
+            "sha": branch.target.hex,
+            "url": url_for('.get_repos_commit', _external=True,
+                           repo_key=repo_key, sha=branch.target.hex),
+        },
+    } for branch in branches]
+
+
 @restfulgit.route('/repos/<repo_key>/git/refs/')
 @restfulgit.route('/repos/<repo_key>/git/refs/<path:ref_path>')
 @corsify
