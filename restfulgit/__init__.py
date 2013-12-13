@@ -240,7 +240,6 @@ def _convert_commit(repo_key, commit):
     }
 
 
-
 def _tree_entries(repo_key, repo, tree, recursive=False, path=''):
     entry_list = []
     for entry in tree:
@@ -385,7 +384,7 @@ def _convert_patch(repo_key, commit, patch, patches_txt):
 
 def _repos_convert_commit(repo_key, repo, commit, include_diff=False):
     result = {
-        "commit" : _convert_commit(repo_key, commit),
+        "commit": _convert_commit(repo_key, commit),
         "url": url_for('.get_repos_commit', _external=True,
                        repo_key=repo_key, branch_or_tag_or_sha=commit.hex),
         "parents": [{
@@ -416,7 +415,7 @@ def _convert_branch(repo_key, repo, branch):
         "name": branch.branch_name,
         "commit": _repos_convert_commit(repo_key, repo, branch.get_object()),
         "url": url_for('.get_branch', _external=True,
-                        repo_key=repo_key, branch_name=branch.branch_name),
+                       repo_key=repo_key, branch_name=branch.branch_name),
         "_links": {
             # For some reason GitHub API for branch does the self-link like this
             # instead of with "url" as everywhere else.
@@ -702,9 +701,9 @@ def get_tags(repo_key):
             "sha": tag.get_object().hex,
             "url": url_for('.get_repos_commit', _external=True,
                            repo_key=repo_key, branch_or_tag_or_sha=tag.get_object().hex),
-        },
+            },
         "url": url_for('.get_repos_tag', _external=True,
-                        repo_key=repo_key, tag_name=tag.shorthand),
+                       repo_key=repo_key, tag_name=tag.shorthand),
     } for tag in tags]
 
 
@@ -720,7 +719,7 @@ def get_repos_tag(repo_key, tag_name):
         "name": tag.shorthand,
         "commit": _repos_convert_commit(repo_key, repo, tag.get_object()),
         "url": url_for('.get_repos_tag', _external=True,
-                        repo_key=repo_key, tag_name=tag.shorthand),
+                       repo_key=repo_key, tag_name=tag.shorthand),
     }
     # simple tag
     if tag.target != tag.get_object().oid:
@@ -741,7 +740,7 @@ def get_branches(repo_key):
             "sha": branch.target.hex,
             "url": url_for('.get_repos_commit', _external=True,
                            repo_key=repo_key, branch_or_tag_or_sha=branch.target.hex),
-        },
+            },
     } for branch in branches]
 
 
