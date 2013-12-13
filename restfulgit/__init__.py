@@ -145,9 +145,7 @@ def _get_commit_for_refspec(repo, branch_or_tag_or_sha):
     if commit_sha is None:
         ref_to_tag = _lookup_ref(repo, "tags/" + branch_or_tag_or_sha)
         if ref_to_tag is not None:
-            sha_of_tag_itself = ref_to_tag.resolve().target.hex
-            tag = _get_tag(repo, sha_of_tag_itself)
-            commit_sha = tag.target.hex
+            commit_sha = ref_to_tag.get_object().hex
     # commit?
     if commit_sha is None:
         commit_sha = branch_or_tag_or_sha
