@@ -684,7 +684,30 @@ def get_tags(repo_key):
             "url": url_for('.get_repos_commit', _external=True,
                            repo_key=repo_key, branch_or_tag_or_sha=tag.get_object().hex),
         },
+        "url": url_for('.get_repos_tag', _external=True,
+                        repo_key=repo_key, tag_name=tag.shorthand),
     } for tag in tags]
+
+
+@restfulgit.route('/repos/<repo_key>/tags/<tag_name>/')
+@corsify
+@jsonify
+def get_repos_tag(repo_key, tag_name):
+    repo = _get_repo(repo_key)
+    tag = _lookup_ref(repo, TAG_REF_PREFIX + tag_name)
+    if tag is None:
+        raise NotFound("tag not found")
+    result = {
+        "name": tag.shorthand,
+        "commit": _repos_convert_commit(repo_key, repo, tag.get_object()),
+        "url": url_for('.get_repos_tag', _external=True,
+                        repo_key=repo_key, tag_name=tag.shorthand),
+    }
+    # simple tag
+    if tag.target != tag.get_object().oid:
+        tag_obj = repo[tag.target]
+        result['tag'] = _convert_tag(repo_key, repo, tag_obj)
+    return result
 
 
 @restfulgit.route('/repos/<repo_key>/branches/')
@@ -701,7 +724,6 @@ def get_branches(repo_key):
                            repo_key=repo_key, branch_or_tag_or_sha=branch.target.hex),
         },
     } for branch in branches]
-
 
 
 @restfulgit.route('/repos/<repo_key>/branches/<branch_name>/')
