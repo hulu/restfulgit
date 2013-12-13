@@ -568,15 +568,6 @@ def get_commit(repo_key, sha):
     return _convert_commit(repo_key, commit)
 
 
-@restfulgit.route('/repos/<repo_key>/commits/<sha:sha>/')
-@corsify
-@jsonify
-def get_repos_commit(repo_key, sha):
-    repo = _get_repo(repo_key)
-    commit = _get_commit(repo, sha)
-    return _repos_convert_commit(repo_key, repo, commit, include_diff=True)
-
-
 @restfulgit.route('/repos/<repo_key>/git/trees/<sha:sha>/')
 @corsify
 @jsonify
@@ -658,6 +649,15 @@ def get_repo_list():
     repositories = list(mirrors | working_copies)
     repositories.sort()
     return [_convert_repo(repo_key) for repo_key in repositories]
+
+
+@restfulgit.route('/repos/<repo_key>/commits/<sha:sha>/')
+@corsify
+@jsonify
+def get_repos_commit(repo_key, sha):
+    repo = _get_repo(repo_key)
+    commit = _get_commit(repo, sha)
+    return _repos_convert_commit(repo_key, repo, commit, include_diff=True)
 
 
 @restfulgit.route('/repos/<repo_key>/branches/')
