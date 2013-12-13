@@ -677,7 +677,7 @@ def get_branches(repo_key):
 
 
 
-@restfulgit.route('/repos/<repo_key>/branches/<branch_name>')
+@restfulgit.route('/repos/<repo_key>/branches/<branch_name>/')
 @corsify
 @jsonify
 def get_branch(repo_key, branch_name):
