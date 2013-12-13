@@ -1,9 +1,11 @@
 # coding=utf-8
 from __future__ import print_function
 
+import flask
 from flask import Flask, url_for, request, Response, current_app, Blueprint, safe_join, send_from_directory, make_response
-from werkzeug.exceptions import NotFound, BadRequest, HTTPException, default_exceptions
+from werkzeug.exceptions import NotFound, BadRequest, HTTPException, PreconditionRequired, default_exceptions
 from werkzeug.routing import BaseConverter
+from werkzeug import ETagResponseMixin
 
 from pygit2 import (Repository,
                     GIT_OBJ_COMMIT, GIT_OBJ_TREE, GIT_OBJ_BLOB, GIT_OBJ_TAG,
@@ -42,6 +44,9 @@ class DefaultConfig(object):
     RESTFULGIT_CORS_ALLOW_CREDENTIALS = False
     RESTFULGIT_CORS_MAX_AGE = timedelta(days=30)
     RESTFULGIT_CORS_ALLOWED_ORIGIN = "*"
+    RESTFULGIT_CACHE_CONTROL = "max-age=3600"
+
+
 
 
 app = Flask(__name__)
@@ -284,6 +289,50 @@ def _convert_ref(repo_key, ref, obj):
     }
 
 
+# Modified from the conditional-get snippet at:
+# http://flask.pocoo.org/snippets/95/
+class NotModified(HTTPException):
+    code = 304
+    def get_response(self, environment):
+        return flask.Response(status=304)
+
+
+def conditional(func):
+    '''
+        Requires the decorated function to return a response object
+        Decorated function must also define flask.g.etag
+    '''
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        flask.g.condtnl_etags_start = True
+        response = func(*args, **kwargs)
+        response.set_etag(flask.g.etag)
+        response.headers['Cache-Control'] = current_app.config['RESTFULGIT_CACHE_CONTROL']
+        return response
+    return wrapper
+
+
+_old_set_etag = ETagResponseMixin.set_etag
+@functools.wraps(ETagResponseMixin.set_etag)
+def _new_set_etag(self, etag, weak=False):
+    print('I do stuff- really!')
+    if (hasattr(flask.g, 'condtnl_etags_start') and
+        flask.g.condtnl_etags_start):
+        # Not sure if we'll use these, but completeness is nice
+        if flask.request.method in ('PUT', 'DELETE', 'PATCH'):
+            if not flask.request.if_match:
+                raise PreconditionRequired
+            if etag not in flask.request.if_match:
+                flask.abort(412)
+        elif (flask.request.method == 'GET' and
+              flask.request.if_none_match and
+              etag in flask.request.if_none_match):
+            raise NotModified
+        flask.g.condtnl_etags_start = False
+    _old_set_etag(self, etag, weak)
+ETagResponseMixin.set_etag = _new_set_etag
+
+
 def jsonify(func):
     def dthandler(obj):
         if hasattr(obj, 'isoformat'):
@@ -417,18 +466,22 @@ def get_commit_list(repo_key):
 
 
 @restfulgit.route('/repos/<repo_key>/git/commits/<sha:sha>/')
+@conditional
 @corsify
 @jsonify
 def get_commit(repo_key, sha):
+    flask.g.etag = sha
     repo = _get_repo(repo_key)
     commit = _get_commit(repo, sha)
     return _convert_commit(repo_key, commit)
 
 
 @restfulgit.route('/repos/<repo_key>/git/trees/<sha:sha>/')
+@conditional
 @corsify
 @jsonify
 def get_tree(repo_key, sha):
+    flask.g.etag = sha
     recursive = request.args.get('recursive') == '1'
     repo = _get_repo(repo_key)
     tree = _get_tree(repo, sha)
@@ -436,9 +489,11 @@ def get_tree(repo_key, sha):
 
 
 @restfulgit.route('/repos/<repo_key>/git/blobs/<sha:sha>/')
+@conditional
 @corsify
 @jsonify
 def get_blob(repo_key, sha):
+    flask.g.etag = sha
     repo = _get_repo(repo_key)
     try:
         blob = repo[unicode(sha)]
@@ -450,9 +505,11 @@ def get_blob(repo_key, sha):
 
 
 @restfulgit.route('/repos/<repo_key>/git/tags/<sha:sha>/')
+@conditional
 @corsify
 @jsonify
 def get_tag(repo_key, sha):
+    flask.g.etag = sha
     repo = _get_repo(repo_key)
     tag = _get_tag(repo, sha)
     return _convert_tag(repo_key, repo, tag)
