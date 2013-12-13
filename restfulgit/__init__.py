@@ -153,7 +153,7 @@ def _get_commit_for_refspec(repo, branch_or_tag_or_sha):
         commit_sha = branch_or_tag_or_sha
     try:
         return _get_commit(repo, commit_sha)
-    except ValueError:
+    except (ValueError, NotFound):
         raise NotFound("no such branch, tag, or commit SHA")
 
 
@@ -652,11 +652,18 @@ def get_repo_list():
 
 
 @restfulgit.route('/repos/<repo_key>/commits/<branch_or_tag_or_sha>/')
+@restfulgit.route('/repos/<repo_key>/commits/<sha:sha>/')
 @corsify
 @jsonify
-def get_repos_commit(repo_key, branch_or_tag_or_sha):
+def get_repos_commit(repo_key, sha=None, branch_or_tag_or_sha=None):
     repo = _get_repo(repo_key)
-    commit = _get_commit_for_refspec(repo, branch_or_tag_or_sha)
+    if sha:
+        try:
+            commit = _get_commit(repo, sha)
+        except NotFound:
+            branch_or_tag_or_sha = sha
+    else:
+        commit = _get_commit_for_refspec(repo, branch_or_tag_or_sha)
     return _repos_convert_commit(repo_key, repo, commit, include_diff=True)
 
 
