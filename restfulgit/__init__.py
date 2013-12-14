@@ -521,7 +521,7 @@ def get_refs(repo_key, ref_path=None):
     return ref_data
 
 
-@restfulgit.route('/repos/<repo_key>/blob/<branch_or_tag_or_sha>/<path:file_path>')
+@restfulgit.route('/repos/<repo_key>/raw/<branch_or_tag_or_sha>/<path:file_path>')
 @corsify
 def get_raw(repo_key, branch_or_tag_or_sha, file_path):
     repo = _get_repo(repo_key)

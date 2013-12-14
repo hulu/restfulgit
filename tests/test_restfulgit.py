@@ -640,11 +640,11 @@ class RefsTestCase(_RestfulGitTestCase):
 
 class RawFileTestCase(_RestfulGitTestCase):
     def test_nonexistent_branch(self):
-        resp = self.client.get('/repos/restfulgit/blob/this-branch-does-not-exist/LICENSE.md')
+        resp = self.client.get('/repos/restfulgit/raw/this-branch-does-not-exist/LICENSE.md')
         self.assertJson404(resp)
 
     def test_nonexistent_file_path(self):
-        resp = self.client.get('/repos/restfulgit/blob/master/this_path/does_not/exist.txt')
+        resp = self.client.get('/repos/restfulgit/raw/master/this_path/does_not/exist.txt')
         self.assertJson404(resp)
 
     def test_mime_type_logic(self):
@@ -656,7 +656,7 @@ class RawFileTestCase(_RestfulGitTestCase):
         #     api.py's SHA-512 = e948e8d0b0d0703d972279382a002c90040ff19d636e96927262d63e1f1429526539ea781744d2f3a65a5938b59e0c5f57adadc26f797480efcfc6f7dcff3d81
         # tag "ambiguous" = commit ff6405b
         #     api.py's SHA-512 = a50e02753d282c0e35630bbbc16a525ea4e0b2e2af668135b603c8e1467c7269bcbe9075886baf3f08ce195a7eab1e0b8179080af08a2c0f3eda3b9518650fa1
-        resp = self.client.get("/repos/restfulgit/blob/ambiguous/api.py")
+        resp = self.client.get("/repos/restfulgit/raw/ambiguous/api.py")
         self.assert200(resp)
         self.assertEqual(
             'e948e8d0b0d0703d972279382a002c90040ff19d636e96927262d63e1f1429526539ea781744d2f3a65a5938b59e0c5f57adadc26f797480efcfc6f7dcff3d81',
@@ -664,7 +664,7 @@ class RawFileTestCase(_RestfulGitTestCase):
         )
 
     def test_sha_works(self):
-        resp = self.client.get('/repos/restfulgit/blob/326d80cd68ec3413fe6eaca99c52c59ca428a0d0/api.py')
+        resp = self.client.get('/repos/restfulgit/raw/326d80cd68ec3413fe6eaca99c52c59ca428a0d0/api.py')
         self.assert200(resp)
         self.assertEqual(
             '0229e0a11f6a3c8c9b84c50ecbd54d476edf5c0767137e37526d1961210530aa6bd93f67a70bd4ea1998d65cdbe74c7fd8b90482ef5cbdf244cc697e3135e497',
@@ -672,7 +672,7 @@ class RawFileTestCase(_RestfulGitTestCase):
         )
 
     def test_tag_works(self):
-        resp = self.client.get('/repos/restfulgit/blob/initial/api.py')
+        resp = self.client.get('/repos/restfulgit/raw/initial/api.py')
         self.assert200(resp)
         self.assertEqual(
             '1c846bb4d44c08073c487316a7dc02d97d825aecf50546caf9bf10277c01d17e19860d5f86de877268dd969bd081c7595991c325e0ab492374b956e3a6c9967f',
@@ -680,7 +680,7 @@ class RawFileTestCase(_RestfulGitTestCase):
         )
 
     def test_branch_works(self):
-        resp = self.client.get('/repos/restfulgit/blob/master/LICENSE.md')
+        resp = self.client.get('/repos/restfulgit/raw/master/LICENSE.md')
         self.assert200(resp)
         self.assertEqual(
             '7201955547d83fb4e740adf52d95c3044591ec8b60e4a136f5486a05d1dfaac2bd44d4546830cf0f32d05b40ce5928d0b3f71e0b2628488ea0db1427a6dd2988',
@@ -736,7 +736,7 @@ class CorsTestCase(_RestfulGitTestCase):
 
     @property
     def arbitrary_response(self):
-        resp = self.client.get('/repos/restfulgit/blob/master/LICENSE.md')
+        resp = self.client.get('/repos/restfulgit/raw/master/LICENSE.md')
         self.assert200(resp)
         return resp
 
@@ -765,13 +765,13 @@ class CorsTestCase(_RestfulGitTestCase):
 
     def test_disabled_disables_preflight(self):
         with self.config_override('RESTFULGIT_ENABLE_CORS', False):
-            resp = self.client.options('/repos/restfulgit/blob/master/LICENSE.md')
+            resp = self.client.options('/repos/restfulgit/raw/master/LICENSE.md')
             self.assert200(resp)
             self.assert_cors_disabled_for(resp)
 
     def test_enabled_enables_preflight(self):
         with self.config_override('RESTFULGIT_ENABLE_CORS', True):
-            resp = self.client.options('/repos/restfulgit/blob/master/LICENSE.md')
+            resp = self.client.options('/repos/restfulgit/raw/master/LICENSE.md')
             self.assert200(resp)
             self.assert_cors_enabled_for(resp)
 
