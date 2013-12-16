@@ -1,0 +1,27 @@
+diff --git a/README.md b/README.md
+index 1b51a0e..c65dc8c 100644
+--- a/README.md
++++ b/README.md
+@@ -4,6 +4,11 @@ REST API for Git data
+ Provides a read-only restful interface for accessing data from Git repositories (local to the server).
+ Modeled off the GitHub Git DB API for compatibility (see http://developer.github.com/v3/git/).
+ 
++Requires: flask, pygit2 (>= 0.18.1), libgit2 (>= 0.18).
++Must modify: REPO_BASE (root path for repositories, note only repositories immediately under this path are currently supported).
++
++api.py is a valid WSGI application.
++
+ --
+ 
+ All of these routes return JSON unless otherwise specified.
+diff --git a/requirements.txt b/requirements.txt
+new file mode 100644
+index 0000000..da23f6c
+--- /dev/null
++++ b/requirements.txt
+@@ -0,0 +1,5 @@
++Flask==0.9
++Jinja2==2.6
++Werkzeug==0.8.3
++pygit2==0.18.1
++wsgiref==0.1.2
