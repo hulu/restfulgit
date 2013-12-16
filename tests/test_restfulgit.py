@@ -18,7 +18,8 @@ os.environ[b'RESTFULGIT_CONFIG'] = os.path.join(RESTFULGIT_REPO, 'example_config
 import restfulgit
 
 
-TEST_SUBDIR = os.path.join(RESTFULGIT_REPO, 'test')
+TEST_SUBDIR = os.path.join(RESTFULGIT_REPO, 'tests')
+FIXTURES_DIR = os.path.join(TEST_SUBDIR, 'fixtures')
 GIT_MIRROR_DESCRIPTION_FILEPATH = os.path.join(RESTFULGIT_REPO, 'description')
 NORMAL_CLONE_DESCRIPTION_FILEPATH = os.path.join(RESTFULGIT_REPO, '.git', 'description')
 FIRST_COMMIT = "07b9bf1540305153ceeb4519a50b588c35a35464"
@@ -62,6 +63,14 @@ class _RestfulGitTestCase(_FlaskTestCase):
             yield
         finally:
             self.app.config[key] = orig_val
+
+    def _get_fixture_text(self, filename):
+        filepath = os.path.join(FIXTURES_DIR, filename)
+        with open(filepath, 'r') as fixture_file:
+            return fixture_file.read()
+
+    def assertTextEqualsFixture(self, text, fixture):
+        self.assertEqual(text, self._get_fixture_text(fixture))
 
 
 class RepoKeyTestCase(_RestfulGitTestCase):
@@ -415,6 +424,12 @@ class SimpleSHATestCase(_RestfulGitTestCase):
                 "message": "initial commit\n"
             }
         )
+
+    def test_get_diff_works(self):
+        resp = self.client.get('/repos/restfulgit/commits/d408fc2428bc6444cabd7f7b46edbe70b6992b16.diff')
+        self.assert200(resp)
+        self.assertEqual(resp.headers.get_all('Content-Type'), [b'text/x-diff; charset=utf-8'])
+        self.assertTextEqualsFixture(resp.get_data(), 'd408fc2428bc6444cabd7f7b46edbe70b6992b16.diff')
 
 
 class RefsTestCase(_RestfulGitTestCase):
