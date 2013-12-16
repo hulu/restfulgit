@@ -282,7 +282,7 @@ class SimpleSHATestCase(_RestfulGitTestCase):
         resp = self.client.get('/repos/restfulgit/git/tags/{}/'.format(IMPROBABLE_SHA))
         self.assertJson404(resp)
 
-    def test_get_commit_works(self):
+    def test_get_git_commit_works(self):
         resp = self.client.get('/repos/restfulgit/git/commits/{}/'.format(FIRST_COMMIT))
         self.assert200(resp)
         self.assertEqual(
@@ -430,6 +430,29 @@ class SimpleSHATestCase(_RestfulGitTestCase):
         self.assert200(resp)
         self.assertEqual(resp.headers.get_all('Content-Type'), [b'text/x-diff; charset=utf-8'])
         self.assertTextEqualsFixture(resp.get_data(), 'd408fc2428bc6444cabd7f7b46edbe70b6992b16.diff')
+
+    def test_get_repo_tags_works(self):
+        # From https://api.github.com/repos/hulu/restfulgit/tags with necessary adjustments
+        reference_tag = {
+            "name": "initial",
+            "commit": {
+                "sha": "07b9bf1540305153ceeb4519a50b588c35a35464",
+                "url": "http://localhost/repos/restfulgit/commits/07b9bf1540305153ceeb4519a50b588c35a35464/"
+            },
+            'url': 'http://localhost/repos/restfulgit/tags/initial/'  # NOTE: RestfulGit extension
+        }
+        resp = self.client.get('/repos/restfulgit/tags/')
+        self.assert200(resp)
+        json = resp.json
+        self.assertIsInstance(json, list)
+        for tag in json:
+            self.assertIsInstance(tag, dict)
+            self.assertIn('name', tag)
+        initial_tags = [tag for tag in json if tag['name'] == 'initial']
+        self.assertEqual(len(initial_tags), 1)
+        initial_tag = initial_tags[0]
+        self.maxDiff = None
+        self.assertEqual(initial_tag, reference_tag)
 
 
 class RefsTestCase(_RestfulGitTestCase):
