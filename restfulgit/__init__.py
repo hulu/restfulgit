@@ -222,14 +222,17 @@ def _convert_signature(sig):
     }
 
 
-def _convert_commit(repo_key, commit):
+def _convert_commit(repo_key, commit, porcelain=False):
+    message = commit.message
+    if porcelain:
+        message = message.rstrip('\n')
     return {
         "url": url_for('.get_commit', _external=True,
                        repo_key=repo_key, sha=commit.hex),
         "sha": commit.hex,
         "author": _convert_signature(commit.author),
         "committer": _convert_signature(commit.committer),
-        "message": commit.message,
+        "message": message,
         "tree": {
             "sha": commit.tree.hex,
             "url": url_for('.get_tree', _external=True,
@@ -237,7 +240,7 @@ def _convert_commit(repo_key, commit):
         },
         "parents": [{
             "sha": c.hex,
-            "url": url_for('.get_commit', _external=True,
+            "url": url_for(('.get_repos_commit' if porcelain else '.get_commit'), _external=True,
                            repo_key=repo_key, sha=c.hex)
         } for c in commit.parents]
     }
@@ -367,6 +370,7 @@ GIT_STATUS_TO_NAME = {
 
 def _convert_patch(repo_key, commit, patch, patches_txt):
     deleted = patch.status == 'D'
+    branch_or_tag_or_sha = (commit.hex if not deleted else commit.parents[0].hex)
     result = {
         "sha": patch.new_oid if not deleted else patch.old_oid,
         "status": GIT_STATUS_TO_NAME[patch.status],
@@ -377,8 +381,13 @@ def _convert_patch(repo_key, commit, patch, patches_txt):
         "raw_url": url_for('.get_raw',
                            _external=True,
                            repo_key=repo_key,
-                           branch_or_tag_or_sha=commit.hex if not deleted else commit.parents[0].hex,
+                           branch_or_tag_or_sha=branch_or_tag_or_sha,
                            file_path=patch.new_file_path),
+        "contents_url": url_for('.get_contents',
+                                _external=True,
+                                repo_key=repo_key,
+                                file_path=patch.new_file_path,
+                                ref=branch_or_tag_or_sha),
     }
     if patch.new_file_path in patches_txt:
         result['patch'] = patches_txt[patch.new_file_path]
@@ -386,8 +395,12 @@ def _convert_patch(repo_key, commit, patch, patches_txt):
 
 
 def _repos_convert_commit(repo_key, repo, commit, include_diff=False):
+    plain_commit_json = _convert_commit(repo_key, commit, porcelain=True)
     result = {
-        "commit": _convert_commit(repo_key, commit),
+        "commit": plain_commit_json,
+        "sha": plain_commit_json['sha'],
+        "author": plain_commit_json['author'],
+        "committer": plain_commit_json['committer'],
         "url": url_for('.get_repos_commit', _external=True,
                        repo_key=repo_key, branch_or_tag_or_sha=commit.hex),
         "parents": [{
@@ -415,14 +428,9 @@ def _repos_convert_commit(repo_key, repo, commit, include_diff=False):
 
 def _convert_branch(repo_key, repo, branch):
     url = url_for('.get_branch', _external=True, repo_key=repo_key, branch_name=branch.branch_name)
-    commit = _repos_convert_commit(repo_key, repo, branch.get_object())
-    innner_commit = commit['commit']
-    commit['sha'] = innner_commit['sha']
-    commit['author'] = innner_commit['author']
-    commit['committer'] = innner_commit['committer']
     return {
         "name": branch.branch_name,
-        "commit": commit,
+        "commit": _repos_convert_commit(repo_key, repo, branch.get_object()),
         "url": url,
         "_links": {
             # For some reason GitHub API for branch does the self-link like this
@@ -673,6 +681,7 @@ def get_repo_list():
 @corsify
 @jsonify
 def get_repos_commit(repo_key, sha=None, branch_or_tag_or_sha=None):
+    context.restfulgit_force_utc = True
     repo = _get_repo(repo_key)
     if sha:
         try:
@@ -763,6 +772,7 @@ def get_branches(repo_key):
 @corsify
 @jsonify
 def get_branch(repo_key, branch_name):
+    context.restfulgit_force_utc = True
     repo = _get_repo(repo_key)
     branch = _get_branch(repo, branch_name)
     return _convert_branch(repo_key, repo, branch)

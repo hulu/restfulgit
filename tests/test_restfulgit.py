@@ -452,7 +452,7 @@ class SimpleSHATestCase(_RestfulGitTestCase):
         self.assertEqual(len(initial_tags), 1)
         initial_tag = initial_tags[0]
         self.maxDiff = None
-        self.assertEqual(initial_tag, reference_tag)
+        self.assertEqual(reference_tag, initial_tag)
 
     def test_get_repo_branches_works(self):
         # From https://api.github.com/repos/hulu/restfulgit/branches with necessary adjustments
@@ -473,7 +473,67 @@ class SimpleSHATestCase(_RestfulGitTestCase):
         ambiguous_branches = [branch for branch in json if branch['name'] == 'ambiguous']
         self.assertEqual(len(ambiguous_branches), 1)
         ambiguous_branch = ambiguous_branches[0]
-        self.assertEqual(ambiguous_branch, reference_branch)
+        self.assertEqual(reference_branch, ambiguous_branch)
+
+    def test_get_repo_branch_works(self):
+        # From https://api.github.com/repos/hulu/restfulgit/branches/ambiguous with necessary adjustments
+        reference = {
+            "name": "ambiguous",
+            "commit": {
+                "sha": "1f51b91ac383806df9d322ae67bbad3364f50811",
+                "commit": {
+                    "author": {
+                      "name": "Rajiv Makhijani",
+                      "email": "rajiv@hulu.com",
+                      "date": "2013-02-25T12:35:29Z"
+                    },
+                    "committer": {
+                      "name": "Rajiv Makhijani",
+                      "email": "rajiv@hulu.com",
+                      "date": "2013-02-25T12:35:29Z"
+                    },
+                    "message": "Support submodule in tree-listings",
+                    "tree": {
+                      "sha": "1404e1766a3269f5a73b3d2ec8c81b7ea3ad6e09",
+                      "url": "http://localhost/repos/restfulgit/git/trees/1404e1766a3269f5a73b3d2ec8c81b7ea3ad6e09/"
+                    },
+                    "url": "http://localhost/repos/restfulgit/git/commits/1f51b91ac383806df9d322ae67bbad3364f50811/",
+                    "sha": "1f51b91ac383806df9d322ae67bbad3364f50811",  # NOTE: RestfulGit extension
+                    "parents": [  # NOTE: RestfulGit extension
+                        {
+                          "sha": "ff6405b71273b5c2c50d5c33d5cf962af5390542",
+                          "url": "http://localhost/repos/restfulgit/commits/ff6405b71273b5c2c50d5c33d5cf962af5390542/",
+                        }
+                    ]
+                },
+                "url": "http://localhost/repos/restfulgit/commits/1f51b91ac383806df9d322ae67bbad3364f50811/",
+                "author": {
+                    "name": "Rajiv Makhijani",
+                    "email": "rajiv@hulu.com",
+                    "date": "2013-02-25T12:35:29Z"
+                },
+                "committer": {
+                    "name": "Rajiv Makhijani",
+                    "email": "rajiv@hulu.com",
+                    "date": "2013-02-25T12:35:29Z"
+                },
+                "parents": [
+                    {
+                      "sha": "ff6405b71273b5c2c50d5c33d5cf962af5390542",
+                      "url": "http://localhost/repos/restfulgit/commits/ff6405b71273b5c2c50d5c33d5cf962af5390542/",
+                    }
+                ]
+            },
+            "_links": {
+                "self": "http://localhost/repos/restfulgit/branches/ambiguous/",
+            },
+            'url': 'http://localhost/repos/restfulgit/branches/ambiguous/'
+        }
+        resp = self.client.get('/repos/restfulgit/branches/ambiguous/')
+        self.assert200(resp)
+        json = resp.json
+        self.maxDiff = None
+        self.assertEqual(reference, json)
 
 
 class RefsTestCase(_RestfulGitTestCase):
