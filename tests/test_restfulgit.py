@@ -511,6 +511,65 @@ class SimpleSHATestCase(_RestfulGitTestCase):
         self.assertEqual(resp.headers.get_all('Content-Type'), [b'text/x-diff; charset=utf-8'])
         self.assertTextEqualsFixture(resp.get_data(), 'd408fc2428bc6444cabd7f7b46edbe70b6992b16.diff')
 
+    def test_get_repos_tag_works(self):
+        resp = self.client.get('/repos/restfulgit/tags/initial/')
+        self.assert200(resp)
+        self.assertEqual(resp.json, {
+            'commit': {
+                'author': {
+                    'date': '2013-02-24T05:25:46-08:00',
+                    'email': 'rajiv@hulu.com',
+                    'name': 'Rajiv Makhijani'
+                },
+                'commit': {
+                    'author': {
+                        'date': '2013-02-24T05:25:46-08:00',
+                        'email': 'rajiv@hulu.com',
+                        'name': 'Rajiv Makhijani'
+                    },
+                    'committer': {
+                        'date': '2013-02-24T05:25:46-08:00',
+                        'email': 'rajiv@hulu.com',
+                        'name': 'Rajiv Makhijani'
+                    },
+                    'message': 'Initial support for read-only REST api for Git plumbing',
+                    'parents': [],
+                    'sha': '07b9bf1540305153ceeb4519a50b588c35a35464',
+                    'tree': {
+                        'sha': '6ca22167185c31554aa6157306e68dfd612d6345',
+                        'url': 'http://localhost/repos/restfulgit/git/trees/6ca22167185c31554aa6157306e68dfd612d6345/'
+                    },
+                    'url': 'http://localhost/repos/restfulgit/git/commits/07b9bf1540305153ceeb4519a50b588c35a35464/'
+                },
+               'committer': {
+                    'date': '2013-02-24T05:25:46-08:00',
+                    'email': 'rajiv@hulu.com',
+                    'name': 'Rajiv Makhijani'
+                },
+                'parents': [],
+                'sha': '07b9bf1540305153ceeb4519a50b588c35a35464',
+                'url': 'http://localhost/repos/restfulgit/commits/07b9bf1540305153ceeb4519a50b588c35a35464/'
+            },
+            'name': 'initial',
+            'tag': {
+                'message': 'initial commit\n',
+                'object': {
+                    'sha': '07b9bf1540305153ceeb4519a50b588c35a35464',
+                    'type': 'commit',
+                    'url': 'http://localhost/repos/restfulgit/git/commits/07b9bf1540305153ceeb4519a50b588c35a35464/'
+                },
+            'sha': '1dffc031c9beda43ff94c526cbc00a30d231c079',
+            'tag': 'initial',
+            'tagger': {
+                'date': '2013-09-27T18:14:09-07:00',
+                'email': 'chris.rebert@hulu.com',
+                'name': 'Chris Rebert'
+            },
+            'url': 'http://localhost/repos/restfulgit/git/tags/1dffc031c9beda43ff94c526cbc00a30d231c079/'
+        },
+        'url': 'http://localhost/repos/restfulgit/tags/initial/'
+    })
+
     def test_get_repo_tags_works(self):
         # From https://api.github.com/repos/hulu/restfulgit/tags with necessary adjustments
         reference_tag = {

@@ -734,7 +734,7 @@ def get_tags(repo_key):
 @restfulgit.route('/repos/<repo_key>/tags/<tag_name>/')
 @corsify
 @jsonify
-def get_repos_tag(repo_key, tag_name):
+def get_repos_tag(repo_key, tag_name):  # NOTE: This endpoint is a RestfulGit extension
     repo = _get_repo(repo_key)
     tag = _lookup_ref(repo, TAG_REF_PREFIX + tag_name)
     if tag is None:
