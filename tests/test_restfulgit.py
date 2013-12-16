@@ -539,6 +539,23 @@ class RepositoryInfoCase(_RestfulGitTestCase):
             }
         )
 
+    def test_default_description_file(self):
+        with io.open(NORMAL_CLONE_DESCRIPTION_FILEPATH, mode='wt', encoding='utf-8') as description_file:
+            description_file.write("Unnamed repository; edit this file 'description' to name the repository.\n")
+        try:
+            resp = self.client.get('/repos/restfulgit/')
+            self.assert200(resp)
+            self.assertEqual(
+                resp.json,
+                {
+                    'name': 'restfulgit',
+                    'description': None,
+                    'url': 'http://localhost/repos/restfulgit/',
+                }
+            )
+        finally:
+            delete_file_quietly(NORMAL_CLONE_DESCRIPTION_FILEPATH)
+
     def test_dot_dot_disallowed(self):
         restfulgit.REPO_BASE = TEST_SUBDIR
         resp = self.client.get('/repos/../')
