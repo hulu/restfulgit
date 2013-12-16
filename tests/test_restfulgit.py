@@ -605,6 +605,27 @@ class SimpleSHATestCase(_RestfulGitTestCase):
             }
         )
 
+    def test_get_repo_tags_works(self):
+        # From https://api.github.com/repos/hulu/restfulgit/tags with necessary adjustments
+        reference_tag = {
+            "name": "initial",
+            "commit": {
+                "sha": "07b9bf1540305153ceeb4519a50b588c35a35464",
+                "url": "http://localhost/repos/restfulgit/commits/07b9bf1540305153ceeb4519a50b588c35a35464/"
+            }
+        }
+        resp = self.client.get('/repos/restfulgit/tags/')
+        self.assert200(resp)
+        json = resp.json
+        self.assertIsInstance(json, list)
+        for tag in json:
+            self.assertIsInstance(tag, dict)
+            self.assertIn('name', tag)
+        initial_tags = [tag for tag in json if tag['name'] == 'initial']
+        self.assertEqual(len(initial_tags), 1)
+        initial_tag = initial_tags[0]
+        self.assertEqual(reference_tag, initial_tag)
+
     def test_get_repo_branches_works(self):
         # From https://api.github.com/repos/hulu/restfulgit/branches with necessary adjustments
         reference_branch = {
