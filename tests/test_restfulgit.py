@@ -18,7 +18,7 @@ os.environ[b'RESTFULGIT_CONFIG'] = os.path.join(RESTFULGIT_REPO, 'example_config
 import restfulgit
 
 
-TEST_SUBDIR = os.path.join(RESTFULGIT_REPO, 'test')
+TEST_SUBDIR = os.path.join(RESTFULGIT_REPO, 'tests')
 GIT_MIRROR_DESCRIPTION_FILEPATH = os.path.join(RESTFULGIT_REPO, 'description')
 NORMAL_CLONE_DESCRIPTION_FILEPATH = os.path.join(RESTFULGIT_REPO, '.git', 'description')
 FIRST_COMMIT = "07b9bf1540305153ceeb4519a50b588c35a35464"
