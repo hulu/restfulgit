@@ -503,7 +503,6 @@ class SimpleSHATestCase(_RestfulGitTestCase):
         }
         resp = self.client.get('/repos/restfulgit/commits/d408fc2428bc6444cabd7f7b46edbe70b6992b16/')
         self.assert200(resp)
-        self.maxDiff = None
         self.assertEqual(reference, resp.json)
 
     def test_get_diff_works(self):
@@ -532,7 +531,6 @@ class SimpleSHATestCase(_RestfulGitTestCase):
         initial_tags = [tag for tag in json if tag['name'] == 'initial']
         self.assertEqual(len(initial_tags), 1)
         initial_tag = initial_tags[0]
-        self.maxDiff = None
         self.assertEqual(reference_tag, initial_tag)
 
     def test_get_repo_branches_works(self):
@@ -613,7 +611,6 @@ class SimpleSHATestCase(_RestfulGitTestCase):
         resp = self.client.get('/repos/restfulgit/branches/ambiguous/')
         self.assert200(resp)
         json = resp.json
-        self.maxDiff = None
         self.assertEqual(reference, json)
 
 
