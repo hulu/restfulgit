@@ -100,9 +100,23 @@ class RepoKeyTestCase(_RestfulGitTestCase):
                 self.assertEqual(
                     repo,
                     {
-                        'name': 'restfulgit',
-                        'description': None,
-                        'url': 'http://localhost/repos/restfulgit/',
+                        "name": 'restfulgit',
+                        "full_name": 'restfulgit',
+                        "description": None,
+                        "url": 'http://localhost/repos/restfulgit/',
+                        "branches_url": "http://localhost/repos/restfulgit/branches{/branch}",
+                        "tags_url": "http://localhost/repos/restfulgit/tags/",
+                        "blobs_url": "http://localhost/repos/restfulgit/git/blobs{/sha}",
+                        "git_tags_url": "http://localhost/repos/restfulgit/git/tags{/sha}",
+                        "git_refs_url": "http://localhost/repos/restfulgit/git/refs{/sha}",
+                        "trees_url": "http://localhost/repos/restfulgit/git/trees{/sha}",
+                        # "compare_url": "http://localhost/repos/restfulgit/compare/{base}...{head}",
+                        # "contributors_url": "http://localhost/repos/restfulgit/contributors",
+                        # "contents_url": "http://localhost/repos/restfulgit/contents/{+path}",
+                        "commits_url": "http://localhost/repos/restfulgit/commits{/sha}",
+                        "git_commits_url": "http://localhost/repos/restfulgit/git/commits{/sha}",
+                        # "size": N (in what units?)
+                        # "updated_at": "some timestamp"
                     }
                 )
 
@@ -929,11 +943,46 @@ class RepositoryInfoCase(_RestfulGitTestCase):
         self.assertEqual(
             resp.json,
             {
-                'name': 'restfulgit',
+                'blobs_url': 'http://localhost/repos/restfulgit/git/blobs{/sha}',
+                'branches_url': 'http://localhost/repos/restfulgit/branches{/branch}',
+                'commits_url': 'http://localhost/repos/restfulgit/commits{/sha}',
                 'description': None,
+                'full_name': 'restfulgit',
+                'git_commits_url': 'http://localhost/repos/restfulgit/git/commits{/sha}',
+                'git_refs_url': 'http://localhost/repos/restfulgit/git/refs{/sha}',
+                'git_tags_url': 'http://localhost/repos/restfulgit/git/tags{/sha}',
+                'name': 'restfulgit',
+                'tags_url': 'http://localhost/repos/restfulgit/tags/',
+                'trees_url': 'http://localhost/repos/restfulgit/git/trees{/sha}',
                 'url': 'http://localhost/repos/restfulgit/',
             }
         )
+
+    def test_default_description_file(self):
+        with io.open(NORMAL_CLONE_DESCRIPTION_FILEPATH, mode='wt', encoding='utf-8') as description_file:
+            description_file.write("Unnamed repository; edit this file 'description' to name the repository.\n")
+        try:
+            resp = self.client.get('/repos/restfulgit/')
+            self.assert200(resp)
+            self.assertEqual(
+                resp.json,
+                {
+                    'blobs_url': 'http://localhost/repos/restfulgit/git/blobs{/sha}',
+                    'branches_url': 'http://localhost/repos/restfulgit/branches{/branch}',
+                    'commits_url': 'http://localhost/repos/restfulgit/commits{/sha}',
+                    'description': None,
+                    'full_name': 'restfulgit',
+                    'git_commits_url': 'http://localhost/repos/restfulgit/git/commits{/sha}',
+                    'git_refs_url': 'http://localhost/repos/restfulgit/git/refs{/sha}',
+                    'git_tags_url': 'http://localhost/repos/restfulgit/git/tags{/sha}',
+                    'name': 'restfulgit',
+                    'tags_url': 'http://localhost/repos/restfulgit/tags/',
+                    'trees_url': 'http://localhost/repos/restfulgit/git/trees{/sha}',
+                    'url': 'http://localhost/repos/restfulgit/',
+                }
+            )
+        finally:
+            delete_file_quietly(NORMAL_CLONE_DESCRIPTION_FILEPATH)
 
     def test_dot_dot_disallowed(self):
         restfulgit.REPO_BASE = TEST_SUBDIR
@@ -954,8 +1003,17 @@ class RepositoryInfoCase(_RestfulGitTestCase):
             self.assertEqual(
                 resp.json,
                 {
-                    'name': 'restfulgit',
+                    'blobs_url': 'http://localhost/repos/restfulgit/git/blobs{/sha}',
+                    'branches_url': 'http://localhost/repos/restfulgit/branches{/branch}',
+                    'commits_url': 'http://localhost/repos/restfulgit/commits{/sha}',
                     'description': description,
+                    'full_name': 'restfulgit',
+                    'git_commits_url': 'http://localhost/repos/restfulgit/git/commits{/sha}',
+                    'git_refs_url': 'http://localhost/repos/restfulgit/git/refs{/sha}',
+                    'git_tags_url': 'http://localhost/repos/restfulgit/git/tags{/sha}',
+                    'name': 'restfulgit',
+                    'tags_url': 'http://localhost/repos/restfulgit/tags/',
+                    'trees_url': 'http://localhost/repos/restfulgit/git/trees{/sha}',
                     'url': 'http://localhost/repos/restfulgit/',
                 }
             )
@@ -971,8 +1029,17 @@ class RepositoryInfoCase(_RestfulGitTestCase):
             self.assertEqual(
                 resp.json,
                 {
-                    'name': 'restfulgit',
+                    'blobs_url': 'http://localhost/repos/restfulgit/git/blobs{/sha}',
+                    'branches_url': 'http://localhost/repos/restfulgit/branches{/branch}',
+                    'commits_url': 'http://localhost/repos/restfulgit/commits{/sha}',
                     'description': description,
+                    'full_name': 'restfulgit',
+                    'git_commits_url': 'http://localhost/repos/restfulgit/git/commits{/sha}',
+                    'git_refs_url': 'http://localhost/repos/restfulgit/git/refs{/sha}',
+                    'git_tags_url': 'http://localhost/repos/restfulgit/git/tags{/sha}',
+                    'name': 'restfulgit',
+                    'tags_url': 'http://localhost/repos/restfulgit/tags/',
+                    'trees_url': 'http://localhost/repos/restfulgit/git/trees{/sha}',
                     'url': 'http://localhost/repos/restfulgit/',
                 }
             )

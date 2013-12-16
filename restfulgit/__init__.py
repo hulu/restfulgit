@@ -206,8 +206,17 @@ def _convert_repo(repo_key):
     description = _get_repo_description(repo_key)
     return {
         "name": repo_key,
+        "full_name": repo_key,
         "description": description,
         "url": url_for('.get_repo', _external=True, repo_key=repo_key),
+        "branches_url": (url_for('.get_branches', _external=True, repo_key=repo_key).rstrip('/') + '{/branch}'),
+        "blobs_url": (url_for('.get_blob', _external=True, repo_key=repo_key, sha='').rstrip('/') + '{/sha}'),
+        "commits_url": (url_for('.get_repos_commit', _external=True, repo_key=repo_key, branch_or_tag_or_sha='').rstrip('/') + '{/sha}'),
+        "git_commits_url": (url_for('.get_commit', _external=True, repo_key=repo_key, sha='').rstrip('/') + '{/sha}'),
+        "git_refs_url": (url_for('.get_refs', _external=True, repo_key=repo_key).rstrip('/') + '{/sha}'),
+        "git_tags_url": (url_for('.get_tag', _external=True, repo_key=repo_key, sha='').rstrip('/') + '{/sha}'),
+        "tags_url": url_for('.get_tags', _external=True, repo_key=repo_key),
+        "trees_url": (url_for('.get_tree', _external=True, repo_key=repo_key, sha='').rstrip('/') + '{/sha}'),
     }
 
 
@@ -248,12 +257,14 @@ def _convert_commit(repo_key, commit, porcelain=False):
     }
 
 
+
 GIT_STATUS_TO_NAME = {
     'M': 'modified',
     'A': 'added',
     'R': 'renamed',
     'D': 'removed',
 }
+
 
 
 def _convert_patch(repo_key, commit, patch, patches_txt):
