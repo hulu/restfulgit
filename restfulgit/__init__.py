@@ -557,6 +557,13 @@ def get_raw(repo_key, branch_or_tag_or_sha, file_path):
     return Response(data, mimetype=mime_type)
 
 
+@restfulgit.route('/repos/<repo_key>/contents/<path:file_path>')
+@corsify
+def get_contents(repo_key, path):  # pylint: disable=W0613
+    ref = request.args.get('ref')  # pylint: disable=W0612
+    raise NotImplementedError()
+
+
 @restfulgit.route('/')
 @corsify
 @jsonify
