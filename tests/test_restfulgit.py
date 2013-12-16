@@ -454,6 +454,27 @@ class SimpleSHATestCase(_RestfulGitTestCase):
         self.maxDiff = None
         self.assertEqual(initial_tag, reference_tag)
 
+    def test_get_repo_branches_works(self):
+        # From https://api.github.com/repos/hulu/restfulgit/branches with necessary adjustments
+        reference_branch =  {
+            "name": "ambiguous",
+            "commit": {
+                "sha": "1f51b91ac383806df9d322ae67bbad3364f50811",
+                "url": "http://localhost/repos/restfulgit/commits/1f51b91ac383806df9d322ae67bbad3364f50811/"
+            }
+        }
+        resp = self.client.get('/repos/restfulgit/branches/')
+        self.assert200(resp)
+        json = resp.json
+        self.assertIsInstance(json, list)
+        for branch in json:
+            self.assertIsInstance(branch, dict)
+            self.assertIn('name', branch)
+        ambiguous_branches = [branch for branch in json if branch['name'] == 'ambiguous']
+        self.assertEqual(len(ambiguous_branches), 1)
+        ambiguous_branch = ambiguous_branches[0]
+        self.assertEqual(ambiguous_branch, reference_branch)
+
 
 class RefsTestCase(_RestfulGitTestCase):
     def test_get_refs_works(self):
