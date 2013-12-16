@@ -425,6 +425,87 @@ class SimpleSHATestCase(_RestfulGitTestCase):
             }
         )
 
+    def test_get_repo_commit(self):
+        # From https://api.github.com/repos/hulu/restfulgit/commits/d408fc2428bc6444cabd7f7b46edbe70b6992b16 with necessary adjustments
+        reference = {
+            "sha": "d408fc2428bc6444cabd7f7b46edbe70b6992b16",
+            "commit": {
+                "author": {
+                    "name": "Rajiv Makhijani",
+                    "email": "rajiv@hulu.com",
+                    "date": "2013-04-21T11:20:14Z"
+                },
+                "committer": {
+                    "name": "Rajiv Makhijani",
+                    "email": "rajiv@hulu.com",
+                    "date": "2013-04-21T11:20:14Z"
+                },
+                "message": "Added requirements.txt + more README",
+                "tree": {
+                    "sha": "e49e456564f8d852f430c1d0028a9d6560e3f3e9",
+                    "url": "http://localhost/repos/restfulgit/git/trees/e49e456564f8d852f430c1d0028a9d6560e3f3e9/"
+                },
+                "url": "http://localhost/repos/restfulgit/git/commits/d408fc2428bc6444cabd7f7b46edbe70b6992b16/",
+                "sha": "d408fc2428bc6444cabd7f7b46edbe70b6992b16",  # NOTE: RestfulGit extension
+                "parents": [  # NOTE: RestfulGit extension
+                    {
+                        "sha": "c92de24597eff312bbdd5a70059665a2e3000590",
+                        "url": "http://localhost/repos/restfulgit/commits/c92de24597eff312bbdd5a70059665a2e3000590/",
+                    }
+                ],
+            },
+            "url": "http://localhost/repos/restfulgit/commits/d408fc2428bc6444cabd7f7b46edbe70b6992b16/",
+            "author": {
+                "name": "Rajiv Makhijani",
+                "email": "rajiv@hulu.com",
+                "date": "2013-04-21T11:20:14Z"
+            },
+            "committer": {
+                "name": "Rajiv Makhijani",
+                "email": "rajiv@hulu.com",
+                "date": "2013-04-21T11:20:14Z"
+            },
+            "parents": [
+                {
+                    "sha": "c92de24597eff312bbdd5a70059665a2e3000590",
+                    "url": "http://localhost/repos/restfulgit/commits/c92de24597eff312bbdd5a70059665a2e3000590/",
+                }
+            ],
+            "stats": {
+                "total": 10,
+                "additions": 10,
+                "deletions": 0
+            },
+            "files": [
+                {
+                    "sha": "c65dc8c22cc3dc5d37a1c39e5a9f336f1dd6fe34",
+                    "filename": "README.md",
+                    "status": "modified",
+                    "additions": 5,
+                    "deletions": 0,
+                    "changes": 5,
+                    "raw_url": "http://localhost/repos/restfulgit/raw/d408fc2428bc6444cabd7f7b46edbe70b6992b16/README.md",
+                    "contents_url": "http://localhost/repos/restfulgit/contents/README.md?ref=d408fc2428bc6444cabd7f7b46edbe70b6992b16",
+                    "patch": "@@ -4,6 +4,11 @@ REST API for Git data\n Provides a read-only restful interface for accessing data from Git repositories (local to the server).\n Modeled off the GitHub Git DB API for compatibility (see http://developer.github.com/v3/git/).\n \n+Requires: flask, pygit2 (>= 0.18.1), libgit2 (>= 0.18).\n+Must modify: REPO_BASE (root path for repositories, note only repositories immediately under this path are currently supported).\n+\n+api.py is a valid WSGI application.\n+\n --\n \n All of these routes return JSON unless otherwise specified."
+                },
+                {
+                    "sha": "da23f6c1cf961369faa90c8c4f4c242a09205ce6",
+                    "filename": "requirements.txt",
+                    "status": "added",
+                    "additions": 5,
+                    "deletions": 0,
+                    "changes": 5,
+                    "raw_url": "http://localhost/repos/restfulgit/raw/d408fc2428bc6444cabd7f7b46edbe70b6992b16/requirements.txt",
+                    "contents_url": "http://localhost/repos/restfulgit/contents/requirements.txt?ref=d408fc2428bc6444cabd7f7b46edbe70b6992b16",
+                    "patch": "@@ -0,0 +1,5 @@\n+Flask==0.9\n+Jinja2==2.6\n+Werkzeug==0.8.3\n+pygit2==0.18.1\n+wsgiref==0.1.2"
+                }
+            ]
+        }
+        resp = self.client.get('/repos/restfulgit/commits/d408fc2428bc6444cabd7f7b46edbe70b6992b16/')
+        self.assert200(resp)
+        self.maxDiff = None
+        self.assertEqual(reference, resp.json)
+
     def test_get_diff_works(self):
         resp = self.client.get('/repos/restfulgit/commits/d408fc2428bc6444cabd7f7b46edbe70b6992b16.diff')
         self.assert200(resp)
