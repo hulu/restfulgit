@@ -414,16 +414,20 @@ def _repos_convert_commit(repo_key, repo, commit, include_diff=False):
 
 
 def _convert_branch(repo_key, repo, branch):
+    url = url_for('.get_branch', _external=True, repo_key=repo_key, branch_name=branch.branch_name)
+    commit = _repos_convert_commit(repo_key, repo, branch.get_object())
+    innner_commit = commit['commit']
+    commit['sha'] = innner_commit['sha']
+    commit['author'] = innner_commit['author']
+    commit['committer'] = innner_commit['committer']
     return {
         "name": branch.branch_name,
-        "commit": _repos_convert_commit(repo_key, repo, branch.get_object()),
-        "url": url_for('.get_branch', _external=True,
-                       repo_key=repo_key, branch_name=branch.branch_name),
+        "commit": commit,
+        "url": url,
         "_links": {
             # For some reason GitHub API for branch does the self-link like this
             # instead of with "url" as everywhere else.
-            "self": url_for('.get_branch', _external=True,
-                            repo_key=repo_key, branch_name=branch.branch_name),
+            "self": url,
         }
     }
 
