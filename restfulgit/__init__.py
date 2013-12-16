@@ -1,7 +1,7 @@
 # coding=utf-8
 from __future__ import print_function
 
-from flask import Flask, url_for, request, Response, current_app, Blueprint, safe_join, send_from_directory, make_response
+from flask import Flask, url_for, request, Response, current_app, Blueprint, safe_join, send_from_directory, make_response, g as context
 from werkzeug.exceptions import NotFound, BadRequest, HTTPException, default_exceptions
 from werkzeug.routing import BaseConverter
 
@@ -212,10 +212,13 @@ def _convert_repo(repo_key):
 
 
 def _convert_signature(sig):
+    date = datetime.fromtimestamp(sig.time, FixedOffset(sig.offset))
+    if context.restfulgit_force_utc:
+        date = date.astimezone(UTC)
     return {
         "name": sig.name,
         "email": sig.email,
-        "date": datetime.fromtimestamp(sig.time, FixedOffset(sig.offset))
+        "date": date,
     }
 
 
@@ -428,7 +431,7 @@ def _convert_branch(repo_key, repo, branch):
 def jsonify(func):
     def dthandler(obj):
         if hasattr(obj, 'isoformat'):
-            return obj.isoformat()
+            return obj.isoformat().replace('+00:00', 'Z')
 
     @functools.wraps(func)
     def wrapped(*args, **kwargs):
@@ -481,6 +484,14 @@ class FixedOffset(tzinfo):
 
     def dst(self, dt):  # pylint: disable=W0613
         return self.ZERO
+
+
+UTC = FixedOffset(0)
+
+
+@restfulgit.before_request
+def setup_utc_flag():
+    context.restfulgit_force_utc = False
 
 
 OCTET_STREAM = 'application/octet-stream'
