@@ -286,7 +286,7 @@ def _convert_ref(repo_key, ref, obj):
 def jsonify(func):
     def dthandler(obj):
         if hasattr(obj, 'isoformat'):
-            return obj.isoformat()
+            return obj.astimezone(UTC).replace(tzinfo=None).isoformat() + 'Z'
 
     @functools.wraps(func)
     def wrapped(*args, **kwargs):
@@ -336,6 +336,9 @@ class FixedOffset(tzinfo):
 
     def dst(self, dt):  # pylint: disable=W0613
         return self.ZERO
+
+
+UTC = FixedOffset(0)
 
 ##### VIEWS #####
 

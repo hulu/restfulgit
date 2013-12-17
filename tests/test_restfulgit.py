@@ -159,12 +159,12 @@ class CommitsTestCase(_RestfulGitTestCase):
             [
                 {
                     'author': {
-                        'date': '2013-02-26T19:14:13-08:00',
+                        'date': '2013-02-27T03:14:13Z',
                         'email': 'rajiv@hulu.com',
                         'name': 'Rajiv Makhijani'
                     },
                     'committer': {
-                        'date': '2013-02-26T19:14:13-08:00',
+                        'date': '2013-02-27T03:14:13Z',
                         'email': 'rajiv@hulu.com',
                         'name': 'Rajiv Makhijani'
                     },
@@ -182,12 +182,12 @@ class CommitsTestCase(_RestfulGitTestCase):
                 },
                 {
                     'author': {
-                        'date': '2013-02-26T01:15:35-08:00',
+                        'date': '2013-02-26T09:15:35Z',
                         'email': 'rajiv@hulu.com',
                         'name': 'Rajiv Makhijani'
                     },
                     'committer': {
-                        'date': '2013-02-26T01:15:35-08:00',
+                        'date': '2013-02-26T09:15:35Z',
                         'email': 'rajiv@hulu.com',
                         'name': 'Rajiv Makhijani'
                     },
@@ -205,12 +205,12 @@ class CommitsTestCase(_RestfulGitTestCase):
                 },
                 {
                     'author': {
-                        'date': '2013-02-25T04:35:29-08:00',
+                        'date': '2013-02-25T12:35:29Z',
                         'email': 'rajiv@hulu.com',
                         'name': 'Rajiv Makhijani'
                     },
                     'committer': {
-                        'date': '2013-02-25T04:35:29-08:00',
+                        'date': '2013-02-25T12:35:29Z',
                         'email': 'rajiv@hulu.com',
                         'name': 'Rajiv Makhijani'
                     },
@@ -272,12 +272,12 @@ class SimpleSHATestCase(_RestfulGitTestCase):
             resp.json,
             {
                 "committer": {
-                    "date": "2013-02-24T05:25:46-08:00",
+                    "date": "2013-02-24T13:25:46Z",
                     "name": "Rajiv Makhijani",
                     "email": "rajiv@hulu.com"
                 },
                 "author": {
-                    "date": "2013-02-24T05:25:46-08:00",
+                    "date": "2013-02-24T13:25:46Z",
                     "name": "Rajiv Makhijani",
                     "email": "rajiv@hulu.com"
                 },
@@ -578,7 +578,7 @@ class SimpleSHATestCase(_RestfulGitTestCase):
                 "sha": "1dffc031c9beda43ff94c526cbc00a30d231c079",
                 "tag": "initial",
                 "tagger": {
-                    "date": "2013-09-27T18:14:09-07:00",
+                    "date": "2013-09-28T01:14:09Z",
                     "name": "Chris Rebert",
                     "email": "chris.rebert@hulu.com"
                 },
