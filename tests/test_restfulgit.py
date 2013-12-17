@@ -539,6 +539,7 @@ class SimpleSHATestCase(_RestfulGitTestCase):
         )
 
     def test_get_blob_works(self):
+        # From https://api.github.com/repos/hulu/restfulgit/git/blobs/ae9d90706c632c26023ce599ac96cb152673da7c with necessary adjustments
         resp = self.client.get('/repos/restfulgit/git/blobs/{}/'.format(BLOB_FROM_FIRST_COMMIT))
         self.assert200(resp)
         json = resp.json
@@ -554,10 +555,13 @@ class SimpleSHATestCase(_RestfulGitTestCase):
             {
                 "url": "http://localhost/repos/restfulgit/git/blobs/ae9d90706c632c26023ce599ac96cb152673da7c/",
                 "sha": "ae9d90706c632c26023ce599ac96cb152673da7c",
-                "encoding": "utf-8",
+                "encoding": "utf-8",  # NOTE: RestfulGit extension
                 "size": 5543
             }
         )
+
+    def test_get_binary_blob_works(self):
+        pass
 
     def test_get_tag_works(self):
         resp = self.client.get('/repos/restfulgit/git/tags/{}/'.format(TAG_FOR_FIRST_COMMIT))
