@@ -159,7 +159,7 @@ def _get_diff(repo, commit):
     if commit.parents:
         diff = repo.diff(commit.parents[0], commit)
         diff.find_similar()
-    else:
+    else:  # NOTE: RestfulGit extension; GitHub gives a 404 in this case
         diff = commit.tree.diff_to_tree(swap=True)
     return diff
 
@@ -226,6 +226,15 @@ def _convert_commit(repo_key, commit, porcelain=False):
     message = commit.message
     if porcelain:
         message = message.rstrip('\n')
+
+        def commit_url_for(sha):
+            return url_for('.get_repos_commit', _external=True,
+                           repo_key=repo_key, branch_or_tag_or_sha=sha)
+    else:
+        def commit_url_for(sha):
+            return url_for('.get_commit', _external=True,
+                           repo_key=repo_key, sha=sha)
+
     return {
         "url": url_for('.get_commit', _external=True,
                        repo_key=repo_key, sha=commit.hex),
@@ -240,8 +249,7 @@ def _convert_commit(repo_key, commit, porcelain=False):
         },
         "parents": [{
             "sha": c.hex,
-            "url": url_for(('.get_repos_commit' if porcelain else '.get_commit'), _external=True,
-                           repo_key=repo_key, sha=c.hex)
+            "url": commit_url_for(c.hex)
         } for c in commit.parents]
     }
 
@@ -677,34 +685,20 @@ def get_repo_list():
 
 
 @restfulgit.route('/repos/<repo_key>/commits/<branch_or_tag_or_sha>/')
-@restfulgit.route('/repos/<repo_key>/commits/<sha:sha>/')
 @corsify
 @jsonify
-def get_repos_commit(repo_key, sha=None, branch_or_tag_or_sha=None):
+def get_repos_commit(repo_key, branch_or_tag_or_sha):
     context.restfulgit_force_utc = True
     repo = _get_repo(repo_key)
-    if sha:
-        try:
-            commit = _get_commit(repo, sha)
-        except NotFound:
-            branch_or_tag_or_sha = sha
-    if branch_or_tag_or_sha:
-        commit = _get_commit_for_refspec(repo, branch_or_tag_or_sha)
+    commit = _get_commit_for_refspec(repo, branch_or_tag_or_sha)
     return _repos_convert_commit(repo_key, repo, commit, include_diff=True)
 
 
-@restfulgit.route('/repos/<repo_key>/commits/<branch_or_tag_or_sha>.diff')
-@restfulgit.route('/repos/<repo_key>/commits/<sha:sha>.diff')
+@restfulgit.route('/repos/<repo_key>/commit/<branch_or_tag_or_sha>.diff')
 @corsify
-def get_repos_diff(repo_key, sha=None, branch_or_tag_or_sha=None):
+def get_repos_diff(repo_key, branch_or_tag_or_sha):
     repo = _get_repo(repo_key)
-    if sha:
-        try:
-            commit = _get_commit(repo, sha)
-        except NotFound:
-            branch_or_tag_or_sha = sha
-    if branch_or_tag_or_sha:
-        commit = _get_commit_for_refspec(repo, branch_or_tag_or_sha)
+    commit = _get_commit_for_refspec(repo, branch_or_tag_or_sha)
     diff = _get_diff(repo, commit)
     return Response(diff.patch, mimetype="text/x-diff")
 
