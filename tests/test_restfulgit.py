@@ -510,13 +510,19 @@ class SimpleSHATestCase(_RestfulGitTestCase):
         self.assertJson404(resp)
 
     def test_get_diff_works(self):
-        resp = self.client.get('/repos/restfulgit/commits/d408fc2428bc6444cabd7f7b46edbe70b6992b16.diff')
+        resp = self.client.get('/repos/restfulgit/commit/d408fc2428bc6444cabd7f7b46edbe70b6992b16.diff')
         self.assert200(resp)
         self.assertEqual(resp.headers.get_all('Content-Type'), [b'text/x-diff; charset=utf-8'])
         self.assertTextEqualsFixture(resp.get_data(), 'd408fc2428bc6444cabd7f7b46edbe70b6992b16.diff')
 
+    def test_get_diff_with_parentless_commit(self):  # NOTE: RestfulGit extension; GitHub gives a 404 in this case
+        resp = self.client.get('/repos/restfulgit/commit/07b9bf1540305153ceeb4519a50b588c35a35464.diff')
+        self.assert200(resp)
+        self.assertEqual(resp.headers.get_all('Content-Type'), [b'text/x-diff; charset=utf-8'])
+        self.assertTextEqualsFixture(resp.get_data(), '07b9bf1540305153ceeb4519a50b588c35a35464.diff')
+
     def test_get_diff_with_nonexistent_sha(self):
-        resp = self.client.get('/repos/restfulgit/commits/{}.diff'.format(IMPROBABLE_SHA))
+        resp = self.client.get('/repos/restfulgit/commit/{}.diff'.format(IMPROBABLE_SHA))
         self.assertJson404(resp)
 
     def test_get_repos_tag_works(self):  # NOTE: RestfulGit extension
