@@ -718,7 +718,7 @@ TAG_REF_PREFIX = "refs/tags/"
 def get_tags(repo_key):
     repo = _get_repo(repo_key)
     ref_names = ifilter(lambda x: x.startswith(TAG_REF_PREFIX), repo.listall_references())
-    tags = [repo.lookup_reference(ref_name) for ref_name in ref_names]
+    tags = (repo.lookup_reference(ref_name) for ref_name in ref_names)
     return [{
         "name": tag.shorthand,
         "commit": {
@@ -757,7 +757,7 @@ def get_repos_tag(repo_key, tag_name):  # NOTE: This endpoint is a RestfulGit ex
 @jsonify
 def get_branches(repo_key):
     repo = _get_repo(repo_key)
-    branches = [repo.lookup_branch(branch_name) for branch_name in repo.listall_branches()]
+    branches = (repo.lookup_branch(branch_name) for branch_name in repo.listall_branches())
     return [{
         "name": branch.branch_name,
         "commit": {
