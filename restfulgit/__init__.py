@@ -189,7 +189,7 @@ def _convert_commit(repo_key, commit):
         "sha": commit.hex,
         "author": _convert_signature(commit.author),
         "committer": _convert_signature(commit.committer),
-        "message": commit.message,
+        "message": commit.message.rstrip(),
         "tree": {
             "sha": commit.tree.hex,
             "url": url_for('.get_tree', _external=True,

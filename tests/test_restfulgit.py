@@ -176,7 +176,7 @@ class CommitsTestCase(_RestfulGitTestCase):
                         'email': 'rajiv@hulu.com',
                         'name': 'Rajiv Makhijani'
                     },
-                    'message': 'add file mode\n',
+                    'message': 'add file mode',
                     'parents': [{
                         'sha': '326d80cd68ec3413fe6eaca99c52c59ca428a0d0',
                         'url': 'http://localhost/repos/restfulgit/git/commits/326d80cd68ec3413fe6eaca99c52c59ca428a0d0/'
@@ -199,7 +199,7 @@ class CommitsTestCase(_RestfulGitTestCase):
                         'email': 'rajiv@hulu.com',
                         'name': 'Rajiv Makhijani'
                     },
-                    'message': 'Now using a jsonify decorator which returns the correct content-type\n',
+                    'message': 'Now using a jsonify decorator which returns the correct content-type',
                     'parents': [{
                         'sha': '1f51b91ac383806df9d322ae67bbad3364f50811',
                         'url': 'http://localhost/repos/restfulgit/git/commits/1f51b91ac383806df9d322ae67bbad3364f50811/'
@@ -222,7 +222,7 @@ class CommitsTestCase(_RestfulGitTestCase):
                         'email': 'rajiv@hulu.com',
                         'name': 'Rajiv Makhijani'
                     },
-                    'message': 'Support submodule in tree-listings\n',
+                    'message': 'Support submodule in tree-listings',
                     'parents': [{
                         'sha': 'ff6405b71273b5c2c50d5c33d5cf962af5390542',
                         'url': 'http://localhost/repos/restfulgit/git/commits/ff6405b71273b5c2c50d5c33d5cf962af5390542/'
@@ -273,30 +273,31 @@ class SimpleSHATestCase(_RestfulGitTestCase):
         resp = self.client.get('/repos/restfulgit/git/tags/{}/'.format(IMPROBABLE_SHA))
         self.assertJson404(resp)
 
-    def test_get_commit_works(self):
+    def test_get_git_commit_works(self):
+        # From https://api.github.com/repos/hulu/restfulgit/git/commits/07b9bf1540305153ceeb4519a50b588c35a35464 with necessary adjustments
         resp = self.client.get('/repos/restfulgit/git/commits/{}/'.format(FIRST_COMMIT))
         self.assert200(resp)
         self.assertEqual(
             resp.json,
             {
-                "committer": {
-                    "date": "2013-02-24T13:25:46Z",
-                    "name": "Rajiv Makhijani",
-                    "email": "rajiv@hulu.com"
-                },
-                "author": {
-                    "date": "2013-02-24T13:25:46Z",
-                    "name": "Rajiv Makhijani",
-                    "email": "rajiv@hulu.com"
-                },
-                "url": "http://localhost/repos/restfulgit/git/commits/07b9bf1540305153ceeb4519a50b588c35a35464/",
-                "tree": {
-                    "url": "http://localhost/repos/restfulgit/git/trees/6ca22167185c31554aa6157306e68dfd612d6345/",
-                    "sha": "6ca22167185c31554aa6157306e68dfd612d6345"
-                },
                 "sha": "07b9bf1540305153ceeb4519a50b588c35a35464",
-                "parents": [],
-                "message": "Initial support for read-only REST api for Git plumbing\n"
+                "url": "http://localhost/repos/restfulgit/git/commits/07b9bf1540305153ceeb4519a50b588c35a35464/",
+                "author": {
+                    "name": "Rajiv Makhijani",
+                    "email": "rajiv@hulu.com",
+                    "date": "2013-02-24T13:25:46Z"
+                },
+                "committer": {
+                    "name": "Rajiv Makhijani",
+                    "email": "rajiv@hulu.com",
+                    "date": "2013-02-24T13:25:46Z"
+                },
+                "tree": {
+                    "sha": "6ca22167185c31554aa6157306e68dfd612d6345",
+                    "url": "http://localhost/repos/restfulgit/git/trees/6ca22167185c31554aa6157306e68dfd612d6345/"
+                },
+                "message": "Initial support for read-only REST api for Git plumbing",
+                "parents": []
             }
         )
 
