@@ -572,24 +572,25 @@ class SimpleSHATestCase(_RestfulGitTestCase):
         pass
 
     def test_get_tag_works(self):
+        # From https://api.github.com/repos/hulu/restfulgit/git/tags/1dffc031c9beda43ff94c526cbc00a30d231c079 with necessary adjustments
         resp = self.client.get('/repos/restfulgit/git/tags/{}/'.format(TAG_FOR_FIRST_COMMIT))
         self.assert200(resp)
         self.assertEqual(
             resp.json,
             {
-                "url": "http://localhost/repos/restfulgit/git/tags/1dffc031c9beda43ff94c526cbc00a30d231c079/",
-                "object": {
-                    "url": "http://localhost/repos/restfulgit/git/commits/07b9bf1540305153ceeb4519a50b588c35a35464/",
-                    "sha": "07b9bf1540305153ceeb4519a50b588c35a35464",
-                    "type": "commit"
-                },
                 "sha": "1dffc031c9beda43ff94c526cbc00a30d231c079",
-                "tag": "initial",
+                "url": "http://localhost/repos/restfulgit/git/tags/1dffc031c9beda43ff94c526cbc00a30d231c079/",
                 "tagger": {
-                    "date": "2013-09-28T01:14:09Z",
                     "name": "Chris Rebert",
-                    "email": "chris.rebert@hulu.com"
+                    "email": "chris.rebert@hulu.com",
+                    "date": "2013-09-28T01:14:09Z"
                 },
+                "object": {
+                    "sha": "07b9bf1540305153ceeb4519a50b588c35a35464",
+                    "type": "commit",
+                    "url": "http://localhost/repos/restfulgit/git/commits/07b9bf1540305153ceeb4519a50b588c35a35464/"
+                },
+                "tag": "initial",
                 "message": "initial commit\n"
             }
         )

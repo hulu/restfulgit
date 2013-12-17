@@ -173,6 +173,7 @@ def _convert_repo(repo_key):
         "url": url_for('.get_repo', _external=True, repo_key=repo_key)
     }
 
+
 def _convert_signature(sig):
     return {
         "name": sig.name,
