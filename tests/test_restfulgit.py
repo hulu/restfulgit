@@ -689,7 +689,8 @@ class SimpleSHATestCase(_RestfulGitTestCase):
             "commit": {
                 "sha": "07b9bf1540305153ceeb4519a50b588c35a35464",
                 "url": "http://localhost/repos/restfulgit/commits/07b9bf1540305153ceeb4519a50b588c35a35464/"
-            }
+            },
+            "url": "http://localhost/repos/restfulgit/tags/initial/",  # NOTE: RestfulGit extension
         }
         resp = self.client.get('/repos/restfulgit/tags/')
         self.assert200(resp)
