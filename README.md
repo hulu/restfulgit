@@ -54,25 +54,25 @@ Retrieves a list of commit objects:
 ```json
 [
     {
-        "committer": {
-            "date": "2013-05-20T16:11:30-07:00",
-            "name": "Rajiv Makhijani",
-            "email": "rajiv@hulu.com"
-        },
+        "sha": "f85df530d8413b0390364b291eb97d1cc5798dee",
+        "url": "http://localhost:5000/repos/restfulgit/git/commits/f85df530d8413b0390364b291eb97d1cc5798dee/",
         "author": {
-            "date": "2013-05-20T16:11:30-07:00",
+            "date": "2013-05-20T23:11:30Z",
             "name": "Rajiv Makhijani",
             "email": "rajiv@hulu.com"
         },
-        "url": "http://localhost:5000/repos/restfulgit.git/git/commits/f85df530d8413b0390364b291eb97d1cc5798dee/",
+        "committer": {
+            "date": "2013-05-20T23:11:30Z",
+            "name": "Rajiv Makhijani",
+            "email": "rajiv@hulu.com"
+        },
         "tree": {
-            "url": "http://localhost:5000/repos/restfulgit.git/git/trees/4c392547aa3d644877f3b22e198a5caac99a69a3/",
+            "url": "http://localhost:5000/repos/restfulgit/git/trees/4c392547aa3d644877f3b22e198a5caac99a69a3/",
             "sha": "4c392547aa3d644877f3b22e198a5caac99a69a3"
         },
-        "sha": "f85df530d8413b0390364b291eb97d1cc5798dee",
         "parents": [
             {
-                "url": "http://localhost:5000/repos/restfulgit.git/git/commits/7b3f40ff9aba370a59732522420201b744297317/",
+                "url": "http://localhost:5000/repos/restfulgit/git/commits/7b3f40ff9aba370a59732522420201b744297317/",
                 "sha": "7b3f40ff9aba370a59732522420201b744297317"
             }
         ],
@@ -145,7 +145,7 @@ Retrieves a specific tag object:
     "sha": "89571737c474fae7ea4c092b5ed94e4eccb11b2a",
     "tag": "v0.1",
     "tagger": {
-        "date": "2013-09-12T21:00:28-07:00",
+        "date": "2013-09-13T04:00:28Z",
         "name": "Rajiv Makhijani",
         "email": "rajiv@hulu.com"
     },
@@ -182,26 +182,35 @@ Raw Files
 ----------
 Returns the raw file data for the file on the specified branch, tag, or commit SHA:
 
-    GET /repos/:repo_key/blob/:refspec/:file_path
+    GET /repos/:repo_key/raw/:refspec/:file_path
 
 List Repositories
 ----------
-Retrieves a list of the names of all the repos:
+Retrieves a list of general information about all of the repos:
 
     GET /repos/
 
 ```json
-{"repos": ["restfulgit.git"]}
+[
+    {
+        "url": "http://localhost:5000/repos/restfulgit/",
+        "name": "restfulgit",
+        "description": "REST API for Git data"
+    },
+    ...
+]
 ```
 
-Repository Descriptions
+Repository Info
 -----------------
-Retrieve the description (if any) of the repo, as plain text:
+Retrieve general information about a specific repo:
 
-    GET /repos/:repo_key/description/
+    GET /repos/:repo_key/
 
+```json
+{
+        "url": "http://localhost:5000/repos/restfulgit/",
+        "name": "restfulgit",
+        "description": "REST API for Git data"
+    }
 ```
-REST API for Git data
-```
-
-(If there is no description, the result will be blank.)
