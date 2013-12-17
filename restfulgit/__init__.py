@@ -203,13 +203,14 @@ def _tree_entries(repo_key, repo, tree, recursive=False, path=''):
                     "url": url_for('.get_tree', _external=True,
                                    repo_key=repo_key, sha=entry.hex)
                 }
-        entry_data['mode'] = oct(entry.filemode)
+        entry_data['mode'] = oct(entry.filemode)[1:].zfill(6)  # 6 octal digits without single leading base-indicating 0
         entry_list.append(entry_data)
     return entry_list
 
 
 def _convert_tree(repo_key, repo, tree, recursive=False):
     entry_list = _tree_entries(repo_key, repo, tree, recursive=recursive)
+    entry_list.sort(key=lambda entry: entry['path'])
     return {
         "url": url_for('.get_tree', _external=True,
                        repo_key=repo_key, sha=tree.hex),

@@ -293,73 +293,247 @@ class SimpleSHATestCase(_RestfulGitTestCase):
         )
 
     def test_get_tree_works(self):
+        # From https://api.github.com/repos/hulu/restfulgit/git/trees/6ca22167185c31554aa6157306e68dfd612d6345 with necessary adjustments
         resp = self.client.get('/repos/restfulgit/git/trees/{}/'.format(TREE_OF_FIRST_COMMIT))
         self.assert200(resp)
         self.assertEqual(
             resp.json,
             {
-                "url": "http://localhost/repos/restfulgit/git/trees/6ca22167185c31554aa6157306e68dfd612d6345/",
-                "sha": "6ca22167185c31554aa6157306e68dfd612d6345",
-                "tree": [
-                    {
-                        "url": "http://localhost/repos/restfulgit/git/blobs/ae9d90706c632c26023ce599ac96cb152673da7c/",
-                        "sha": "ae9d90706c632c26023ce599ac96cb152673da7c",
-                        "mode": "0100644",
-                        "path": "api.py",
-                        "type": "blob",
-                        "size": 5543
-                    }
-                ]
+              "sha": "6ca22167185c31554aa6157306e68dfd612d6345",
+              "url": "http://localhost/repos/restfulgit/git/trees/6ca22167185c31554aa6157306e68dfd612d6345/",
+              "tree": [
+                {
+                  "mode": "100644",
+                  "type": "blob",
+                  "sha": "ae9d90706c632c26023ce599ac96cb152673da7c",
+                  "path": "api.py",
+                  "size": 5543,
+                  "url": "http://localhost/repos/restfulgit/git/blobs/ae9d90706c632c26023ce599ac96cb152673da7c/"
+                }
+              ]
             }
         )
 
     def test_get_nested_tree_works(self):
+        # From https://api.github.com/repos/hulu/restfulgit/git/trees/fc0fddc986c93f8444d754c7ec93c8b87f3d7c7e with necessary adjustments
         resp = self.client.get('/repos/restfulgit/git/trees/fc0fddc986c93f8444d754c7ec93c8b87f3d7c7e/')
         self.assert200(resp)
         self.assertEqual(
             resp.json,
             {
-                "url": "http://localhost/repos/restfulgit/git/trees/fc0fddc986c93f8444d754c7ec93c8b87f3d7c7e/",
                 "sha": "fc0fddc986c93f8444d754c7ec93c8b87f3d7c7e",
+                "url": "http://localhost/repos/restfulgit/git/trees/fc0fddc986c93f8444d754c7ec93c8b87f3d7c7e/",
                 "tree": [
-                    {"url": "http://localhost/repos/restfulgit/git/blobs/b5d2ce6a7246f37aaa41e7ce3403b5acd6369914/", "sha": "b5d2ce6a7246f37aaa41e7ce3403b5acd6369914", "mode": "0100644", "path": ".coveragerc", "type": "blob", "size": 65},
-                    {"url": "http://localhost/repos/restfulgit/git/blobs/cae6643e19e7a8198a26a449f556db6d1909aec8/", "sha": "cae6643e19e7a8198a26a449f556db6d1909aec8", "mode": "0100644", "path": ".gitignore", "type": "blob", "size": 22},
-                    {"url": "http://localhost/repos/restfulgit/git/blobs/f93712aaf5fcc4c0d44dc472d86abad40fdb0ec3/", "sha": "f93712aaf5fcc4c0d44dc472d86abad40fdb0ec3", "mode": "0100644", "path": ".pep8", "type": "blob", "size": 19},
-                    {"url": "http://localhost/repos/restfulgit/git/blobs/14e6bf5b229127a5495d9c176f50e3ef1922f0f2/", "sha": "14e6bf5b229127a5495d9c176f50e3ef1922f0f2", "mode": "0100644", "path": ".travis.yml", "type": "blob", "size": 985},
-                    {"url": "http://localhost/repos/restfulgit/git/blobs/bb27aa0a502f73c19837b96d1bd514ba95e0d404/", "sha": "bb27aa0a502f73c19837b96d1bd514ba95e0d404", "mode": "0100644", "path": "LICENSE.md", "type": "blob", "size": 1056},
-                    {"url": "http://localhost/repos/restfulgit/git/blobs/342f0ffead9243f5a3514505b83b918e61247ae2/", "sha": "342f0ffead9243f5a3514505b83b918e61247ae2", "mode": "0100644", "path": "README.md", "type": "blob", "size": 5655},
-                    {"url": "http://localhost/repos/restfulgit/git/blobs/20ff5b895391daa7335cc55be7e3a4da601982da/", "sha": "20ff5b895391daa7335cc55be7e3a4da601982da", "mode": "0100644", "path": "config.conf", "type": "blob", "size": 398},
-                    {"url": "http://localhost/repos/restfulgit/git/blobs/3e4025298468787af1123191bdddfb72df19061a/", "sha": "3e4025298468787af1123191bdddfb72df19061a", "mode": "0100644", "path": "pylint.rc", "type": "blob", "size": 8529},
-                    {"url": "http://localhost/repos/restfulgit/git/blobs/77b71e4967983b090aef88ba358724ef4703b01b/", "sha": "77b71e4967983b090aef88ba358724ef4703b01b", "mode": "0100644", "path": "requirements.txt", "type": "blob", "size": 29},
-                    {"url": "http://localhost/repos/restfulgit/git/trees/dd8a3571820936595e553c9ba9f776a5c77b1a53/", "path": "restfulgit", "type": "tree", "mode": "040000", "sha": "dd8a3571820936595e553c9ba9f776a5c77b1a53"},
-                    {"url": "http://localhost/repos/restfulgit/git/trees/bdcb3627ba5b29da20f01d9c4571b0ebc6a8b2bd/", "path": "tests", "type": "tree", "mode": "040000", "sha": "bdcb3627ba5b29da20f01d9c4571b0ebc6a8b2bd"}
-                ]
+                    {
+                        "mode": "100644",
+                        "type": "blob",
+                        "sha": "b5d2ce6a7246f37aaa41e7ce3403b5acd6369914",
+                        "path": ".coveragerc",
+                        "size": 65,
+                        "url": "http://localhost/repos/restfulgit/git/blobs/b5d2ce6a7246f37aaa41e7ce3403b5acd6369914/"
+                    },
+                    {
+                        "mode": "100644",
+                        "type": "blob",
+                        "sha": "cae6643e19e7a8198a26a449f556db6d1909aec8",
+                        "path": ".gitignore",
+                        "size": 22,
+                        "url": "http://localhost/repos/restfulgit/git/blobs/cae6643e19e7a8198a26a449f556db6d1909aec8/"
+                    },
+                    {
+                        "mode": "100644",
+                        "type": "blob",
+                        "sha": "f93712aaf5fcc4c0d44dc472d86abad40fdb0ec3",
+                        "path": ".pep8",
+                        "size": 19,
+                        "url": "http://localhost/repos/restfulgit/git/blobs/f93712aaf5fcc4c0d44dc472d86abad40fdb0ec3/"
+                    },
+                    {
+                        "mode": "100644",
+                        "type": "blob",
+                        "sha": "14e6bf5b229127a5495d9c176f50e3ef1922f0f2",
+                        "path": ".travis.yml",
+                        "size": 985,
+                        "url": "http://localhost/repos/restfulgit/git/blobs/14e6bf5b229127a5495d9c176f50e3ef1922f0f2/"
+                    },
+                    {
+                        "mode": "100644",
+                        "type": "blob",
+                        "sha": "bb27aa0a502f73c19837b96d1bd514ba95e0d404",
+                        "path": "LICENSE.md",
+                        "size": 1056,
+                        "url": "http://localhost/repos/restfulgit/git/blobs/bb27aa0a502f73c19837b96d1bd514ba95e0d404/"
+                    },
+                    {
+                        "mode": "100644",
+                        "type": "blob",
+                        "sha": "342f0ffead9243f5a3514505b83b918e61247ae2",
+                        "path": "README.md",
+                        "size": 5655,
+                        "url": "http://localhost/repos/restfulgit/git/blobs/342f0ffead9243f5a3514505b83b918e61247ae2/"
+                    },
+                    {
+                        "mode": "100644",
+                        "type": "blob",
+                        "sha": "20ff5b895391daa7335cc55be7e3a4da601982da",
+                        "path": "config.conf",
+                        "size": 398,
+                        "url": "http://localhost/repos/restfulgit/git/blobs/20ff5b895391daa7335cc55be7e3a4da601982da/"
+                    },
+                    {
+                        "mode": "100644",
+                        "type": "blob",
+                        "sha": "3e4025298468787af1123191bdddfb72df19061a",
+                        "path": "pylint.rc",
+                        "size": 8529,
+                        "url": "http://localhost/repos/restfulgit/git/blobs/3e4025298468787af1123191bdddfb72df19061a/"
+                    },
+                    {
+                        "mode": "100644",
+                        "type": "blob",
+                        "sha": "77b71e4967983b090aef88ba358724ef4703b01b",
+                        "path": "requirements.txt",
+                        "size": 29,
+                        "url": "http://localhost/repos/restfulgit/git/blobs/77b71e4967983b090aef88ba358724ef4703b01b/"
+                    },
+                    {
+                        "mode": "040000",
+                        "type": "tree",
+                        "sha": "dd8a3571820936595e553c9ba9f776a5c77b1a53",
+                        "path": "restfulgit",
+                        "url": "http://localhost/repos/restfulgit/git/trees/dd8a3571820936595e553c9ba9f776a5c77b1a53/"
+                    },
+                    {
+                        "mode": "040000",
+                        "type": "tree",
+                        "sha": "bdcb3627ba5b29da20f01d9c4571b0ebc6a8b2bd",
+                        "path": "tests",
+                        "url": "http://localhost/repos/restfulgit/git/trees/bdcb3627ba5b29da20f01d9c4571b0ebc6a8b2bd/"
+                    }
+              ]
             }
         )
 
     def test_get_recursive_tree_works(self):
+        # From https://api.github.com/repos/hulu/restfulgit/git/trees/fc36ceb418b0b9e945ffd3706dd8544dd988500a?recursive=1 with necessary adjustments
         resp = self.client.get('/repos/restfulgit/git/trees/fc36ceb418b0b9e945ffd3706dd8544dd988500a/?recursive=1')
         self.assert200(resp)
         self.assertEqual(
             resp.json,
             {
-                "url": "http://localhost/repos/restfulgit/git/trees/fc36ceb418b0b9e945ffd3706dd8544dd988500a/",
                 "sha": "fc36ceb418b0b9e945ffd3706dd8544dd988500a",
+                "url": "http://localhost/repos/restfulgit/git/trees/fc36ceb418b0b9e945ffd3706dd8544dd988500a/",
                 "tree": [
-                    {"url": "http://localhost/repos/restfulgit/git/blobs/b5d2ce6a7246f37aaa41e7ce3403b5acd6369914/", "sha": "b5d2ce6a7246f37aaa41e7ce3403b5acd6369914", "mode": "0100644", "path": ".coveragerc", "type": "blob", "size": 65},
-                    {"url": "http://localhost/repos/restfulgit/git/blobs/cae6643e19e7a8198a26a449f556db6d1909aec8/", "sha": "cae6643e19e7a8198a26a449f556db6d1909aec8", "mode": "0100644", "path": ".gitignore", "type": "blob", "size": 22},
-                    {"url": "http://localhost/repos/restfulgit/git/blobs/f93712aaf5fcc4c0d44dc472d86abad40fdb0ec3/", "sha": "f93712aaf5fcc4c0d44dc472d86abad40fdb0ec3", "mode": "0100644", "path": ".pep8", "type": "blob", "size": 19},
-                    {"url": "http://localhost/repos/restfulgit/git/blobs/b3e1e0f2b569fef46e7413cadb6778504c19c87f/", "sha": "b3e1e0f2b569fef46e7413cadb6778504c19c87f", "mode": "0100644", "path": ".travis.yml", "type": "blob", "size": 1008},
-                    {"url": "http://localhost/repos/restfulgit/git/blobs/bb27aa0a502f73c19837b96d1bd514ba95e0d404/", "sha": "bb27aa0a502f73c19837b96d1bd514ba95e0d404", "mode": "0100644", "path": "LICENSE.md", "type": "blob", "size": 1056},
-                    {"url": "http://localhost/repos/restfulgit/git/blobs/ee655c4baa251fad0a67dd74b2c390b4a4f9ac53/", "sha": "ee655c4baa251fad0a67dd74b2c390b4a4f9ac53", "mode": "0100644", "path": "README.md", "type": "blob", "size": 7855},
-                    {"url": "http://localhost/repos/restfulgit/git/blobs/7186d8fab5c4bb492cbcfe1383b2270651e13c2e/", "sha": "7186d8fab5c4bb492cbcfe1383b2270651e13c2e", "mode": "0100644", "path": "example_config.py", "type": "blob", "size": 489},
-                    {"url": "http://localhost/repos/restfulgit/git/blobs/abb1a23bc0fad8f7fe1dc5996a8e4c7c4cb9903e/", "sha": "abb1a23bc0fad8f7fe1dc5996a8e4c7c4cb9903e", "mode": "0100644", "path": "pylint.rc", "type": "blob", "size": 8517},
-                    {"url": "http://localhost/repos/restfulgit/git/blobs/77b71e4967983b090aef88ba358724ef4703b01b/", "sha": "77b71e4967983b090aef88ba358724ef4703b01b", "mode": "0100644", "path": "requirements.txt", "type": "blob", "size": 29},
-                    {"url": "http://localhost/repos/restfulgit/git/blobs/7fe178c5687eae1e2c04d9d21b6a429c93a28e6a/", "sha": "7fe178c5687eae1e2c04d9d21b6a429c93a28e6a", "mode": "0100644", "path": "restfulgit/__init__.py", "type": "blob", "size": 15986},
-                    {"url": "http://localhost/repos/restfulgit/git/blobs/e067d7f361bd3b0f227ba1914c227ebf9539f59d/", "sha": "e067d7f361bd3b0f227ba1914c227ebf9539f59d", "mode": "0100644", "path": "restfulgit/__main__.py", "type": "blob", "size": 110},
-                    {"url": "http://localhost/repos/restfulgit/git/trees/c0dcf8f58a3c5bf42f07e880d5e442ef124c9370/", "path": "restfulgit", "type": "tree", "mode": "040000", "sha": "c0dcf8f58a3c5bf42f07e880d5e442ef124c9370"},
-                    {"url": "http://localhost/repos/restfulgit/git/blobs/2d500fea50b6c1a38d972c1a22b5cb5b5673167a/", "sha": "2d500fea50b6c1a38d972c1a22b5cb5b5673167a", "mode": "0100644", "path": "tests/test_restfulgit.py", "type": "blob", "size": 26725},
-                    {"url": "http://localhost/repos/restfulgit/git/trees/803c8592dd96cb0a6fc041ebb6af71fbf1f7551c/", "path": "tests", "type": "tree", "mode": "040000", "sha": "803c8592dd96cb0a6fc041ebb6af71fbf1f7551c"}
+                    {
+                        "mode": "100644",
+                        "type": "blob",
+                        "sha": "b5d2ce6a7246f37aaa41e7ce3403b5acd6369914",
+                        "path": ".coveragerc",
+                        "size": 65,
+                        "url": "http://localhost/repos/restfulgit/git/blobs/b5d2ce6a7246f37aaa41e7ce3403b5acd6369914/"
+                    },
+                    {
+                        "mode": "100644",
+                        "type": "blob",
+                        "sha": "cae6643e19e7a8198a26a449f556db6d1909aec8",
+                        "path": ".gitignore",
+                        "size": 22,
+                        "url": "http://localhost/repos/restfulgit/git/blobs/cae6643e19e7a8198a26a449f556db6d1909aec8/"
+                    },
+                    {
+                        "mode": "100644",
+                        "type": "blob",
+                        "sha": "f93712aaf5fcc4c0d44dc472d86abad40fdb0ec3",
+                        "path": ".pep8",
+                        "size": 19,
+                        "url": "http://localhost/repos/restfulgit/git/blobs/f93712aaf5fcc4c0d44dc472d86abad40fdb0ec3/"
+                    },
+                    {
+                        "mode": "100644",
+                        "type": "blob",
+                        "sha": "b3e1e0f2b569fef46e7413cadb6778504c19c87f",
+                        "path": ".travis.yml",
+                        "size": 1008,
+                        "url": "http://localhost/repos/restfulgit/git/blobs/b3e1e0f2b569fef46e7413cadb6778504c19c87f/"
+                    },
+                    {
+                        "mode": "100644",
+                        "type": "blob",
+                        "sha": "bb27aa0a502f73c19837b96d1bd514ba95e0d404",
+                        "path": "LICENSE.md",
+                        "size": 1056,
+                        "url": "http://localhost/repos/restfulgit/git/blobs/bb27aa0a502f73c19837b96d1bd514ba95e0d404/"
+                    },
+                    {
+                        "mode": "100644",
+                        "type": "blob",
+                        "sha": "ee655c4baa251fad0a67dd74b2c390b4a4f9ac53",
+                        "path": "README.md",
+                        "size": 7855,
+                        "url": "http://localhost/repos/restfulgit/git/blobs/ee655c4baa251fad0a67dd74b2c390b4a4f9ac53/"
+                    },
+                    {
+                        "mode": "100644",
+                        "type": "blob",
+                        "sha": "7186d8fab5c4bb492cbcfe1383b2270651e13c2e",
+                        "path": "example_config.py",
+                        "size": 489,
+                        "url": "http://localhost/repos/restfulgit/git/blobs/7186d8fab5c4bb492cbcfe1383b2270651e13c2e/"
+                    },
+                    {
+                        "mode": "100644",
+                        "type": "blob",
+                        "sha": "abb1a23bc0fad8f7fe1dc5996a8e4c7c4cb9903e",
+                        "path": "pylint.rc",
+                        "size": 8517,
+                        "url": "http://localhost/repos/restfulgit/git/blobs/abb1a23bc0fad8f7fe1dc5996a8e4c7c4cb9903e/"
+                    },
+                    {
+                        "mode": "100644",
+                        "type": "blob",
+                        "sha": "77b71e4967983b090aef88ba358724ef4703b01b",
+                        "path": "requirements.txt",
+                        "size": 29,
+                        "url": "http://localhost/repos/restfulgit/git/blobs/77b71e4967983b090aef88ba358724ef4703b01b/"
+                    },
+                    {
+                        "mode": "040000",
+                        "type": "tree",
+                        "sha": "c0dcf8f58a3c5bf42f07e880d5e442ef124c9370",
+                        "path": "restfulgit",
+                        "url": "http://localhost/repos/restfulgit/git/trees/c0dcf8f58a3c5bf42f07e880d5e442ef124c9370/"
+                    },
+                    {
+                        "mode": "100644",
+                        "type": "blob",
+                        "sha": "7fe178c5687eae1e2c04d9d21b6a429c93a28e6a",
+                        "path": "restfulgit/__init__.py",
+                        "size": 15986,
+                        "url": "http://localhost/repos/restfulgit/git/blobs/7fe178c5687eae1e2c04d9d21b6a429c93a28e6a/"
+                    },
+                    {
+                        "mode": "100644",
+                        "type": "blob",
+                        "sha": "e067d7f361bd3b0f227ba1914c227ebf9539f59d",
+                        "path": "restfulgit/__main__.py",
+                        "size": 110,
+                        "url": "http://localhost/repos/restfulgit/git/blobs/e067d7f361bd3b0f227ba1914c227ebf9539f59d/"
+                    },
+                    {
+                        "mode": "040000",
+                        "type": "tree",
+                        "sha": "803c8592dd96cb0a6fc041ebb6af71fbf1f7551c",
+                        "path": "tests",
+                        "url": "http://localhost/repos/restfulgit/git/trees/803c8592dd96cb0a6fc041ebb6af71fbf1f7551c/"
+                    },
+                    {
+                        "mode": "100644",
+                        "type": "blob",
+                        "sha": "2d500fea50b6c1a38d972c1a22b5cb5b5673167a",
+                        "path": "tests/test_restfulgit.py",
+                        "size": 26725,
+                        "url": "http://localhost/repos/restfulgit/git/blobs/2d500fea50b6c1a38d972c1a22b5cb5b5673167a/"
+                    }
                 ]
             }
         )
