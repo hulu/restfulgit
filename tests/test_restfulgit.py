@@ -519,7 +519,7 @@ class SimpleSHATestCase(_RestfulGitTestCase):
         resp = self.client.get('/repos/restfulgit/commits/{}.diff'.format(IMPROBABLE_SHA))
         self.assertJson404(resp)
 
-    def test_get_repos_tag_works(self):
+    def test_get_repos_tag_works(self):  # NOTE: RestfulGit extension
         resp = self.client.get('/repos/restfulgit/tags/initial/')
         self.assert200(resp)
         self.assertEqual(resp.json, {
@@ -578,7 +578,7 @@ class SimpleSHATestCase(_RestfulGitTestCase):
         'url': 'http://localhost/repos/restfulgit/tags/initial/'
     })
 
-    def test_get_repos_tag_with_nonexistent_tag(self):
+    def test_get_repos_tag_with_nonexistent_tag(self):  # NOTE: RestfulGit extension
         resp = self.client.get('/repos/restfulgit/tags/this-tag-does-not-exist/')
         self.assertJson404(resp)
 
