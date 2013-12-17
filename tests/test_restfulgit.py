@@ -425,7 +425,7 @@ class SimpleSHATestCase(_RestfulGitTestCase):
             }
         )
 
-    def test_get_repo_commit(self):
+    def test_get_repo_commit_works(self):
         # From https://api.github.com/repos/hulu/restfulgit/commits/d408fc2428bc6444cabd7f7b46edbe70b6992b16 with necessary adjustments
         reference = {
             "sha": "d408fc2428bc6444cabd7f7b46edbe70b6992b16",
@@ -505,11 +505,19 @@ class SimpleSHATestCase(_RestfulGitTestCase):
         self.assert200(resp)
         self.assertEqual(reference, resp.json)
 
+    def test_get_repo_commit_with_nonexistent_sha(self):
+        resp = self.client.get('/repos/restfulgit/commits/{}/'.format(IMPROBABLE_SHA))
+        self.assertJson404(resp)
+
     def test_get_diff_works(self):
         resp = self.client.get('/repos/restfulgit/commits/d408fc2428bc6444cabd7f7b46edbe70b6992b16.diff')
         self.assert200(resp)
         self.assertEqual(resp.headers.get_all('Content-Type'), [b'text/x-diff; charset=utf-8'])
         self.assertTextEqualsFixture(resp.get_data(), 'd408fc2428bc6444cabd7f7b46edbe70b6992b16.diff')
+
+    def test_get_diff_with_nonexistent_sha(self):
+        resp = self.client.get('/repos/restfulgit/commits/{}.diff'.format(IMPROBABLE_SHA))
+        self.assertJson404(resp)
 
     def test_get_repos_tag_works(self):
         resp = self.client.get('/repos/restfulgit/tags/initial/')
@@ -570,6 +578,10 @@ class SimpleSHATestCase(_RestfulGitTestCase):
         'url': 'http://localhost/repos/restfulgit/tags/initial/'
     })
 
+    def test_get_repos_tag_with_nonexistent_tag(self):
+        resp = self.client.get('/repos/restfulgit/tags/this-tag-does-not-exist/')
+        self.assertJson404(resp)
+
     def test_get_repo_tags_works(self):
         # From https://api.github.com/repos/hulu/restfulgit/tags with necessary adjustments
         reference_tag = {
@@ -592,6 +604,10 @@ class SimpleSHATestCase(_RestfulGitTestCase):
         initial_tag = initial_tags[0]
         self.assertEqual(reference_tag, initial_tag)
 
+    def test_get_repo_tags_with_nonexistent_repo(self):
+        resp = self.client.get('/repos/this-repo-does-not-exist/tags/')
+        self.assertJson404(resp)
+
     def test_get_repo_branches_works(self):
         # From https://api.github.com/repos/hulu/restfulgit/branches with necessary adjustments
         reference_branch =  {
@@ -612,6 +628,10 @@ class SimpleSHATestCase(_RestfulGitTestCase):
         self.assertEqual(len(ambiguous_branches), 1)
         ambiguous_branch = ambiguous_branches[0]
         self.assertEqual(reference_branch, ambiguous_branch)
+
+    def test_get_repo_branches_with_nonexistent_repo(self):
+        resp = self.client.get('/repos/this-repo-does-not-exist/branches/')
+        self.assertJson404(resp)
 
     def test_get_repo_branch_works(self):
         # From https://api.github.com/repos/hulu/restfulgit/branches/ambiguous with necessary adjustments
@@ -671,6 +691,10 @@ class SimpleSHATestCase(_RestfulGitTestCase):
         self.assert200(resp)
         json = resp.json
         self.assertEqual(reference, json)
+
+    def test_get_repo_branch_with_nonexistent_branch(self):
+        resp = self.client.get('/repos/restfulgit/branches/this-branch-does-not-exist/')
+        self.assertJson404(resp)
 
 
 class RefsTestCase(_RestfulGitTestCase):
