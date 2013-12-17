@@ -619,7 +619,7 @@ class SimpleSHATestCase(_RestfulGitTestCase):
             }
         )
 
-    def test_get_repos_tag_works(self):
+    def test_get_repos_tag_works(self):  # NOTE: RestfulGit extension
         resp = self.client.get('/repos/restfulgit/tags/initial/')
         self.assert200(resp)
         self.assertEqual(resp.json, {
