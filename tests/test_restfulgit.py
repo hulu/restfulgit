@@ -613,6 +613,7 @@ class RefsTestCase(_RestfulGitTestCase):
         self.assertEqual([], resp.json)
 
     def test_valid_specific_ref_path(self):
+        # Frpm https://api.github.com/repos/hulu/restfulgit/git/refs/tags/initial with necessary adjustments
         resp = self.client.get('/repos/restfulgit/git/refs/tags/initial')
         self.assert200(resp)
         self.assertEqual(
