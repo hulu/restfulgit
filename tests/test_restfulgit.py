@@ -589,23 +589,31 @@ class SimpleSHATestCase(_RestfulGitTestCase):
 
 class RefsTestCase(_RestfulGitTestCase):
     def test_get_refs_works(self):
+        # From https://api.github.com/repos/hulu/restfulgit/git/refs with necessary adjustments
+        reference_initial_tag_ref = {
+            "ref": "refs/tags/initial",
+            "url": "http://localhost/repos/restfulgit/git/refs/tags/initial",
+            "object": {
+                "sha": "1dffc031c9beda43ff94c526cbc00a30d231c079",
+                "type": "tag",
+                "url": "http://localhost/repos/restfulgit/git/tags/1dffc031c9beda43ff94c526cbc00a30d231c079/"
+            }
+        }
+        reference_ambiguous_branch_ref = {
+            "ref": "refs/heads/ambiguous",
+            "url": "http://localhost/repos/restfulgit/git/refs/heads/ambiguous",
+            "object": {
+                "sha": "1f51b91ac383806df9d322ae67bbad3364f50811",
+                "type": "commit",
+                "url": "http://localhost/repos/restfulgit/git/commits/1f51b91ac383806df9d322ae67bbad3364f50811/"
+            }
+        }
         resp = self.client.get('/repos/restfulgit/git/refs/')
         self.assert200(resp)
         ref_list = resp.json
         self.assertIsInstance(ref_list, list)
-        for ref in ref_list:
-            self.assertIsInstance(ref, dict)
-            self.assertEqual(ref.viewkeys(), {'object', 'ref', 'url'})
-
-            self.assertIsInstance(ref['ref'], unicode)
-            self.assertIsInstance(ref['url'], unicode)
-
-            obj = ref['object']
-            self.assertIsInstance(obj, dict)
-            self.assertEqual(obj.viewkeys(), {'type', 'sha', 'url'})
-            for val in obj.itervalues():
-                self.assertIsInstance(val, unicode)
-            self.assertIn(obj['type'], {'commit', 'tag'})
+        self.assertIn(reference_initial_tag_ref, ref_list)
+        self.assertIn(reference_ambiguous_branch_ref, ref_list)
 
     def test_invalid_ref_path(self):
         resp = self.client.get('/repos/restfulgit/git/refs/this_ref/path_does/not_exist')
