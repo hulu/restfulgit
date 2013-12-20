@@ -317,18 +317,18 @@ class SimpleSHATestCase(_RestfulGitTestCase):
         self.assertEqual(
             resp.json,
             {
-              "sha": "6ca22167185c31554aa6157306e68dfd612d6345",
-              "url": "http://localhost/repos/restfulgit/git/trees/6ca22167185c31554aa6157306e68dfd612d6345/",
-              "tree": [
-                {
-                  "mode": "100644",
-                  "type": "blob",
-                  "sha": "ae9d90706c632c26023ce599ac96cb152673da7c",
-                  "path": "api.py",
-                  "size": 5543,
-                  "url": "http://localhost/repos/restfulgit/git/blobs/ae9d90706c632c26023ce599ac96cb152673da7c/"
-                }
-              ]
+                "sha": "6ca22167185c31554aa6157306e68dfd612d6345",
+                "url": "http://localhost/repos/restfulgit/git/trees/6ca22167185c31554aa6157306e68dfd612d6345/",
+                "tree": [
+                    {
+                        "mode": "100644",
+                        "type": "blob",
+                        "sha": "ae9d90706c632c26023ce599ac96cb152673da7c",
+                        "path": "api.py",
+                        "size": 5543,
+                        "url": "http://localhost/repos/restfulgit/git/blobs/ae9d90706c632c26023ce599ac96cb152673da7c/"
+                    }
+                ]
             }
         )
 
@@ -428,7 +428,7 @@ class SimpleSHATestCase(_RestfulGitTestCase):
                         "path": "tests",
                         "url": "http://localhost/repos/restfulgit/git/trees/bdcb3627ba5b29da20f01d9c4571b0ebc6a8b2bd/"
                     }
-              ]
+                ]
             }
         )
 
@@ -607,7 +607,7 @@ class SimpleSHATestCase(_RestfulGitTestCase):
 
     def test_get_repo_branches_works(self):
         # From https://api.github.com/repos/hulu/restfulgit/branches with necessary adjustments
-        reference_branch =  {
+        reference_branch = {
             "name": "ambiguous",
             "commit": {
                 "sha": "1f51b91ac383806df9d322ae67bbad3364f50811",
@@ -634,26 +634,26 @@ class SimpleSHATestCase(_RestfulGitTestCase):
                 "sha": "1f51b91ac383806df9d322ae67bbad3364f50811",
                 "commit": {
                     "author": {
-                      "name": "Rajiv Makhijani",
-                      "email": "rajiv@hulu.com",
-                      "date": "2013-02-25T12:35:29Z"
+                        "name": "Rajiv Makhijani",
+                        "email": "rajiv@hulu.com",
+                        "date": "2013-02-25T12:35:29Z"
                     },
                     "committer": {
-                      "name": "Rajiv Makhijani",
-                      "email": "rajiv@hulu.com",
-                      "date": "2013-02-25T12:35:29Z"
+                        "name": "Rajiv Makhijani",
+                        "email": "rajiv@hulu.com",
+                        "date": "2013-02-25T12:35:29Z"
                     },
                     "message": "Support submodule in tree-listings",
                     "tree": {
-                      "sha": "1404e1766a3269f5a73b3d2ec8c81b7ea3ad6e09",
-                      "url": "http://localhost/repos/restfulgit/git/trees/1404e1766a3269f5a73b3d2ec8c81b7ea3ad6e09/"
+                        "sha": "1404e1766a3269f5a73b3d2ec8c81b7ea3ad6e09",
+                        "url": "http://localhost/repos/restfulgit/git/trees/1404e1766a3269f5a73b3d2ec8c81b7ea3ad6e09/"
                     },
                     "url": "http://localhost/repos/restfulgit/git/commits/1f51b91ac383806df9d322ae67bbad3364f50811/",
                     "sha": "1f51b91ac383806df9d322ae67bbad3364f50811",  # NOTE: RestfulGit extension
                     "parents": [  # NOTE: RestfulGit extension
                         {
-                          "sha": "ff6405b71273b5c2c50d5c33d5cf962af5390542",
-                          "url": "http://localhost/repos/restfulgit/commits/ff6405b71273b5c2c50d5c33d5cf962af5390542/",
+                            "sha": "ff6405b71273b5c2c50d5c33d5cf962af5390542",
+                            "url": "http://localhost/repos/restfulgit/commits/ff6405b71273b5c2c50d5c33d5cf962af5390542/",
                         }
                     ]
                 },
@@ -670,8 +670,8 @@ class SimpleSHATestCase(_RestfulGitTestCase):
                 },
                 "parents": [
                     {
-                      "sha": "ff6405b71273b5c2c50d5c33d5cf962af5390542",
-                      "url": "http://localhost/repos/restfulgit/commits/ff6405b71273b5c2c50d5c33d5cf962af5390542/",
+                        "sha": "ff6405b71273b5c2c50d5c33d5cf962af5390542",
+                        "url": "http://localhost/repos/restfulgit/commits/ff6405b71273b5c2c50d5c33d5cf962af5390542/",
                     }
                 ]
             },
@@ -683,7 +683,6 @@ class SimpleSHATestCase(_RestfulGitTestCase):
         resp = self.client.get('/repos/restfulgit/branches/ambiguous/')
         self.assert200(resp)
         json = resp.json
-        self.maxDiff = None
         self.assertEqual(reference, json)
 
     def test_get_repo_commit(self):
