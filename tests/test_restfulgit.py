@@ -19,6 +19,7 @@ import restfulgit
 
 
 TEST_SUBDIR = os.path.join(RESTFULGIT_REPO, 'tests')
+FIXTURES_DIR = os.path.join(TEST_SUBDIR, 'fixtures')
 GIT_MIRROR_DESCRIPTION_FILEPATH = os.path.join(RESTFULGIT_REPO, 'description')
 NORMAL_CLONE_DESCRIPTION_FILEPATH = os.path.join(RESTFULGIT_REPO, '.git', 'description')
 FIRST_COMMIT = "07b9bf1540305153ceeb4519a50b588c35a35464"
@@ -62,6 +63,14 @@ class _RestfulGitTestCase(_FlaskTestCase):
             yield
         finally:
             self.app.config[key] = orig_val
+
+    def _get_fixture_text(self, filename):
+        filepath = os.path.join(FIXTURES_DIR, filename)
+        with open(filepath, 'r') as fixture_file:
+            return fixture_file.read()
+
+    def assertTextEqualsFixture(self, text, fixture):
+        self.assertEqual(text, self._get_fixture_text(fixture))
 
 
 class RepoKeyTestCase(_RestfulGitTestCase):
@@ -756,6 +765,25 @@ class SimpleSHATestCase(_RestfulGitTestCase):
         resp = self.client.get('/repos/restfulgit/commits/d408fc2428bc6444cabd7f7b46edbe70b6992b16/')
         self.assert200(resp)
         self.assertEqual(reference, resp.json)
+
+    def test_get_diff_works(self):
+        resp = self.client.get('/repos/restfulgit/commits/d408fc2428bc6444cabd7f7b46edbe70b6992b16.diff')
+        resp = self.client.get('/repos/restfulgit/commit/d408fc2428bc6444cabd7f7b46edbe70b6992b16.diff')
+        self.assert200(resp)
+        self.assertEqual(resp.headers.get_all('Content-Type'), [b'text/x-diff; charset=utf-8'])
+        self.assertTextEqualsFixture(resp.get_data(), 'd408fc2428bc6444cabd7f7b46edbe70b6992b16.diff')
+
+    def test_get_diff_with_parentless_commit(self):  # NOTE: RestfulGit extension; GitHub gives a 404 in this case
+        resp = self.client.get('/repos/restfulgit/commit/07b9bf1540305153ceeb4519a50b588c35a35464.diff')
+        self.assert200(resp)
+        self.assertEqual(resp.headers.get_all('Content-Type'), [b'text/x-diff; charset=utf-8'])
+        self.assertTextEqualsFixture(resp.get_data(), '07b9bf1540305153ceeb4519a50b588c35a35464.diff')
+
+    def test_get_diff_with_nonexistent_sha(self):
+        resp = self.client.get('/repos/restfulgit/commits/{}.diff'.format(IMPROBABLE_SHA))
+        resp = self.client.get('/repos/restfulgit/commit/{}.diff'.format(IMPROBABLE_SHA))
+        self.assertJson404(resp)
+
 
 class RefsTestCase(_RestfulGitTestCase):
     def test_get_refs_works(self):
