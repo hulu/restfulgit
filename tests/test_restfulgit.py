@@ -626,6 +626,10 @@ class SimpleSHATestCase(_RestfulGitTestCase):
         initial_tag = initial_tags[0]
         self.assertEqual(reference_tag, initial_tag)
 
+    def test_get_repo_tags_with_nonexistent_repo(self):
+        resp = self.client.get('/repos/this-repo-does-not-exist/tags/')
+        self.assertJson404(resp)
+
     def test_get_repo_branches_works(self):
         # From https://api.github.com/repos/hulu/restfulgit/branches with necessary adjustments
         reference_branch = {
