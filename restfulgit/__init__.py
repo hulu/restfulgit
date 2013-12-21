@@ -257,14 +257,12 @@ def _convert_commit(repo_key, commit, porcelain=False):
     }
 
 
-
 GIT_STATUS_TO_NAME = {
     'M': 'modified',
     'A': 'added',
     'R': 'renamed',
     'D': 'removed',
 }
-
 
 
 def _convert_patch(repo_key, commit, patch, patches_txt):
