@@ -5,7 +5,7 @@ RestfulGit: A Restful API for Git data
 [![Requirements Status](https://requires.io/github/hulu/restfulgit/requirements.png?branch=master)](https://requires.io/github/hulu/restfulgit/requirements/?branch=master)
 
 Provides a read-only restful interface for accessing data from Git repositories (local to the server).
-Modeled off the GitHub Git DB API for compatibility (see http://developer.github.com/v3/git/).
+Modeled off the GitHub API for compatibility (see http://developer.github.com/v3/).
 
 Requires:
 - Python 2.7
