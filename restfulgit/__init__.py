@@ -802,7 +802,7 @@ def get_contents(repo_key, path):  # pylint: disable=W0613
     raise NotImplementedError()
 
 
-@restfulgit.route('/repos/<repo_key>/blame/<branch_or_tag_or_sha>/<path:file_path>')
+@restfulgit.route('/repos/<repo_key>/blame/<branch_or_tag_or_sha>/<path:file_path>')  # NOTE: This endpoint is a RestfulGit extension
 @corsify
 @jsonify
 def get_blame(repo_key, branch_or_tag_or_sha, file_path):
