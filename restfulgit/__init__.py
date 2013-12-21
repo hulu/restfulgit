@@ -151,7 +151,7 @@ def _get_commit_for_refspec(repo, branch_or_tag_or_sha):
         commit_sha = branch_or_tag_or_sha
     try:
         return _get_commit(repo, commit_sha)
-    except ValueError:
+    except (ValueError, NotFound):
         raise NotFound("no such branch, tag, or commit SHA")
 
 
