@@ -647,6 +647,10 @@ class SimpleSHATestCase(_RestfulGitTestCase):
         ambiguous_branch = ambiguous_branches[0]
         self.assertEqual(reference_branch, ambiguous_branch)
 
+    def test_get_repo_branches_with_nonexistent_repo(self):
+        resp = self.client.get('/repos/this-repo-does-not-exist/branches/')
+        self.assertJson404(resp)
+
     def test_get_repo_branch_works(self):
         # From https://api.github.com/repos/hulu/restfulgit/branches/ambiguous with necessary adjustments
         reference = {
@@ -705,6 +709,10 @@ class SimpleSHATestCase(_RestfulGitTestCase):
         self.assert200(resp)
         json = resp.json
         self.assertEqual(reference, json)
+
+    def test_get_repo_branch_with_nonexistent_branch(self):
+        resp = self.client.get('/repos/restfulgit/branches/this-branch-does-not-exist/')
+        self.assertJson404(resp)
 
     def test_get_repo_commit(self):
         # From https://api.github.com/repos/hulu/restfulgit/commits/d408fc2428bc6444cabd7f7b46edbe70b6992b16 with necessary adjustments
@@ -785,6 +793,10 @@ class SimpleSHATestCase(_RestfulGitTestCase):
         resp = self.client.get('/repos/restfulgit/commits/d408fc2428bc6444cabd7f7b46edbe70b6992b16/')
         self.assert200(resp)
         self.assertEqual(reference, resp.json)
+
+    def test_get_repo_commit_with_nonexistent_sha(self):
+        resp = self.client.get('/repos/restfulgit/commits/{}/'.format(IMPROBABLE_SHA))
+        self.assertJson404(resp)
 
     def test_get_diff_works(self):
         resp = self.client.get('/repos/restfulgit/commits/d408fc2428bc6444cabd7f7b46edbe70b6992b16.diff')
