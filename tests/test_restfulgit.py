@@ -714,7 +714,7 @@ class SimpleSHATestCase(_RestfulGitTestCase):
         resp = self.client.get('/repos/restfulgit/branches/this-branch-does-not-exist/')
         self.assertJson404(resp)
 
-    def test_get_repo_commit(self):
+    def test_get_repo_commit_works(self):
         # From https://api.github.com/repos/hulu/restfulgit/commits/d408fc2428bc6444cabd7f7b46edbe70b6992b16 with necessary adjustments
         reference = {
             "sha": "d408fc2428bc6444cabd7f7b46edbe70b6992b16",
