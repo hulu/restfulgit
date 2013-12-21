@@ -676,8 +676,8 @@ TAG_REF_PREFIX = "refs/tags/"
 @jsonify
 def get_tags(repo_key):
     repo = _get_repo(repo_key)
-    ref_names = ifilter(lambda x: x.startswith(TAG_REF_PREFIX), repo.listall_references())
-    tags = [repo.lookup_reference(ref_name) for ref_name in ref_names]
+    ref_names = ifilter(lambda ref_name: ref_name.startswith(TAG_REF_PREFIX), repo.listall_references())
+    tags = (repo.lookup_reference(ref_name) for ref_name in ref_names)
     return [
         {
             "name": tag.shorthand,
@@ -726,7 +726,7 @@ def get_repos_diff(repo_key, branch_or_tag_or_sha=None):
 @jsonify
 def get_branches(repo_key):
     repo = _get_repo(repo_key)
-    branches = [repo.lookup_branch(branch_name) for branch_name in repo.listall_branches()]
+    branches = (repo.lookup_branch(branch_name) for branch_name in repo.listall_branches())
     return [
         {
             "name": branch.branch_name,
