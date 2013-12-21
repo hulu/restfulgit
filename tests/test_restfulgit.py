@@ -799,7 +799,6 @@ class SimpleSHATestCase(_RestfulGitTestCase):
         self.assertJson404(resp)
 
     def test_get_diff_works(self):
-        resp = self.client.get('/repos/restfulgit/commits/d408fc2428bc6444cabd7f7b46edbe70b6992b16.diff')
         resp = self.client.get('/repos/restfulgit/commit/d408fc2428bc6444cabd7f7b46edbe70b6992b16.diff')
         self.assert200(resp)
         self.assertEqual(resp.headers.get_all('Content-Type'), [b'text/x-diff; charset=utf-8'])
@@ -812,7 +811,6 @@ class SimpleSHATestCase(_RestfulGitTestCase):
         self.assertTextEqualsFixture(resp.get_data(), '07b9bf1540305153ceeb4519a50b588c35a35464.diff')
 
     def test_get_diff_with_nonexistent_sha(self):
-        resp = self.client.get('/repos/restfulgit/commits/{}.diff'.format(IMPROBABLE_SHA))
         resp = self.client.get('/repos/restfulgit/commit/{}.diff'.format(IMPROBABLE_SHA))
         self.assertJson404(resp)
 
