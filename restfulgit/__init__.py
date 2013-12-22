@@ -430,7 +430,7 @@ def _convert_blob(repo_key, blob):
         "sha": blob.hex,
         "size": blob.size,
         "encoding": encoding,
-        "data": data,
+        "content": data,
     }
 
 

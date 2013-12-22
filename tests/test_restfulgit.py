@@ -64,13 +64,13 @@ class _RestfulGitTestCase(_FlaskTestCase):
         finally:
             self.app.config[key] = orig_val
 
-    def _get_fixture_text(self, filename):
+    def _get_fixture_bytes(self, filename):
         filepath = os.path.join(FIXTURES_DIR, filename)
         with open(filepath, 'r') as fixture_file:
             return fixture_file.read()
 
-    def assertTextEqualsFixture(self, text, fixture):
-        self.assertEqual(text, self._get_fixture_text(fixture))
+    def assertBytesEqualFixture(self, text, fixture):
+        self.assertEqual(text, self._get_fixture_bytes(fixture))
 
 
 class RepoKeyTestCase(_RestfulGitTestCase):
@@ -576,12 +576,12 @@ class SimpleSHATestCase(_RestfulGitTestCase):
         self.assert200(resp)
         json = resp.json
         self.assertIsInstance(json, dict)
-        self.assertIn("data", json)
+        self.assertIn("content", json)
         self.assertEqual(
-            sha512(json["data"]).hexdigest(),
+            sha512(json["content"]).hexdigest(),
             '1c846bb4d44c08073c487316a7dc02d97d825aecf50546caf9bf10277c01d17e19860d5f86de877268dd969bd081c7595991c325e0ab492374b956e3a6c9967f'
         )
-        del json["data"]
+        del json["content"]
         self.assertEqual(
             json,
             {
@@ -593,7 +593,24 @@ class SimpleSHATestCase(_RestfulGitTestCase):
         )
 
     def test_get_binary_blob_works(self):
-        pass
+        # From https://api.github.com/repos/hulu/restfulgit/git/blobs/79fbf74e9d9f752c901c956e958845a308c44283 with necessary adjustments
+        resp = self.client.get('/repos/restfulgit/git/blobs/79fbf74e9d9f752c901c956e958845a308c44283/')
+        self.assert200(resp)
+        json = resp.json
+        self.assertIsInstance(json, dict)
+        self.assertIn('content', json)
+        content = json['content']
+        del json['content']
+        self.assertBytesEqualFixture(content.decode('base64'), 'example.png')
+        self.assertEqual(
+            json,
+            {
+                "sha": "79fbf74e9d9f752c901c956e958845a308c44283",
+                "size": 1185,
+                "url": "http://localhost/repos/restfulgit/git/blobs/79fbf74e9d9f752c901c956e958845a308c44283/",
+                "encoding": "base64"
+            }
+        )
 
     def test_get_tag_works(self):
         # From https://api.github.com/repos/hulu/restfulgit/git/tags/1dffc031c9beda43ff94c526cbc00a30d231c079 with necessary adjustments
@@ -884,13 +901,13 @@ class SimpleSHATestCase(_RestfulGitTestCase):
         resp = self.client.get('/repos/restfulgit/commit/d408fc2428bc6444cabd7f7b46edbe70b6992b16.diff')
         self.assert200(resp)
         self.assertEqual(resp.headers.get_all('Content-Type'), [b'text/x-diff; charset=utf-8'])
-        self.assertTextEqualsFixture(resp.get_data(), 'd408fc2428bc6444cabd7f7b46edbe70b6992b16.diff')
+        self.assertBytesEqualFixture(resp.get_data(), 'd408fc2428bc6444cabd7f7b46edbe70b6992b16.diff')
 
     def test_get_diff_with_parentless_commit(self):  # NOTE: RestfulGit extension; GitHub gives a 404 in this case
         resp = self.client.get('/repos/restfulgit/commit/07b9bf1540305153ceeb4519a50b588c35a35464.diff')
         self.assert200(resp)
         self.assertEqual(resp.headers.get_all('Content-Type'), [b'text/x-diff; charset=utf-8'])
-        self.assertTextEqualsFixture(resp.get_data(), '07b9bf1540305153ceeb4519a50b588c35a35464.diff')
+        self.assertBytesEqualFixture(resp.get_data(), '07b9bf1540305153ceeb4519a50b588c35a35464.diff')
 
     def test_get_diff_with_nonexistent_sha(self):
         resp = self.client.get('/repos/restfulgit/commit/{}.diff'.format(IMPROBABLE_SHA))
@@ -901,7 +918,7 @@ class SimpleSHATestCase(_RestfulGitTestCase):
         resp = self.client.get('/repos/restfulgit/commit/88edac1a3a55c04646ccc963fdada0e194ed5926.diff')
         self.assert200(resp)
         self.assertEqual(resp.headers.get_all('Content-Type'), [b'text/x-diff; charset=utf-8'])
-        self.assertTextEqualsFixture(resp.get_data(), '88edac1a3a55c04646ccc963fdada0e194ed5926.diff')
+        self.assertBytesEqualFixture(resp.get_data(), '88edac1a3a55c04646ccc963fdada0e194ed5926.diff')
 
     def test_get_diff_with_merge_commit(self):
         pass
