@@ -896,6 +896,16 @@ class SimpleSHATestCase(_RestfulGitTestCase):
         resp = self.client.get('/repos/restfulgit/commit/{}.diff'.format(IMPROBABLE_SHA))
         self.assertJson404(resp)
 
+    def test_get_diff_involving_binary_file(self):
+        # From https://github.com/hulu/restfulgit/commit/88edac1a3a55c04646ccc963fdada0e194ed5926.diff
+        resp = self.client.get('/repos/restfulgit/commit/88edac1a3a55c04646ccc963fdada0e194ed5926.diff')
+        self.assert200(resp)
+        self.assertEqual(resp.headers.get_all('Content-Type'), [b'text/x-diff; charset=utf-8'])
+        self.assertTextEqualsFixture(resp.get_data(), '88edac1a3a55c04646ccc963fdada0e194ed5926.diff')
+
+    def test_get_diff_with_merge_commit(self):
+        pass
+
 
 class RefsTestCase(_RestfulGitTestCase):
     def test_get_refs_works(self):
