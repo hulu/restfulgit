@@ -20,6 +20,7 @@ before_script:
   - "git branch ambiguous 1f51b91ac383806df9d322ae67bbad3364f50811"
   - "git branch -v"
   - "git checkout -b master || true"
+  - "umask 0022"
 script:
   - "pep8 restfulgit"
   - "pylint --rcfile=pylint.rc restfulgit"

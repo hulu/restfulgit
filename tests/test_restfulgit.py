@@ -8,6 +8,9 @@ import os.path
 import io
 from contextlib import contextmanager
 from datetime import timedelta
+from tempfile import mkdtemp, mkstemp
+from shutil import rmtree
+from subprocess import check_call
 
 from flask.ext.testing import TestCase as _FlaskTestCase
 
@@ -64,13 +67,40 @@ class _RestfulGitTestCase(_FlaskTestCase):
         finally:
             self.app.config[key] = orig_val
 
+    def get_fixture_path(self, filename):
+        return os.path.join(FIXTURES_DIR, filename)
+
     def _get_fixture_bytes(self, filename):
-        filepath = os.path.join(FIXTURES_DIR, filename)
+        filepath = self.get_fixture_path(filename)
         with open(filepath, 'r') as fixture_file:
             return fixture_file.read()
 
     def assertBytesEqualFixture(self, text, fixture):
         self.assertEqual(text, self._get_fixture_bytes(fixture))
+
+    @contextmanager
+    def temporary_file(self, suffix=''):
+        file_descriptor, filepath = mkstemp(suffix=suffix)
+        file_obj = os.fdopen(file_descriptor, 'wb')
+        try:
+            yield file_obj, filepath
+        finally:
+            if not file_obj.closed:
+                file_obj.close()
+            delete_file_quietly(filepath)
+
+    @contextmanager
+    def temporary_directory(self, suffix=''):
+        temp_dir = mkdtemp(suffix=suffix)
+        try:
+            yield temp_dir
+        finally:
+            rmtree(temp_dir)
+
+    def make_nested_dir(self, extant_parent, new_child):
+        new_dir = os.path.join(extant_parent, new_child)
+        os.mkdir(new_dir)
+        return new_dir
 
 
 class RepoKeyTestCase(_RestfulGitTestCase):
@@ -1221,6 +1251,130 @@ class CorsTestCase(_RestfulGitTestCase):
     def test_allowed_methods(self):
         with self.cors_enabled:
             self.assert_header_equal('Access-Control-Allow-Methods', 'HEAD, OPTIONS, GET')
+
+
+class ArchiveDownloadTestCase(_RestfulGitTestCase):
+    def run_command_quietly(self, args):
+        with open(os.devnull, 'wb') as blackhole:
+            check_call(args, stdout=blackhole)
+
+    def _only_subdirectory_in(self, directory):
+        names = os.listdir(directory)
+        self.assertEqual(len(names), 1)
+        subdir = os.path.join(directory, names[0])
+        self.assertTrue(os.path.isdir(subdir))
+        return subdir
+
+    def assertFilesEqual(self, filepath_one, filepath_two, including_permissions=False):
+        if including_permissions:
+            self.assertEqualPermissions(filepath_one, filepath_two)
+        with open(filepath_one, 'rb') as file_one, open(filepath_two, 'rb') as file_two:
+            self.assertEqual(file_one.read(), file_two.read())
+
+    def assertEqualPermissions(self, path_one, path_two):
+        stat_one = os.stat(path_one)
+        stat_two = os.stat(path_two)
+        self.assertEqual(stat_one.st_mode, stat_two.st_mode)
+        self.assertEqual(stat_one.st_uid, stat_two.st_uid)
+        self.assertEqual(stat_one.st_gid, stat_two.st_gid)
+
+    def assertDirectoriesEqual(self, dir_one, dir_two, including_permissions=False):
+        for dirpath_one, dirnames_one, filenames_one in os.walk(dir_one):
+            dirnames_one = frozenset(dirnames_one)
+            filenames_one = frozenset(filenames_one)
+
+            dirpath_two = dirpath_one.replace(dir_one, dir_two, 1)
+            self.assertTrue(os.path.isdir(dirpath_two))
+            children_two = os.listdir(dirpath_two)
+            dirnames_two = frozenset(name for name in children_two if os.path.isdir(os.path.join(dirpath_two, name)))
+            filenames_two = frozenset(name for name in children_two if os.path.isfile(os.path.join(dirpath_two, name)))
+
+            if including_permissions:
+                self.assertEqualPermissions(dirpath_one, dirpath_two)
+            self.assertEqual(dirnames_one, dirnames_two)
+            self.assertEqual(filenames_one, filenames_two)
+
+            for filename in filenames_one:
+                filepath_one = os.path.join(dirpath_one, filename)
+                filepath_two = os.path.join(dirpath_two, filename)
+                self.assertFilesEqual(filepath_one, filepath_two, including_permissions=including_permissions)
+
+    def assertIsAttachment(self, resp):
+        self.assertTrue(resp.headers.get('Content-Disposition', '').startswith('attachment;'))
+
+    def test_zipball_contents(self):
+        commit = '7da1a61e2f566cf3094c2fea4b18b111d2638a8f'  # 1st commit in the repo that has multiple levels of subdirectories
+        with self.temporary_directory(suffix='.restfulgit') as temp_dir:
+            actual_dir = self.make_nested_dir(temp_dir, 'actual')
+            reference_dir = self.make_nested_dir(temp_dir, 'reference')
+
+            self.run_command_quietly(['unzip', self.get_fixture_path('{}.zip'.format(commit)), '-d', reference_dir])
+
+            with self.temporary_file(suffix='restfulgit_actual_zipball.zip') as pair:
+                actual_zip_file, actual_zip_filepath = pair
+                with actual_zip_file:
+                    resp = self.client.get('/repos/restfulgit/zipball/{}/'.format(commit))
+                    self.assert200(resp)
+
+                    actual_zip_file.write(resp.data)
+
+                self.run_command_quietly(['unzip', actual_zip_filepath, '-d', actual_dir])
+
+            reference_wrapper_dir = self._only_subdirectory_in(reference_dir)
+            actual_wrapper_dir = self._only_subdirectory_in(actual_dir)
+            self.assertDirectoriesEqual(reference_wrapper_dir, actual_wrapper_dir)
+
+    def test_zipball_headers(self):
+        resp = self.client.get('/repos/restfulgit/zipball/7da1a61e2f566cf3094c2fea4b18b111d2638a8f/')
+        self.assertIsAttachment(resp)
+        self.assertTrue(resp.headers.get('Content-Disposition', '').endswith('filename=restfulgit-7da1a61e2f566cf3094c2fea4b18b111d2638a8f.zip'))
+        self.assertEqual(resp.headers.get('Content-Type'), 'application/zip')
+        self.assertIn('max-age=0', resp.headers.get('Cache-Control', ''))
+
+    def test_zipball_on_nonexistent_repo(self):
+        resp = self.client.get('/repos/this-repo-does-not-exist/zipball/master/')
+        self.assertJson404(resp)
+
+    def test_zipball_on_nonexistent_ref(self):
+        resp = self.client.get('/repos/restfulgit/zipball/{}/'.format(IMPROBABLE_SHA))
+        self.assertJson404(resp)
+
+    def test_tarball_contents(self):
+        commit = '7da1a61e2f566cf3094c2fea4b18b111d2638a8f'  # 1st commit in the repo that has multiple levels of subdirectories
+        with self.temporary_directory(suffix='.restfulgit') as temp_dir:
+            actual_dir = self.make_nested_dir(temp_dir, 'actual')
+            reference_dir = self.make_nested_dir(temp_dir, 'reference')
+
+            self.run_command_quietly(['tar', 'xf', self.get_fixture_path('{}.tar.gz'.format(commit)), '-C', reference_dir])
+
+            with self.temporary_file(suffix='restfulgit_actual_tarball.tar.gz') as pair:
+                actual_tar_file, actual_tar_filepath = pair
+                with actual_tar_file:
+                    resp = self.client.get('/repos/restfulgit/tarball/{}/'.format(commit))
+                    self.assert200(resp)
+
+                    actual_tar_file.write(resp.data)
+
+                self.run_command_quietly(['tar', 'xf', actual_tar_filepath, '-C', actual_dir])
+
+            reference_wrapper_dir = self._only_subdirectory_in(reference_dir)
+            actual_wrapper_dir = self._only_subdirectory_in(actual_dir)
+            self.assertDirectoriesEqual(reference_wrapper_dir, actual_wrapper_dir, including_permissions=True)
+
+    def test_tarball_headers(self):
+        resp = self.client.get('/repos/restfulgit/tarball/7da1a61e2f566cf3094c2fea4b18b111d2638a8f/')
+        self.assertIsAttachment(resp)
+        self.assertTrue(resp.headers.get('Content-Disposition', '').endswith('filename=restfulgit-7da1a61e2f566cf3094c2fea4b18b111d2638a8f.tar.gz'))
+        self.assertIn(resp.headers.get('Content-Type'), {'application/x-gzip', 'application/x-tar'})
+        self.assertIn('max-age=0', resp.headers.get('Cache-Control', ''))
+
+    def test_tarball_on_nonexistent_repo(self):
+        resp = self.client.get('/repos/this-repo-does-not-exist/tarball/master/')
+        self.assertJson404(resp)
+
+    def test_tarball_on_nonexistent_ref(self):
+        resp = self.client.get('/repos/restfulgit/tarball/{}/'.format(IMPROBABLE_SHA))
+        self.assertJson404(resp)
 
 
 if __name__ == '__main__':
