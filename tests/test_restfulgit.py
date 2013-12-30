@@ -627,7 +627,7 @@ class CorsTestCase(_RestfulGitTestCase):
 class ConditionalGetTestCase(_RestfulGitTestCase):
     cache_control = 'max-age=60'
     url = 'http://localhost/repos/restfulgit/git/tags/1dffc031c9beda43ff94c526cbc00a30d231c079/'
-    etag = '1dffc031x9beda43ff94c526cbc00a30d231c079'
+    etag = '"1dffc031c9beda43ff94c526cbc00a30d231c079"'
 
     def test_cget_cachecontrol_config(self):
         with self.config_override('RESTFULGIT_CACHE_CONTROL', self.cache_control):
