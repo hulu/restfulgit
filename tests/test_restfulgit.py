@@ -1391,9 +1391,13 @@ class BlameTestCase(_RestfulGitTestCase):
         resp = self.client.get('/repos/restfulgit/blame/master/this-file-does-not-exist')
         self.assertJson404(resp)
 
-    def test_directory(self):
+    def test_directory_with_trailing_slash(self):
         resp = self.client.get('/repos/restfulgit/blame/da55cbf2f13c2ec019bf02f080bc47cc4f83318c/restfulgit/')
-        self.assertJson404(resp)
+        self.assertJson400(resp)
+
+    def test_directory_without_trailing_slash(self):
+        resp = self.client.get('/repos/restfulgit/blame/da55cbf2f13c2ec019bf02f080bc47cc4f83318c/restfulgit')
+        self.assertJson400(resp)
 
     def test_first_line_out_of_bounds(self):
         # relevant file is 1027 lines long
@@ -1825,6 +1829,141 @@ class BlameTestCase(_RestfulGitTestCase):
         relevant_commits = {'129458e24667a9c32db4cb1a0549e3554bff0965', '13e9ff41ba4704d6ca91988f9216adeeee8c79b5'}
         self.assertEqual(relevant_commits, set(json['commits'].viewkeys()))
         self.assertEqual(relevant_commits, {line['commit'] for line in json['lines']})
+
+
+class RepoContentsTestCase(_RestfulGitTestCase):
+    def test_nonexistent_repo(self):
+        resp = self.client.get('/repos/this-repo-does-not-exist/contents/README.md')
+        self.assertJson404(resp)
+
+    def test_nonexistent_ref(self):
+        resp = self.client.get('/repos/restfulgit/contents/README.md?ref=this-branch-does-not-exist')
+        self.assertJson404(resp)
+
+    def test_ref_is_optional(self):
+        resp = self.client.get('/repos/restfulgit/contents/README.md')
+        self.assert200(resp)
+
+    def test_extant_file(self):
+        resp = self.client.get('/repos/restfulgit/contents/tests/fixtures/d408fc2428bc6444cabd7f7b46edbe70b6992b16.diff?ref=7da1a61e2f566cf3094c2fea4b18b111d2638a8f')
+        self.assert200(resp)
+        json = resp.json
+        content = json.pop('content')
+        self.assertEqual(sha512(content).hexdigest(), '1966b04df26b4b9168d9c294d12ff23794fc36ba7bd7e96997541f5f31814f0d2f640dd6f0c0fe719a74815439154890df467ec5b9c4322d785902b18917fecc')
+        # From https://api.github.com/repos/hulu/restfulgit/contents/tests/fixtures/d408fc2428bc6444cabd7f7b46edbe70b6992b16.diff?ref=7da1a61e2f566cf3094c2fea4b18b111d2638a8f with necessary adjustments
+        self.assertEqual(json, {
+            "name": "d408fc2428bc6444cabd7f7b46edbe70b6992b16.diff",
+            "path": "tests/fixtures/d408fc2428bc6444cabd7f7b46edbe70b6992b16.diff",
+            "sha": "40c739b1166f47c791e87f747f0061739b49af0e",
+            "size": 853,
+            "url": "http://localhost/repos/restfulgit/contents/tests/fixtures/d408fc2428bc6444cabd7f7b46edbe70b6992b16.diff?ref=7da1a61e2f566cf3094c2fea4b18b111d2638a8f",
+            "git_url": "http://localhost/repos/restfulgit/git/blobs/40c739b1166f47c791e87f747f0061739b49af0e/",
+            "type": "file",
+            "encoding": "utf-8",
+            "_links": {
+                "self": "http://localhost/repos/restfulgit/contents/tests/fixtures/d408fc2428bc6444cabd7f7b46edbe70b6992b16.diff?ref=7da1a61e2f566cf3094c2fea4b18b111d2638a8f",
+                "git": "http://localhost/repos/restfulgit/git/blobs/40c739b1166f47c791e87f747f0061739b49af0e/",
+            }
+        })
+
+    def test_nonexistent_file(self):
+        resp = self.client.get('/repos/restfulgit/contents/this-file-does-not-exist')
+        self.assertJson404(resp)
+
+    def test_extant_directory_without_trailing_slash(self):
+        # From https://api.github.com/repos/hulu/restfulgit/contents/restfulgit?ref=7da1a61e2f566cf3094c2fea4b18b111d2638a8f with necessary adjustments
+        resp = self.client.get('/repos/restfulgit/contents/restfulgit?ref=7da1a61e2f566cf3094c2fea4b18b111d2638a8f')
+        self.assert200(resp)
+        self.assertEqual(resp.json, [
+            {
+                "name": "__init__.py",
+                "path": "restfulgit/__init__.py",
+                "sha": "db36c03e5649e6e6d23fd431deff3a52ec1faaba",
+                "size": 24099,
+                "url": "http://localhost/repos/restfulgit/contents/restfulgit/__init__.py?ref=7da1a61e2f566cf3094c2fea4b18b111d2638a8f",
+                "git_url": "http://localhost/repos/restfulgit/git/blobs/db36c03e5649e6e6d23fd431deff3a52ec1faaba/",
+                "type": "file",
+                "_links": {
+                    "self": "http://localhost/repos/restfulgit/contents/restfulgit/__init__.py?ref=7da1a61e2f566cf3094c2fea4b18b111d2638a8f",
+                    "git": "http://localhost/repos/restfulgit/git/blobs/db36c03e5649e6e6d23fd431deff3a52ec1faaba/",
+                }
+            },
+            {
+                "name": "__main__.py",
+                "path": "restfulgit/__main__.py",
+                "sha": "e067d7f361bd3b0f227ba1914c227ebf9539f59d",
+                "size": 110,
+                "url": "http://localhost/repos/restfulgit/contents/restfulgit/__main__.py?ref=7da1a61e2f566cf3094c2fea4b18b111d2638a8f",
+                "git_url": "http://localhost/repos/restfulgit/git/blobs/e067d7f361bd3b0f227ba1914c227ebf9539f59d/",
+                "type": "file",
+                "_links": {
+                    "self": "http://localhost/repos/restfulgit/contents/restfulgit/__main__.py?ref=7da1a61e2f566cf3094c2fea4b18b111d2638a8f",
+                    "git": "http://localhost/repos/restfulgit/git/blobs/e067d7f361bd3b0f227ba1914c227ebf9539f59d/",
+                }
+            }
+        ])
+
+    def test_extant_directory_with_trailing_slash(self):
+        # From https://api.github.com/repos/hulu/restfulgit/contents/restfulgit?ref=7da1a61e2f566cf3094c2fea4b18b111d2638a8f with necessary adjustments
+        resp = self.client.get('/repos/restfulgit/contents/restfulgit/?ref=7da1a61e2f566cf3094c2fea4b18b111d2638a8f')
+        self.assert200(resp)
+        self.assertEqual(resp.json, [
+            {
+                "name": "__init__.py",
+                "path": "restfulgit/__init__.py",
+                "sha": "db36c03e5649e6e6d23fd431deff3a52ec1faaba",
+                "size": 24099,
+                "url": "http://localhost/repos/restfulgit/contents/restfulgit/__init__.py?ref=7da1a61e2f566cf3094c2fea4b18b111d2638a8f",
+                "git_url": "http://localhost/repos/restfulgit/git/blobs/db36c03e5649e6e6d23fd431deff3a52ec1faaba/",
+                "type": "file",
+                "_links": {
+                    "self": "http://localhost/repos/restfulgit/contents/restfulgit/__init__.py?ref=7da1a61e2f566cf3094c2fea4b18b111d2638a8f",
+                    "git": "http://localhost/repos/restfulgit/git/blobs/db36c03e5649e6e6d23fd431deff3a52ec1faaba/",
+                }
+            },
+            {
+                "name": "__main__.py",
+                "path": "restfulgit/__main__.py",
+                "sha": "e067d7f361bd3b0f227ba1914c227ebf9539f59d",
+                "size": 110,
+                "url": "http://localhost/repos/restfulgit/contents/restfulgit/__main__.py?ref=7da1a61e2f566cf3094c2fea4b18b111d2638a8f",
+                "git_url": "http://localhost/repos/restfulgit/git/blobs/e067d7f361bd3b0f227ba1914c227ebf9539f59d/",
+                "type": "file",
+                "_links": {
+                    "self": "http://localhost/repos/restfulgit/contents/restfulgit/__main__.py?ref=7da1a61e2f566cf3094c2fea4b18b111d2638a8f",
+                    "git": "http://localhost/repos/restfulgit/git/blobs/e067d7f361bd3b0f227ba1914c227ebf9539f59d/",
+                }
+            }
+        ])
+
+    def test_root_directory(self):
+        resp = self.client.get('/repos/restfulgit/contents/?ref=initial')
+        self.assert200(resp)
+        self.assertEqual(resp.json, [{
+            'name': 'api.py',
+            'url': 'http://localhost/repos/restfulgit/contents/api.py?ref=initial',
+            'sha': 'ae9d90706c632c26023ce599ac96cb152673da7c',
+            '_links': {
+                'self': 'http://localhost/repos/restfulgit/contents/api.py?ref=initial',
+                'git': 'http://localhost/repos/restfulgit/git/blobs/ae9d90706c632c26023ce599ac96cb152673da7c/'
+            },
+            'git_url': 'http://localhost/repos/restfulgit/git/blobs/ae9d90706c632c26023ce599ac96cb152673da7c/',
+            'path': 'api.py',
+            'type': 'file',
+            'size': 5543
+        }])
+
+    def test_nonexistent_directory(self):
+        resp = self.client.get('/repos/restfulgit/contents/this-directory-does-not-exist/')
+        self.assertJson404(resp)
+
+    def test_symlink(self):
+        # FIXME: implement
+        pass
+
+    def test_submodule(self):
+        # FIXME: implement
+        pass
 
 
 if __name__ == '__main__':
