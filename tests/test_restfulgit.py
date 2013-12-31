@@ -1953,6 +1953,39 @@ class RepoContentsTestCase(_RestfulGitTestCase):
             'size': 5543
         }])
 
+    def test_directory_with_subdirectories(self):
+        # From https://api.github.com/repos/hulu/restfulgit/contents/tests?ref=7da1a61e2f566cf3094c2fea4b18b111d2638a8f with necessary adjustments
+        resp = self.client.get('/repos/restfulgit/contents/tests?ref=7da1a61e2f566cf3094c2fea4b18b111d2638a8f')
+        self.assert200(resp)
+        self.assertEqual(resp.json, [
+            {
+                "name": "fixtures",
+                "path": "tests/fixtures",
+                "sha": "7a62b2e0c7e25dc66d110380844c477abf13b91f",
+                "size": 0,
+                "url": "http://localhost/repos/restfulgit/contents/tests/fixtures?ref=7da1a61e2f566cf3094c2fea4b18b111d2638a8f",
+                "git_url": "http://localhost/repos/restfulgit/git/trees/7a62b2e0c7e25dc66d110380844c477abf13b91f/",
+                "type": "dir",
+                "_links": {
+                    "self": "http://localhost/repos/restfulgit/contents/tests/fixtures?ref=7da1a61e2f566cf3094c2fea4b18b111d2638a8f",
+                    "git": "http://localhost/repos/restfulgit/git/trees/7a62b2e0c7e25dc66d110380844c477abf13b91f/",
+                }
+            },
+            {
+                "name": "test_restfulgit.py",
+                "path": "tests/test_restfulgit.py",
+                "sha": "3da8fd332d44b67ecd9910f5392c73cb62a76a4d",
+                "size": 47069,
+                "url": "http://localhost/repos/restfulgit/contents/tests/test_restfulgit.py?ref=7da1a61e2f566cf3094c2fea4b18b111d2638a8f",
+                "git_url": "http://localhost/repos/restfulgit/git/blobs/3da8fd332d44b67ecd9910f5392c73cb62a76a4d/",
+                "type": "file",
+                "_links": {
+                    "self": "http://localhost/repos/restfulgit/contents/tests/test_restfulgit.py?ref=7da1a61e2f566cf3094c2fea4b18b111d2638a8f",
+                    "git": "http://localhost/repos/restfulgit/git/blobs/3da8fd332d44b67ecd9910f5392c73cb62a76a4d/",
+                }
+            }
+        ])
+
     def test_nonexistent_directory(self):
         resp = self.client.get('/repos/restfulgit/contents/this-directory-does-not-exist/')
         self.assertJson404(resp)
