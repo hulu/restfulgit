@@ -13,7 +13,7 @@ GIT_MODE_SUBMODULE = int('0160000', 8)
 
 from datetime import datetime, tzinfo, timedelta
 from base64 import b64encode
-from itertools import islice, ifilter, izip, count
+from itertools import islice, ifilter
 from tempfile import mkstemp as _make_temp_file_handle
 import json
 import os
