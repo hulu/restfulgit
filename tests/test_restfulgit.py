@@ -11,6 +11,7 @@ from datetime import timedelta
 from tempfile import mkdtemp, mkstemp
 from shutil import rmtree
 from subprocess import check_call
+from json import load as load_json_file
 
 from flask.ext.testing import TestCase as _FlaskTestCase
 
@@ -1375,6 +1376,455 @@ class ArchiveDownloadTestCase(_RestfulGitTestCase):
     def test_tarball_on_nonexistent_ref(self):
         resp = self.client.get('/repos/restfulgit/tarball/{}/'.format(IMPROBABLE_SHA))
         self.assertJson404(resp)
+
+
+class BlameTestCase(_RestfulGitTestCase):
+    def test_nonexistent_repo(self):
+        resp = self.client.get('/repos/this-repo-does-not-exist/blame/master/README')
+        self.assertJson404(resp)
+
+    def test_nonexistent_ref(self):
+        resp = self.client.get('/repos/restfulgit/blame/this-branch-does-not-exist/README')
+        self.assertJson404(resp)
+
+    def test_nonexistent_file(self):
+        resp = self.client.get('/repos/restfulgit/blame/master/this-file-does-not-exist')
+        self.assertJson404(resp)
+
+    def test_directory(self):
+        resp = self.client.get('/repos/restfulgit/blame/da55cbf2f13c2ec019bf02f080bc47cc4f83318c/restfulgit/')
+        self.assertJson404(resp)
+
+    def test_first_line_out_of_bounds(self):
+        # relevant file is 1027 lines long
+        resp = self.client.get('/repos/restfulgit/blame/da55cbf2f13c2ec019bf02f080bc47cc4f83318c/restfulgit/__init__.py?firstLine=1028')
+        self.assertJson400(resp)
+
+    def test_last_line_out_of_bounds(self):
+        # relevant file is 1027 lines long
+        resp = self.client.get('/repos/restfulgit/blame/da55cbf2f13c2ec019bf02f080bc47cc4f83318c/restfulgit/__init__.py?lastLine=1028')
+        self.assertJson400(resp)
+
+    def test_malformed_line_range(self):
+        resp = self.client.get('/repos/restfulgit/blame/da55cbf2f13c2ec019bf02f080bc47cc4f83318c/restfulgit/__init__.py?firstLine=2&lastLine=1')
+        self.assertJson400(resp)
+
+    def test_zero_first_line(self):
+        resp = self.client.get('/repos/restfulgit/blame/da55cbf2f13c2ec019bf02f080bc47cc4f83318c/restfulgit/__init__.py?firstLine=0')
+        self.assertJson400(resp)
+
+    def test_zero_last_line(self):
+        resp = self.client.get('/repos/restfulgit/blame/da55cbf2f13c2ec019bf02f080bc47cc4f83318c/restfulgit/__init__.py?lastLine=0')
+        self.assertJson400(resp)
+
+    def test_non_integer_first_line(self):
+        resp = self.client.get('/repos/restfulgit/blame/da55cbf2f13c2ec019bf02f080bc47cc4f83318c/restfulgit/__init__.py?firstLine=abc')
+        self.assertJson400(resp)
+
+    def test_non_integer_last_line(self):
+        resp = self.client.get('/repos/restfulgit/blame/da55cbf2f13c2ec019bf02f080bc47cc4f83318c/restfulgit/__init__.py?lastLine=abc')
+        self.assertJson400(resp)
+
+    def test_basic_works(self):
+        resp = self.client.get('/repos/restfulgit/blame/da55cbf2f13c2ec019bf02f080bc47cc4f83318c/restfulgit/__init__.py')
+        self.assert200(resp)
+
+        with io.open(self.get_fixture_path('da55cbf2f13c2ec019bf02f080bc47cc4f83318c-__init__.py-blame.json'), mode='rt', encoding='utf-8') as reference_file:
+            reference = load_json_file(reference_file)
+
+        self.assertEqual(reference, resp.json)
+
+    def test_first_line_only(self):
+        # relevant file is 1027 lines long
+        resp = self.client.get('/repos/restfulgit/blame/da55cbf2f13c2ec019bf02f080bc47cc4f83318c/restfulgit/__init__.py?firstLine=1025')
+        self.assert200(resp)
+        self.assertEqual(resp.json, {
+            "commits": {
+                "090750eec2fe5f120ad1010fc2204d06fc3ca91e": {
+                    "committer": {
+                        "date": "2013-05-20T19:12:03Z",
+                        "name": "Rajiv Makhijani",
+                        "email": "rajiv@hulu.com"
+                    },
+                    "author": {
+                        "date": "2013-05-20T19:12:03Z",
+                        "name": "Rajiv Makhijani",
+                        "email": "rajiv@hulu.com"
+                    },
+                    "url": "http://localhost/repos/restfulgit/git/commits/090750eec2fe5f120ad1010fc2204d06fc3ca91e/",
+                    "tree": {
+                        "url": "http://localhost/repos/restfulgit/git/trees/288a19807d25403221c3f5260f4c172ec820b621/",
+                        "sha": "288a19807d25403221c3f5260f4c172ec820b621"
+                    },
+                    "sha": "090750eec2fe5f120ad1010fc2204d06fc3ca91e",
+                    "parents": [{
+                        "url": "http://localhost/repos/restfulgit/git/commits/cff4955ef40cfce35efe282e196c840619c518f2/",
+                        "sha": "cff4955ef40cfce35efe282e196c840619c518f2"
+                    }],
+                    "message": "PEP-8 minor cleanup"
+                },
+                "ebaa594a5b689d1cb552e15753bcd109f60b0a10": {
+                    "committer": {
+                        "date": "2013-10-06T23:44:52Z",
+                        "name": "Chris Rebert", "email": "chris.rebert@hulu.com"
+                    },
+                    "author": {
+                        "date": "2013-10-05T04:15:22Z",
+                        "name": "Chris Rebert",
+                        "email": "chris.rebert@hulu.com"
+                    },
+                    "url": "http://localhost/repos/restfulgit/git/commits/ebaa594a5b689d1cb552e15753bcd109f60b0a10/",
+                    "tree": {
+                        "url": "http://localhost/repos/restfulgit/git/trees/16507999f5b925211a48e3c97b242577b14bfc71/",
+                        "sha": "16507999f5b925211a48e3c97b242577b14bfc71"
+                    },
+                    "sha": "ebaa594a5b689d1cb552e15753bcd109f60b0a10",
+                    "parents": [{
+                        "url": "http://localhost/repos/restfulgit/git/commits/caccc35a6f5d8e9b9a7e23d4a2ad60f4b4155739/",
+                        "sha": "caccc35a6f5d8e9b9a7e23d4a2ad60f4b4155739"
+                    }],
+                    "message": "use a blueprint to enhance embedability/reuseability/modularity; fixes #25\n\nURL converter registration inspired by http://blog.adrianschreyer.eu/post/adding-custom-url-map-converters-to-flask-blueprint-objects"
+                }
+            },
+            "lines": [
+                {
+                    "commit": "ebaa594a5b689d1cb552e15753bcd109f60b0a10",
+                    "line": "app.register_blueprint(restfulgit)",
+                    "origPath": "gitapi.py",
+                    "lineNum": 1025
+                },
+                {
+                    "commit": "ebaa594a5b689d1cb552e15753bcd109f60b0a10",
+                    "line": "",
+                    "origPath": "gitapi.py",
+                    "lineNum": 1026
+                },
+                {
+                    "commit": "090750eec2fe5f120ad1010fc2204d06fc3ca91e",
+                    "line": "application = app",
+                    "origPath": "api.py",
+                    "lineNum": 1027
+                }
+            ]
+        })
+
+    def test_last_line_only(self):
+        resp = self.client.get('/repos/restfulgit/blame/da55cbf2f13c2ec019bf02f080bc47cc4f83318c/restfulgit/__init__.py?lastLine=2')
+        self.assert200(resp)
+        self.assertEqual(resp.json, {
+            'commits': {
+                '34f85950f3fcc662338593bbd43ad3bebc8cbf22': {
+                    'author': {
+                        'date': '2013-09-24T04:42:40Z',
+                        'email': 'github@rebertia.com',
+                        'name': 'Chris Rebert'
+                    },
+                    'committer': {
+                        'date': '2013-09-24T04:42:40Z',
+                        'email': 'github@rebertia.com',
+                        'name': 'Chris Rebert'
+                    },
+                    'message': 'add PEP-263 encoding declaration',
+                    'parents': [{
+                        'sha': 'fadadc122ac7357816d6d57515c36ed8dddfadb5',
+                        'url': 'http://localhost/repos/restfulgit/git/commits/fadadc122ac7357816d6d57515c36ed8dddfadb5/'
+                    }],
+                    'sha': '34f85950f3fcc662338593bbd43ad3bebc8cbf22',
+                    'tree': {
+                        'sha': '029c2787239825668f3619eb02bf5a336720f5e9',
+                        'url': 'http://localhost/repos/restfulgit/git/trees/029c2787239825668f3619eb02bf5a336720f5e9/'
+                    },
+                    'url': 'http://localhost/repos/restfulgit/git/commits/34f85950f3fcc662338593bbd43ad3bebc8cbf22/'
+                },
+                'ffefa5a12812d65ba4f55adeaa5bbd8131ea0c69': {
+                    'author': {
+                        'date': '2013-09-26T07:46:16Z',
+                        'email': 'chris.rebert@hulu.com',
+                        'name': 'Chris Rebert'
+                    },
+                    'committer': {
+                        'date': '2013-09-26T07:46:16Z',
+                        'email': 'chris.rebert@hulu.com',
+                        'name': 'Chris Rebert'},
+                    'message': 'improve config loading error reporting & squelch last W0702',
+                    'parents': [{
+                        'sha': '1f6787c238ef12413dca5305b8254c26c299718f',
+                        'url': 'http://localhost/repos/restfulgit/git/commits/1f6787c238ef12413dca5305b8254c26c299718f/'
+                    }],
+                    'sha': 'ffefa5a12812d65ba4f55adeaa5bbd8131ea0c69',
+                    'tree': {
+                        'sha': '60859aa5e7ef3ba15006bd33f6ace219a3049ea5',
+                        'url': 'http://localhost/repos/restfulgit/git/trees/60859aa5e7ef3ba15006bd33f6ace219a3049ea5/'
+                    },
+                    'url': 'http://localhost/repos/restfulgit/git/commits/ffefa5a12812d65ba4f55adeaa5bbd8131ea0c69/'
+                }
+            },
+            'lines': [
+                {
+                    'commit': '34f85950f3fcc662338593bbd43ad3bebc8cbf22',
+                    'line': '# coding=utf-8',
+                    'lineNum': 1,
+                    'origPath': 'gitapi.py'},
+                {
+                    'commit': 'ffefa5a12812d65ba4f55adeaa5bbd8131ea0c69',
+                    'line': 'from __future__ import print_function',
+                    'lineNum': 2,
+                    'origPath': 'gitapi.py'
+                }
+            ]
+        })
+
+    def test_first_line_just_within_bounds(self):
+        # relevant file is 1027 lines long
+        resp = self.client.get('/repos/restfulgit/blame/da55cbf2f13c2ec019bf02f080bc47cc4f83318c/restfulgit/__init__.py?firstLine=1027')
+        self.assert200(resp)
+        self.assertEqual(resp.json, {
+            'commits': {
+                '090750eec2fe5f120ad1010fc2204d06fc3ca91e': {
+                    'author': {
+                        'date': '2013-05-20T19:12:03Z',
+                        'email': 'rajiv@hulu.com',
+                        'name': 'Rajiv Makhijani'
+                    },
+                    'committer': {
+                        'date': '2013-05-20T19:12:03Z',
+                        'email': 'rajiv@hulu.com',
+                        'name': 'Rajiv Makhijani'
+                    },
+                    'message': 'PEP-8 minor cleanup',
+                    'parents': [{
+                        'sha': 'cff4955ef40cfce35efe282e196c840619c518f2',
+                        'url': 'http://localhost/repos/restfulgit/git/commits/cff4955ef40cfce35efe282e196c840619c518f2/'
+                    }],
+                    'sha': '090750eec2fe5f120ad1010fc2204d06fc3ca91e',
+                    'tree': {
+                        'sha': '288a19807d25403221c3f5260f4c172ec820b621',
+                        'url': 'http://localhost/repos/restfulgit/git/trees/288a19807d25403221c3f5260f4c172ec820b621/'
+                    },
+                    'url': 'http://localhost/repos/restfulgit/git/commits/090750eec2fe5f120ad1010fc2204d06fc3ca91e/'
+                }
+            },
+            'lines': [{
+                'commit': '090750eec2fe5f120ad1010fc2204d06fc3ca91e',
+                'line': 'application = app',
+                'lineNum': 1027,
+                'origPath': 'api.py'
+            }]
+        })
+
+    def test_last_line_just_within_bounds(self):
+        # relevant file is 1027 lines long
+        resp = self.client.get('/repos/restfulgit/blame/da55cbf2f13c2ec019bf02f080bc47cc4f83318c/restfulgit/__init__.py?lastLine=1027&firstLine=1026')
+        self.assert200(resp)
+        self.assertEqual(resp.json, {
+            'commits': {
+                '090750eec2fe5f120ad1010fc2204d06fc3ca91e': {
+                    'author': {
+                        'date': '2013-05-20T19:12:03Z',
+                        'email': 'rajiv@hulu.com',
+                        'name': 'Rajiv Makhijani'
+                    },
+                    'committer': {
+                        'date': '2013-05-20T19:12:03Z',
+                        'email': 'rajiv@hulu.com',
+                        'name': 'Rajiv Makhijani'
+                    },
+                    'message': 'PEP-8 minor cleanup',
+                    'parents': [{
+                        'sha': 'cff4955ef40cfce35efe282e196c840619c518f2',
+                        'url': 'http://localhost/repos/restfulgit/git/commits/cff4955ef40cfce35efe282e196c840619c518f2/'
+                    }],
+                    'sha': '090750eec2fe5f120ad1010fc2204d06fc3ca91e',
+                    'tree': {
+                        'sha': '288a19807d25403221c3f5260f4c172ec820b621',
+                        'url': 'http://localhost/repos/restfulgit/git/trees/288a19807d25403221c3f5260f4c172ec820b621/'
+                    },
+                    'url': 'http://localhost/repos/restfulgit/git/commits/090750eec2fe5f120ad1010fc2204d06fc3ca91e/'
+                },
+                'ebaa594a5b689d1cb552e15753bcd109f60b0a10': {
+                    'author': {
+                        'date': '2013-10-05T04:15:22Z',
+                        'email': 'chris.rebert@hulu.com',
+                        'name': 'Chris Rebert'
+                    },
+                    'committer': {
+                        'date': '2013-10-06T23:44:52Z',
+                        'email': 'chris.rebert@hulu.com',
+                        'name': 'Chris Rebert'
+                    },
+                    'message': 'use a blueprint to enhance embedability/reuseability/modularity; fixes #25\n\nURL converter registration inspired by http://blog.adrianschreyer.eu/post/adding-custom-url-map-converters-to-flask-blueprint-objects',
+                    'parents': [{
+                        'sha': 'caccc35a6f5d8e9b9a7e23d4a2ad60f4b4155739',
+                        'url': 'http://localhost/repos/restfulgit/git/commits/caccc35a6f5d8e9b9a7e23d4a2ad60f4b4155739/'
+                    }],
+                    'sha': 'ebaa594a5b689d1cb552e15753bcd109f60b0a10',
+                    'tree': {
+                        'sha': '16507999f5b925211a48e3c97b242577b14bfc71',
+                        'url': 'http://localhost/repos/restfulgit/git/trees/16507999f5b925211a48e3c97b242577b14bfc71/'
+                    },
+                    'url': 'http://localhost/repos/restfulgit/git/commits/ebaa594a5b689d1cb552e15753bcd109f60b0a10/'
+                }
+            },
+            'lines': [
+                {
+                    'commit': 'ebaa594a5b689d1cb552e15753bcd109f60b0a10',
+                    'line': '',
+                    'lineNum': 1026,
+                    'origPath': 'gitapi.py'
+                },
+                {
+                    'commit': '090750eec2fe5f120ad1010fc2204d06fc3ca91e',
+                    'line': 'application = app',
+                    'lineNum': 1027,
+                    'origPath': 'api.py'
+                },
+            ]
+        })
+
+    def test_first_and_last_line_works(self):
+        resp = self.client.get('/repos/restfulgit/blame/da55cbf2f13c2ec019bf02f080bc47cc4f83318c/restfulgit/__init__.py?firstLine=4&lastLine=6')
+        self.assert200(resp)
+        self.assertEqual(resp.json, {
+            'commits': {
+                '13e9ff41ba4704d6ca91988f9216adeeee8c79b5': {
+                    'author': {
+                        'date': '2013-12-23T04:16:14Z',
+                        'email': 'chris.rebert@hulu.com',
+                        'name': 'Chris Rebert'
+                    },
+                    'committer': {
+                        'date': '2013-12-30T20:01:35Z',
+                        'email': 'chris.rebert@hulu.com',
+                        'name': 'Chris Rebert'
+                    },
+                    'message': 'implement tarball & zipball downloads; fixes #62\n\nReference zipball from https://github.com/hulu/restfulgit/zipball/7da1a61e2f566cf3094c2fea4b18b111d2638a8f\nReference tarball from https://github.com/hulu/restfulgit/tarball/7da1a61e2f566cf3094c2fea4b18b111d2638a8f',
+                    'parents': [{
+                        'sha': '129458e24667a9c32db4cb1a0549e3554bff0965',
+                        'url': 'http://localhost/repos/restfulgit/git/commits/129458e24667a9c32db4cb1a0549e3554bff0965/'
+                    }],
+                    'sha': '13e9ff41ba4704d6ca91988f9216adeeee8c79b5',
+                    'tree': {
+                        'sha': 'a611bc827047055a6b8e9cbf7ee2827767b27328',
+                        'url': 'http://localhost/repos/restfulgit/git/trees/a611bc827047055a6b8e9cbf7ee2827767b27328/'
+                    },
+                    'url': 'http://localhost/repos/restfulgit/git/commits/13e9ff41ba4704d6ca91988f9216adeeee8c79b5/'
+                },
+                'a8e4af2d7f30492bfef34ccb1c2c167df54512ba': {
+                    'author': {
+                        'date': '2013-12-10T03:32:32Z',
+                        'email': 'chris.rebert@hulu.com',
+                        'name': 'Chris Rebert'
+                    },
+                    'committer': {
+                        'date': '2013-12-10T03:59:40Z',
+                        'email': 'chris.rebert@hulu.com',
+                        'name': 'Chris Rebert'
+                    },
+                    'message': 'use JSON error pages; fixes #39',
+                    'parents': [{
+                        'sha': '493431d90a21109290e4a8ab8978e523ec957531',
+                        'url': 'http://localhost/repos/restfulgit/git/commits/493431d90a21109290e4a8ab8978e523ec957531/'
+                    }],
+                    'sha': 'a8e4af2d7f30492bfef34ccb1c2c167df54512ba',
+                    'tree': {
+                        'sha': 'b08d1b792ecba9ebb06bc8f2dad5d0877a9a42ec',
+                        'url': 'http://localhost/repos/restfulgit/git/trees/b08d1b792ecba9ebb06bc8f2dad5d0877a9a42ec/'
+                    },
+                    'url': 'http://localhost/repos/restfulgit/git/commits/a8e4af2d7f30492bfef34ccb1c2c167df54512ba/'
+                },
+                'ba3f032dbd2ead6a6610f3bf3b66f05cb628f579': {
+                    'author': {
+                        'date': '2013-09-12T04:26:31Z',
+                        'email': 'chris.rebert@hulu.com',
+                        'name': 'Chris Rebert'
+                    },
+                    'committer': {
+                        'date': '2013-09-12T06:16:37Z',
+                        'email': 'rajiv@hulu.com',
+                        'name': 'Rajiv Makhijani'
+                    },
+                   'message': 'use a custom Werkzeug converter for commit SHAs; fixes #1',
+                   'parents': [{
+                        'sha': '98b873f9d87b110a48628b8493de2cb0383eb391',
+                        'url': 'http://localhost/repos/restfulgit/git/commits/98b873f9d87b110a48628b8493de2cb0383eb391/'
+                    }],
+                    'sha': 'ba3f032dbd2ead6a6610f3bf3b66f05cb628f579',
+                    'tree': {
+                        'sha': 'a6fb2a953ab675c8da0f3776faa160101ac301f9',
+                        'url': 'http://localhost/repos/restfulgit/git/trees/a6fb2a953ab675c8da0f3776faa160101ac301f9/'
+                    },
+                    'url': 'http://localhost/repos/restfulgit/git/commits/ba3f032dbd2ead6a6610f3bf3b66f05cb628f579/'
+                }
+            },
+            'lines': [
+                {
+                    'commit': '13e9ff41ba4704d6ca91988f9216adeeee8c79b5',
+                    'line': 'from flask import Flask, url_for, request, Response, current_app, Blueprint, safe_join, send_from_directory, make_response, send_file',
+                    'lineNum': 4,
+                    'origPath': 'restfulgit/__init__.py'},
+                {
+                    'commit': 'a8e4af2d7f30492bfef34ccb1c2c167df54512ba',
+                    'line': 'from werkzeug.exceptions import NotFound, BadRequest, HTTPException, default_exceptions',
+                    'lineNum': 5,
+                    'origPath': 'restfulgit/__init__.py'
+                },
+                {
+                    'commit': 'ba3f032dbd2ead6a6610f3bf3b66f05cb628f579',
+                    'line': 'from werkzeug.routing import BaseConverter',
+                    'lineNum': 6,
+                    'origPath': 'gitapi.py'
+                }
+            ]
+        })
+
+    def test_single_line_works(self):
+        resp = self.client.get('/repos/restfulgit/blame/da55cbf2f13c2ec019bf02f080bc47cc4f83318c/restfulgit/__init__.py?firstLine=1027&lastLine=1027')
+        self.assert200(resp)
+        self.assertEqual(resp.json, {
+            'commits': {
+                '090750eec2fe5f120ad1010fc2204d06fc3ca91e': {
+                    'author': {
+                        'date': '2013-05-20T19:12:03Z',
+                        'email': 'rajiv@hulu.com',
+                        'name': 'Rajiv Makhijani'
+                    },
+                    'committer': {
+                        'date': '2013-05-20T19:12:03Z',
+                        'email': 'rajiv@hulu.com',
+                        'name': 'Rajiv Makhijani'
+                    },
+                    'message': 'PEP-8 minor cleanup',
+                    'parents': [{
+                        'sha': 'cff4955ef40cfce35efe282e196c840619c518f2',
+                        'url': 'http://localhost/repos/restfulgit/git/commits/cff4955ef40cfce35efe282e196c840619c518f2/'
+                    }],
+                    'sha': '090750eec2fe5f120ad1010fc2204d06fc3ca91e',
+                    'tree': {
+                        'sha': '288a19807d25403221c3f5260f4c172ec820b621',
+                        'url': 'http://localhost/repos/restfulgit/git/trees/288a19807d25403221c3f5260f4c172ec820b621/'
+                    },
+                    'url': 'http://localhost/repos/restfulgit/git/commits/090750eec2fe5f120ad1010fc2204d06fc3ca91e/'
+                }
+            },
+            'lines': [{
+                'commit': '090750eec2fe5f120ad1010fc2204d06fc3ca91e',
+                'line': 'application = app',
+                'lineNum': 1027,
+                'origPath': 'api.py'
+            }]
+        })
+
+    def test_oldest_with_nonexistent_ref(self):
+        resp = self.client.get('/repos/restfulgit/blame/da55cbf2f13c2ec019bf02f080bc47cc4f83318c/restfulgit/__init__.py?oldest={}'.format(IMPROBABLE_SHA))
+        self.assertJson404(resp)
+
+    def test_oldest_works(self):
+        resp = self.client.get('/repos/restfulgit/blame/da55cbf2f13c2ec019bf02f080bc47cc4f83318c/restfulgit/__init__.py?oldest=129458e24667a9c32db4cb1a0549e3554bff0965')
+        self.assert200(resp)
+        json = resp.json
+        relevant_commits = {'129458e24667a9c32db4cb1a0549e3554bff0965', '13e9ff41ba4704d6ca91988f9216adeeee8c79b5'}
+        self.assertEqual(relevant_commits, set(json['commits'].viewkeys()))
+        self.assertEqual(relevant_commits, {line['commit'] for line in json['lines']})
 
 
 if __name__ == '__main__':

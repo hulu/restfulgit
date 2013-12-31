@@ -826,6 +826,50 @@ def get_contents(repo_key, path):  # pylint: disable=W0613
     raise NotImplementedError()
 
 
+def _get_blame(repo, file_path, newest_commit, oldest_refspec=None, min_line=1, max_line=None):  # pylint: disable=R0913
+    kwargs = {
+        'flags': (GIT_BLAME_TRACK_COPIES_SAME_COMMIT_MOVES | GIT_BLAME_TRACK_COPIES_SAME_COMMIT_COPIES),
+        'newest_commit': newest_commit.oid,
+    }
+    if oldest_refspec is not None:
+        oldest_commit = _get_commit_for_refspec(repo, oldest_refspec)
+        kwargs['oldest_commit'] = oldest_commit.oid
+    if min_line > 1:
+        kwargs['min_line'] = min_line
+    if max_line is not None:
+        kwargs['max_line'] = max_line
+
+    try:
+        return repo.blame(file_path, **kwargs)
+    except KeyError as no_such_file_err:
+        raise NotFound(no_such_file_err.message)
+    except ValueError:
+        raise BadRequest("path resolved to non-blob object")
+
+
+def _convert_blame(repo_key, repo, blame, raw_lines, start_line):
+    annotated_lines = []
+    commit_shas = set()
+    for line_num, line in enumerate(raw_lines, start=start_line):
+        hunk = blame.for_line(line_num)
+        commit_sha = hunk.final_commit_id
+        commit_shas.add(commit_sha)
+        annotated_lines.append({
+            'commit': commit_sha,
+            'origPath': hunk.orig_path,
+            'lineNum': line_num,
+            'line': line,
+        })
+
+    return {
+        'lines': annotated_lines,
+        'commits': {
+            commit_sha: _convert_commit(repo_key, _get_commit(repo, commit_sha))
+            for commit_sha in commit_shas
+        }
+    }
+
+
 @restfulgit.route('/repos/<repo_key>/blame/<branch_or_tag_or_sha>/<path:file_path>')  # NOTE: This endpoint is a RestfulGit extension
 @corsify
 @jsonify
@@ -850,39 +894,29 @@ def get_blame(repo_key, branch_or_tag_or_sha, file_path):
             raise BadRequest("lastLine must be positive")
 
         if min_line > max_line:
-            raise BadRequest("line range start cannot be greater than line range end")
+            raise BadRequest("firstLine cannot be greater than lastLine")
 
     repo = _get_repo(repo_key)
     newest_commit = _get_commit_for_refspec(repo, branch_or_tag_or_sha)
     tree = _get_tree(repo, newest_commit.tree.hex)
 
-    flags = GIT_BLAME_TRACK_COPIES_SAME_COMMIT_MOVES | GIT_BLAME_TRACK_COPIES_SAME_COMMIT_COPIES
-    oldest_commit = request.args.get('oldest')
-    # FIX ME: enable once next pygit2 version is released
-    # FIX ME: add tests
-    # FIX ME: document
-    # pylint: disable=W0101
-    raise NotImplementedError("Blocked pending a new pygit2 release with a fixed version of the Blame API.")
-    blame = repo.blame(
-        file_path,
-        flags,
-        newest_commit=newest_commit,
-        oldest_commit=oldest_commit,
-        min_line=min_line,
-        max_line=max_line
-    )
     raw_lines = _get_raw_file_contents(repo, tree, file_path).splitlines()
+    if min_line > len(raw_lines):
+        raise BadRequest("firstLine out of bounds")
+    if max_line is not None and max_line > len(raw_lines):
+        raise BadRequest("lastLine out of bounds")
+    raw_lines = raw_lines[(min_line - 1):max_line]
 
-    return {
-        'lines': [
-            {
-                'commit': _convert_commit(repo_key, _get_commit(repo, hunk.final_commit_id)),
-                'origPath': hunk.orig_path,
-                'lineNum': line_num,
-                'line': raw_lines[line_num - 1],
-            } for line_num, hunk in izip(count(min_line), blame)
-        ]
-    }
+    blame = _get_blame(
+        repo,
+        file_path,
+        newest_commit,
+        oldest_refspec=request.args.get('oldest'),
+        min_line=min_line,
+        max_line=max_line,
+    )
+
+    return _convert_blame(repo_key, repo, blame, raw_lines, min_line)
 
 
 def _walk_tree_recursively(repo, tree, blobs_only=False, base_path=''):
