@@ -1999,5 +1999,26 @@ class RepoContentsTestCase(_RestfulGitTestCase):
         pass
 
 
+class ContributorsTestCase(_RestfulGitTestCase):
+    def test_nonexistent_repo(self):
+        resp = self.client.get('/repos/this-repo-does-not-exist/contributors/')
+        self.assert404(resp)
+
+    def test_results_well_formed(self):
+        resp = self.client.get('/repos/restfulgit/contributors/')
+        self.assert200(resp)
+        contributors = resp.json
+        for contributor in contributors:
+            self.assertIsInstance(contributor, dict)
+            self.assertIsInstance(contributor.get('name'), unicode)
+            self.assertIsInstance(contributor.get('email'), unicode)
+            count = contributor.get('contributions')
+            self.assertIsInstance(count, int)
+            self.assertGreater(count, 0)
+        counts = [contributor['contributions'] for contributor in contributors]
+        sorted_counts = sorted(counts, reverse=True)
+        self.assertEqual(sorted_counts, counts)
+
+
 if __name__ == '__main__':
     unittest.main()

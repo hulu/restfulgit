@@ -7,13 +7,14 @@ from werkzeug.routing import BaseConverter
 
 from pygit2 import (Repository,
                     GIT_OBJ_COMMIT, GIT_OBJ_TREE, GIT_OBJ_BLOB, GIT_OBJ_TAG,
-                    GIT_REF_SYMBOLIC, GIT_SORT_TIME,
+                    GIT_REF_SYMBOLIC, GIT_SORT_TIME, GIT_SORT_NONE,
                     GIT_BLAME_TRACK_COPIES_SAME_COMMIT_MOVES, GIT_BLAME_TRACK_COPIES_SAME_COMMIT_COPIES)
 GIT_MODE_SUBMODULE = int('0160000', 8)
 
 from datetime import datetime, tzinfo, timedelta
 from base64 import b64encode
 from itertools import islice, ifilter
+from collections import defaultdict
 from tempfile import mkstemp as _make_temp_file_handle
 import json
 import os
@@ -1088,6 +1089,30 @@ def get_tarball(repo_key, branch_or_tag_or_sha):
     return _send_transient_file_as_attachment(temp_file,
                                               _archive_filename_for(repo_key, refspec=branch_or_tag_or_sha, ext=extension),
                                               (GZIP_MIME_TYPE if ZLIB_SUPPORT else TAR_MIME_TYPE))
+
+
+@restfulgit.route('/repos/<repo_key>/contributors/')
+@corsify
+@jsonify
+def get_contributors(repo_key):
+    repo = _get_repo(repo_key)
+    authors = (commit.author for commit in repo.walk(repo.head.target, GIT_SORT_NONE))  # pylint: disable=E1103
+    email_to_name = {}
+    commit_counts = defaultdict(int)
+    for author in authors:
+        email = author.email
+        email_to_name.setdefault(email, author.name)
+        commit_counts[email] += 1
+    leaderboard = commit_counts.items()
+    leaderboard.sort(key=(lambda pair: pair[1]), reverse=True)
+    return [
+        {
+            "email": email,
+            "name": email_to_name[email],
+            "contributions": commit_count,
+        }
+        for email, commit_count in leaderboard
+    ]
 
 
 @restfulgit.route('/')
