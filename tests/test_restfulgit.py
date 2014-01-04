@@ -15,11 +15,12 @@ from json import load as load_json_file
 
 from flask.ext.testing import TestCase as _FlaskTestCase
 
+from restfulgit.app_factory import create_app
+
 
 RESTFULGIT_REPO = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 PARENT_DIR_OF_RESTFULGIT_REPO = os.path.abspath(os.path.join(RESTFULGIT_REPO, '..'))
-os.environ[b'RESTFULGIT_CONFIG'] = os.path.join(RESTFULGIT_REPO, 'example_config.py')
-import restfulgit
+CONFIG_FILE = os.path.join(RESTFULGIT_REPO, 'example_config.py')
 
 
 TEST_SUBDIR = os.path.join(RESTFULGIT_REPO, 'tests')
@@ -43,8 +44,10 @@ def delete_file_quietly(filepath):
 
 class _RestfulGitTestCase(_FlaskTestCase):
     def create_app(self):
-        restfulgit.app.config['RESTFULGIT_REPO_BASE_PATH'] = PARENT_DIR_OF_RESTFULGIT_REPO
-        return restfulgit.app
+        app = create_app()
+        app.config.from_pyfile(CONFIG_FILE)
+        app.config['RESTFULGIT_REPO_BASE_PATH'] = PARENT_DIR_OF_RESTFULGIT_REPO
+        return app
 
     def assertJsonError(self, resp):
         json = resp.json
@@ -110,12 +113,12 @@ class RepoKeyTestCase(_RestfulGitTestCase):
         self.assertJson404(resp)
 
     def test_directory_is_not_git_repo(self):
-        restfulgit.REPO_BASE = RESTFULGIT_REPO
+        self.app.config['RESTFULGIT_REPO_BASE_PATH'] = RESTFULGIT_REPO
         resp = self.client.get('/repos/test/git/commits/')
         self.assertJson404(resp)
 
     def test_dot_dot_disallowed(self):
-        restfulgit.REPO_BASE = TEST_SUBDIR
+        self.app.config['RESTFULGIT_REPO_BASE_PATH'] = TEST_SUBDIR
         resp = self.client.get('/repos/../git/commits/')
         self.assertJson404(resp)
 
@@ -1107,12 +1110,12 @@ class RepositoryInfoCase(_RestfulGitTestCase):
             delete_file_quietly(NORMAL_CLONE_DESCRIPTION_FILEPATH)
 
     def test_dot_dot_disallowed(self):
-        restfulgit.REPO_BASE = TEST_SUBDIR
+        self.app.config['RESTFULGIT_REPO_BASE_PATH'] = TEST_SUBDIR
         resp = self.client.get('/repos/../')
         self.assertJson404(resp)
 
     def test_nonexistent_repo(self):
-        restfulgit.REPO_BASE = RESTFULGIT_REPO
+        self.app.config['RESTFULGIT_REPO_BASE_PATH'] = RESTFULGIT_REPO
         resp = self.client.get('/repos/test/')
         self.assertJson404(resp)
 
