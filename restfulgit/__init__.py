@@ -1107,7 +1107,7 @@ def get_contributors(repo_key):
     leaderboard.sort(key=(lambda pair: pair[1]), reverse=True)
     return [
         {
-            "email": email,
+            "email": email,  # NOTE: This is RestfulGit extension
             "name": email_to_name[email],
             "contributions": commit_count,
         }
