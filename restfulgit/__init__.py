@@ -24,6 +24,7 @@ import tarfile
 import zipfile
 
 from restfulgit.cors import corsify
+import restfulgit.mime_types as mime_types
 
 # Detect whether we can actually use compression for archive files
 try:
@@ -498,7 +499,7 @@ def jsonify(func):
     @functools.wraps(func)
     def wrapped(*args, **kwargs):
         return Response(json.dumps(func(*args, **kwargs), default=dthandler),
-                        mimetype='application/json')
+                        mimetype=mime_types.JSON)
     return wrapped
 
 
@@ -521,11 +522,6 @@ class FixedOffset(tzinfo):
 
 UTC = FixedOffset(0)
 
-OCTET_STREAM = 'application/octet-stream'
-ZIP_MIME_TYPE = 'application/zip'
-GZIP_MIME_TYPE = 'application/x-gzip'
-TAR_MIME_TYPE = 'application/x-tar'
-
 
 # JSON error pages based on http://flask.pocoo.org/snippets/83/
 def register_general_error_handler(blueprint_or_app, handler):
@@ -539,7 +535,7 @@ def register_general_error_handler(blueprint_or_app, handler):
 
 def json_error_page(error):
     err_msg = error.description if isinstance(error, HTTPException) else unicode(error)
-    resp = Response(json.dumps({'error': err_msg}), mimetype='application/json')
+    resp = Response(json.dumps({'error': err_msg}), mimetype=mime_types.JSON)
     resp.status_code = (error.code if isinstance(error, HTTPException) else 500)
     return resp
 
@@ -732,7 +728,7 @@ def get_repos_diff(repo_key, branch_or_tag_or_sha=None):
     repo = _get_repo(repo_key)
     commit = _get_commit_for_refspec(repo, branch_or_tag_or_sha)
     diff = _get_diff(repo, commit)
-    return Response(diff.patch, mimetype="text/x-diff")
+    return Response(diff.patch, mimetype=mime_types.DIFF)
 
 
 @restfulgit.route('/repos/<repo_key>/branches/')
@@ -795,7 +791,7 @@ def get_raw(repo_key, branch_or_tag_or_sha, file_path):
     data = _get_raw_file_contents(repo, tree, file_path)
     mime_type = guess_mime_type(os.path.basename(file_path), data)
     if mime_type is None:
-        mime_type = OCTET_STREAM
+        mime_type = mime_types.OCTET_STREAM
     return Response(data, mimetype=mime_type)
 
 
@@ -1009,7 +1005,7 @@ def get_zip_file(repo_key, branch_or_tag_or_sha):
     temp_file.seek(0)
     return _send_transient_file_as_attachment(temp_file,
                                               _archive_filename_for(repo_key, refspec=branch_or_tag_or_sha, ext=ZIP_EXTENSION),
-                                              ZIP_MIME_TYPE)
+                                              mime_types.ZIP)
 
 
 TAR_EXTENSION = '.tar'
@@ -1061,7 +1057,7 @@ def get_tarball(repo_key, branch_or_tag_or_sha):
     temp_file.seek(0)
     return _send_transient_file_as_attachment(temp_file,
                                               _archive_filename_for(repo_key, refspec=branch_or_tag_or_sha, ext=extension),
-                                              (GZIP_MIME_TYPE if ZLIB_SUPPORT else TAR_MIME_TYPE))
+                                              (mime_types.GZIP if ZLIB_SUPPORT else mime_types.TAR))
 
 
 @restfulgit.route('/repos/<repo_key>/contributors/')
