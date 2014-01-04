@@ -1,5 +1,5 @@
 # coding=utf-8
-from __future__ import print_function
+from __future__ import absolute_import, print_function, division
 
 from flask import Flask, url_for, request, Response, current_app, Blueprint, safe_join, send_from_directory, make_response, send_file
 from werkzeug.exceptions import NotFound, BadRequest, HTTPException, default_exceptions
@@ -22,6 +22,8 @@ import functools
 import re
 import tarfile
 import zipfile
+
+from restfulgit.cors import corsify
 
 # Detect whether we can actually use compression for archive files
 try:
@@ -501,35 +503,6 @@ def jsonify(func):
 
 
 #### VIEW UTILS ####
-
-
-def corsify(func):
-    # based on http://flask.pocoo.org/snippets/56/
-    func.provide_automatic_options = False
-    func.required_methods = set(getattr(func, 'required_methods', ())) | {'OPTIONS'}
-
-    @functools.wraps(func)
-    def wrapped(*args, **kwargs):
-        if not current_app.config['RESTFULGIT_ENABLE_CORS']:
-            return func(*args, **kwargs)
-        options_resp = current_app.make_default_options_response()
-        if request.method == 'OPTIONS':
-            resp = options_resp
-        else:
-            resp = make_response(func(*args, **kwargs))
-        headers = resp.headers
-        headers['Access-Control-Allow-Methods'] = options_resp.headers['allow']
-        headers['Access-Control-Allow-Origin'] = current_app.config['RESTFULGIT_CORS_ALLOWED_ORIGIN']
-        headers['Access-Control-Allow-Credentials'] = str(current_app.config['RESTFULGIT_CORS_ALLOW_CREDENTIALS']).lower()
-        allowed_headers = current_app.config['RESTFULGIT_CORS_ALLOWED_HEADERS']
-        if allowed_headers:
-            headers['Access-Control-Allow-Headers'] = ", ".join(allowed_headers)
-        max_age = current_app.config['RESTFULGIT_CORS_MAX_AGE']
-        if max_age is not None:
-            headers['Access-Control-Max-Age'] = str(int(max_age.total_seconds()))
-        return resp
-
-    return wrapped
 
 
 class FixedOffset(tzinfo):
