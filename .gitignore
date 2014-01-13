@@ -1,3 +1,7 @@
 *.pyc
 .coverage
 cover
+*.egg-info
+/build
+/dist
+MANIFEST
