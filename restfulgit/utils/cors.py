@@ -9,14 +9,16 @@ from flask import current_app, request, make_response
 def corsify(func):
     # based on http://flask.pocoo.org/snippets/56/
     func.provide_automatic_options = False
-    func.required_methods = set(getattr(func, 'required_methods', ())) | {'OPTIONS'}
+    required_methods = set(getattr(func, 'required_methods', ()))
+    required_methods.add(b'OPTIONS')
+    func.required_methods = required_methods
 
     @wraps(func)
     def wrapped(*args, **kwargs):
         if not current_app.config['RESTFULGIT_ENABLE_CORS']:
             return func(*args, **kwargs)
         options_resp = current_app.make_default_options_response()
-        if request.method == 'OPTIONS':
+        if request.method == b'OPTIONS':
             resp = options_resp
         else:
             resp = make_response(func(*args, **kwargs))
