@@ -209,8 +209,8 @@ Retrieve general information about a specific repo:
 
 ```json
 {
-        "url": "http://localhost:5000/repos/restfulgit/",
-        "name": "restfulgit",
-        "description": "REST API for Git data"
-    }
+    "url": "http://localhost:5000/repos/restfulgit/",
+    "name": "restfulgit",
+    "description": "REST API for Git data"
+}
 ```
