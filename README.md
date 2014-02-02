@@ -1,5 +1,6 @@
 RestfulGit: A Restful API for Git data
 =======================================
+[![PyPI version](https://badge.fury.io/py/restfulgit.png)](http://badge.fury.io/py/restfulgit)
 [![Build Status](https://travis-ci.org/hulu/restfulgit.png?branch=master)](https://travis-ci.org/hulu/restfulgit)
 [![Coverage Status](https://coveralls.io/repos/hulu/restfulgit/badge.png?branch=master)](https://coveralls.io/r/hulu/restfulgit?branch=master)
 [![Requirements Status](https://requires.io/github/hulu/restfulgit/requirements.png?branch=master)](https://requires.io/github/hulu/restfulgit/requirements/?branch=master)
