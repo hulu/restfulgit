@@ -175,6 +175,24 @@ def get_diff(repo_key, branch_or_tag_or_sha=None):
     return Response(diff.patch, mimetype=mime_types.DIFF)
 
 
+@porcelain.route('/repos/<repo_key>/diff/<branch_or_tag_or_sha1>/<branch_or_tag_or_sha2>')
+@corsify
+def get_diffs(repo_key, branch_or_tag_or_sha1=None, branch_or_tag_or_sha2=None):
+    context_lines = request.args.get('context_lines') or 3
+    try:
+        context_lines = int(context_lines)
+    except ValueError:
+        raise BadRequest("invalid context_lines")
+    if context_lines < 0:
+        raise BadRequest("invalid context_lines")
+
+    repo = get_repo(repo_key)
+    commit1 = get_commit_for_refspec(repo, branch_or_tag_or_sha1)
+    commit2 = get_commit_for_refspec(repo, branch_or_tag_or_sha2)
+    diff = _get_diff(repo, commit1, commit2, context_lines)
+    return Response(diff.patch, mimetype=mime_types.DIFF)
+
+
 @porcelain.route('/repos/<repo_key>/blame/<branch_or_tag_or_sha>/<path:file_path>')  # NOTE: This endpoint is a RestfulGit extension
 @corsify
 @jsonify
