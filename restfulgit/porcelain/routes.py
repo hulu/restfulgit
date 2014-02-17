@@ -175,6 +175,24 @@ def get_diff(repo_key, branch_or_tag_or_sha=None):
     return Response(diff.patch, mimetype=mime_types.DIFF)
 
 
+@porcelain.route('/repos/<repo_key>/compare/<old_branch_or_tag_or_sha>...<new_branch_or_tag_or_sha>.diff')
+@corsify
+def get_compare_diff(repo_key, old_branch_or_tag_or_sha, new_branch_or_tag_or_sha):
+    context = request.args.get('context', 3)  # NOTE: The `context` parameter is a RestfulGit extension
+    try:
+        context = int(context)
+    except ValueError:
+        raise BadRequest("context was not a valid integer")
+    if context < 0:
+        raise BadRequest("context must not non negative")
+
+    repo = get_repo(repo_key)
+    old_commit = get_commit_for_refspec(repo, old_branch_or_tag_or_sha)
+    new_commit = get_commit_for_refspec(repo, new_branch_or_tag_or_sha)
+    diff = _get_diff(repo, new_commit, against=old_commit, context_lines=context)
+    return Response(diff.patch, mimetype=mime_types.DIFF)
+
+
 @porcelain.route('/repos/<repo_key>/blame/<branch_or_tag_or_sha>/<path:file_path>')  # NOTE: This endpoint is a RestfulGit extension
 @corsify
 @jsonify
