@@ -102,12 +102,16 @@ def get_raw_file_content(repo, tree, path):
     return git_obj.data
 
 
-def get_diff(repo, commit):
-    if commit.parents:
-        diff = repo.diff(commit.parents[0], commit)
+def get_diff(repo, commit, commit2=None, context_lines=3):
+    if commit2:
+        diff = repo.diff(commit, commit2, context_lines=context_lines)
         diff.find_similar()
-    else:  # NOTE: RestfulGit extension; GitHub gives a 404 in this case
-        diff = commit.tree.diff_to_tree(swap=True)
+    else:
+        if commit.parents:
+            diff = repo.diff(commit.parents[0], commit)
+            diff.find_similar()
+        else:  # NOTE: RestfulGit extension; GitHub gives a 404 in this case
+            diff = commit.tree.diff_to_tree(swap=True)
     return diff
 
 
