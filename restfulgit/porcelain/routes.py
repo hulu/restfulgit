@@ -67,9 +67,9 @@ def get_branches(repo_key):
         {
             "name": branch.branch_name,
             "commit": {
-                "sha": branch.target.hex,
+                "sha": unicode(branch.target),
                 "url": url_for('porcelain.get_commit', _external=True,
-                               repo_key=repo_key, branch_or_tag_or_sha=branch.target.hex),
+                               repo_key=repo_key, branch_or_tag_or_sha=unicode(branch.target)),
             },
         }
         for branch in branches
@@ -99,9 +99,9 @@ def get_tags(repo_key):
         {
             "name": tag.shorthand,
             "commit": {
-                "sha": tag.get_object().hex,
+                "sha": unicode(tag.get_object().id),
                 "url": url_for('porcelain.get_commit', _external=True,
-                               repo_key=repo_key, branch_or_tag_or_sha=tag.get_object().hex),
+                               repo_key=repo_key, branch_or_tag_or_sha=unicode(tag.get_object().id)),
             },
             "url": url_for('porcelain.get_tag', _external=True,  # NOTE: This is RestfulGit extension
                            repo_key=repo_key, tag_name=tag.shorthand),
@@ -148,7 +148,7 @@ def get_contents(repo_key, file_path=''):
     repo = get_repo(repo_key)
     refspec = request.args.get('ref', 'master')
     commit = get_commit_for_refspec(repo, refspec)
-    tree = get_tree(repo, commit.tree.hex)
+    tree = get_tree(repo, commit.tree.id)
     obj = get_object_from_path(repo, tree, file_path)
     return _get_contents(repo_key, repo, refspec, file_path, obj)
 
@@ -158,7 +158,7 @@ def get_contents(repo_key, file_path=''):
 def get_raw(repo_key, branch_or_tag_or_sha, file_path):
     repo = get_repo(repo_key)
     commit = get_commit_for_refspec(repo, branch_or_tag_or_sha)
-    tree = get_tree(repo, commit.tree.hex)
+    tree = get_tree(repo, commit.tree.id)
     data = get_raw_file_content(repo, tree, file_path)
     mime_type = guess_mime_type(os.path.basename(file_path), data)
     if mime_type is None:
@@ -221,7 +221,7 @@ def get_blame(repo_key, branch_or_tag_or_sha, file_path):
 
     repo = get_repo(repo_key)
     newest_commit = get_commit_for_refspec(repo, branch_or_tag_or_sha)
-    tree = get_tree(repo, newest_commit.tree.hex)
+    tree = get_tree(repo, newest_commit.tree_id)
 
     raw_lines = get_raw_file_content(repo, tree, file_path).splitlines()
     if min_line > len(raw_lines):

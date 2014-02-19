@@ -37,12 +37,12 @@ def get_commit_for_refspec(repo, branch_or_tag_or_sha):
     # branch?
     branch_ref = lookup_ref(repo, branch_or_tag_or_sha)
     if branch_ref is not None:
-        commit_sha = branch_ref.resolve().target.hex
+        commit_sha = branch_ref.resolve().target
     # tag?
     if commit_sha is None:
         ref_to_tag = lookup_ref(repo, "tags/" + branch_or_tag_or_sha)
         if ref_to_tag is not None:
-            commit_sha = ref_to_tag.get_object().hex
+            commit_sha = ref_to_tag.get_object().id
     # commit?
     if commit_sha is None:
         commit_sha = branch_or_tag_or_sha
@@ -153,11 +153,11 @@ def get_contents(repo_key, repo, refspec, file_path, obj, _recursing=False):
         return entries
 
     contents_url = url_for('porcelain.get_contents', _external=True, repo_key=repo_key, file_path=file_path, ref=refspec)
-    git_url = url_for('plumbing.get_' + GIT_OBJ_TYPE_TO_NAME[obj.type], _external=True, repo_key=repo_key, sha=obj.hex)
+    git_url = url_for('plumbing.get_' + GIT_OBJ_TYPE_TO_NAME[obj.type], _external=True, repo_key=repo_key, sha=unicode(obj.id))
 
     result = {
         "type": GIT_OBJ_TO_PORCELAIN_NAME[obj.type],
-        "sha": obj.hex,
+        "sha": unicode(obj.id),
         "name": os.path.basename(file_path),
         "path": file_path,
         "size": (obj.size if obj.type == GIT_OBJ_BLOB else 0),
