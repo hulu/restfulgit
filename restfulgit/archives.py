@@ -106,7 +106,7 @@ def get_zip_file(repo_key, branch_or_tag_or_sha):
     """
     repo = get_repo(repo_key)
     commit = get_commit_for_refspec(repo, branch_or_tag_or_sha)
-    tree = get_tree(repo, commit.tree.hex)
+    tree = get_tree(repo, commit.tree_id)
 
     wrapper_dir = _wrapper_dir_name_for(repo_key, commit)
     temp_file = _make_temp_file(suffix=ZIP_EXTENSION)
@@ -132,7 +132,7 @@ def get_tarball(repo_key, branch_or_tag_or_sha):
     """
     repo = get_repo(repo_key)
     commit = get_commit_for_refspec(repo, branch_or_tag_or_sha)
-    tree = get_tree(repo, commit.tree.hex)
+    tree = get_tree(repo, commit.tree_id)
 
     wrapper_dir = _wrapper_dir_name_for(repo_key, commit)
     extension = (TGZ_EXTENSION if ZLIB_SUPPORT else TAR_EXTENSION)

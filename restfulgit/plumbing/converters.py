@@ -45,9 +45,9 @@ def convert_commit(repo_key, commit, porcelain=False):
         "committer": _convert_signature(commit.committer),
         "message": commit.message.rstrip(),
         "tree": {
-            "sha": commit.tree.hex,
+            "sha": unicode(commit.tree_id),
             "url": url_for('plumbing.get_tree', _external=True,
-                           repo_key=repo_key, sha=commit.tree.hex),
+                           repo_key=repo_key, sha=unicode(commit.tree_id)),
         },
         "parents": [{
             "sha": c.hex,
