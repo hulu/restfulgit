@@ -69,7 +69,7 @@ def get_object_from_path(repo, tree, path):
         if not path_seg and i == len(path_segments) - 1:  # allow trailing slash in paths to directories
             continue
         try:
-            ctree = repo[ctree[path_seg].oid]
+            ctree = repo[ctree[path_seg].id]
         except KeyError:
             raise NotFound("invalid path; no such object")
     return ctree
@@ -119,11 +119,11 @@ def get_diff(repo, commit, against=None, context_lines=3):
 def get_blame(repo, file_path, newest_commit, oldest_refspec=None, min_line=1, max_line=None):  # pylint: disable=R0913
     kwargs = {
         'flags': (GIT_BLAME_TRACK_COPIES_SAME_COMMIT_MOVES | GIT_BLAME_TRACK_COPIES_SAME_COMMIT_COPIES),
-        'newest_commit': newest_commit.oid,
+        'newest_commit': newest_commit.id,
     }
     if oldest_refspec is not None:
         oldest_commit = get_commit_for_refspec(repo, oldest_refspec)
-        kwargs['oldest_commit'] = oldest_commit.oid
+        kwargs['oldest_commit'] = oldest_commit.id
     if min_line > 1:
         kwargs['min_line'] = min_line
     if max_line is not None:
@@ -146,7 +146,7 @@ def get_contents(repo_key, repo, refspec, file_path, obj, _recursing=False):
     # FIX ME: implement symlink and submodule cases
     if not _recursing and obj.type == GIT_OBJ_TREE:
         entries = [
-            get_contents(repo_key, repo, refspec, os.path.join(file_path, entry.name), repo[entry.oid], _recursing=True)
+            get_contents(repo_key, repo, refspec, os.path.join(file_path, entry.name), repo[entry.id], _recursing=True)
             for entry in obj
         ]
         entries.sort(key=lambda entry: entry["name"])

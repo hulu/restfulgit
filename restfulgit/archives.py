@@ -54,7 +54,7 @@ def _walk_tree_recursively(repo, tree, blobs_only=False, base_path=''):
         if entry.filemode == GIT_MODE_SUBMODULE:
             continue  # FIX ME: handle submodules & symlinks
         path = base_path + entry.name
-        obj = repo[entry.oid]
+        obj = repo[entry.id]
         if not blobs_only or obj.type == GIT_OBJ_BLOB:
             yield path, entry.filemode, obj
 

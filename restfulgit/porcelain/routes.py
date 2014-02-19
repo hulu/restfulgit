@@ -125,7 +125,7 @@ def get_tag(repo_key, tag_name):  # NOTE: This endpoint is a RestfulGit extensio
                        repo_key=repo_key, tag_name=tag.shorthand),
     }
     # simple tag
-    if tag.target != tag.get_object().oid:
+    if tag.target != tag.get_object().id:
         tag_obj = repo[tag.target]
         result['tag'] = convert_tag(repo_key, repo, tag_obj)
     return result

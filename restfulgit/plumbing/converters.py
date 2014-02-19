@@ -85,7 +85,7 @@ def _tree_entries(repo_key, repo, tree, recursive=False, path=''):
                 "type": "submodule",
             }
         else:
-            obj = repo[entry.oid]
+            obj = repo[entry.id]
             if obj.type == GIT_OBJ_BLOB:
                 entry_data = {
                     "path": '%s%s' % (path, entry.name),
