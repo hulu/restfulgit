@@ -62,6 +62,9 @@ class _RestfulGitTestCase(_FlaskTestCase):
         self.assert404(resp)
         self.assertJsonError(resp)
 
+    def assertContentTypeIsDiff(self, resp):
+        self.assertEqual(resp.headers.get_all('Content-Type'), [b'text/x-diff; charset=utf-8'])
+
     @contextmanager
     def config_override(self, key, val):
         orig_val = self.app.config[key]
@@ -934,13 +937,13 @@ class SimpleSHATestCase(_RestfulGitTestCase):
     def test_get_diff_works(self):
         resp = self.client.get('/repos/restfulgit/commit/d408fc2428bc6444cabd7f7b46edbe70b6992b16.diff')
         self.assert200(resp)
-        self.assertEqual(resp.headers.get_all('Content-Type'), [b'text/x-diff; charset=utf-8'])
+        self.assertContentTypeIsDiff(resp)
         self.assertBytesEqualFixture(resp.get_data(), 'd408fc2428bc6444cabd7f7b46edbe70b6992b16.diff')
 
     def test_get_diff_with_parentless_commit(self):  # NOTE: RestfulGit extension; GitHub gives a 404 in this case
         resp = self.client.get('/repos/restfulgit/commit/07b9bf1540305153ceeb4519a50b588c35a35464.diff')
         self.assert200(resp)
-        self.assertEqual(resp.headers.get_all('Content-Type'), [b'text/x-diff; charset=utf-8'])
+        self.assertContentTypeIsDiff(resp)
         self.assertBytesEqualFixture(resp.get_data(), '07b9bf1540305153ceeb4519a50b588c35a35464.diff')
 
     def test_get_diff_with_nonexistent_sha(self):
@@ -951,7 +954,7 @@ class SimpleSHATestCase(_RestfulGitTestCase):
         # From https://github.com/hulu/restfulgit/commit/88edac1a3a55c04646ccc963fdada0e194ed5926.diff
         resp = self.client.get('/repos/restfulgit/commit/88edac1a3a55c04646ccc963fdada0e194ed5926.diff')
         self.assert200(resp)
-        self.assertEqual(resp.headers.get_all('Content-Type'), [b'text/x-diff; charset=utf-8'])
+        self.assertContentTypeIsDiff(resp)
         self.assertBytesEqualFixture(resp.get_data(), '88edac1a3a55c04646ccc963fdada0e194ed5926.diff')
 
     def test_get_diff_with_merge_commit(self):
@@ -2000,6 +2003,49 @@ class RepoContentsTestCase(_RestfulGitTestCase):
     def test_submodule(self):
         # FIXME: implement
         pass
+
+
+class CompareTestCase(_RestfulGitTestCase):
+    def test_works(self):
+        resp = self.client.get('/repos/restfulgit/compare/{}...{}.diff'.format('initial', FIFTH_COMMIT))
+        self.assert200(resp)
+        self.assertContentTypeIsDiff(resp)
+        self.assertBytesEqualFixture(resp.get_data(), 'initial_c04112733fe2db2cb2f179fca1a19365cf15fef5.diff')
+
+    def test_empty_diff(self):
+        resp = self.client.get('/repos/restfulgit/compare/initial...initial.diff')
+        self.assert200(resp)
+        self.assertContentTypeIsDiff(resp)
+        self.assertEqual(resp.get_data(), b'')  # From https://github.com/hulu/restfulgit/compare/initial...initial.diff
+
+    def test_nonexistent_refspec_404(self):
+        resp = self.client.get('/repos/restfulgit/compare/initial...this-branch-does-not-exist.diff')
+        self.assertJson404(resp)
+
+    def test_empty_left_refspec_rejected(self):
+        resp = self.client.get('/repos/restfulgit/compare/...initial.diff')
+        self.assertJson404(resp)
+
+    def test_right_empty_refspec_rejected(self):
+        resp = self.client.get('/repos/restfulgit/compare/initial....diff')
+        self.assertJson404(resp)
+
+    def test_branch_names_with_dots(self):
+        pass
+
+    def test_non_integer_context_rejected(self):  # NOTE: `context` is a RestfulGit extension
+        resp = self.client.get('/repos/restfulgit/compare/{}...{}.diff?context=abcdef'.format('initial', FIFTH_COMMIT))
+        self.assert400(resp)
+
+    def test_negative_context_rejected(self):  # NOTE: `context` is a RestfulGit extension
+        resp = self.client.get('/repos/restfulgit/compare/{}...{}.diff?context=-1'.format('initial', FIFTH_COMMIT))
+        self.assert400(resp)
+
+    def test_context_is_honored(self):  # NOTE: `context` is a RestfulGit extension
+        resp = self.client.get('/repos/restfulgit/compare/{}...{}.diff?context=1'.format('initial', FIFTH_COMMIT))
+        self.assert200(resp)
+        self.assertContentTypeIsDiff(resp)
+        self.assertBytesEqualFixture(resp.get_data(), 'initial_c04112733fe2db2cb2f179fca1a19365cf15fef5_context_1.diff')
 
 
 class ContributorsTestCase(_RestfulGitTestCase):
