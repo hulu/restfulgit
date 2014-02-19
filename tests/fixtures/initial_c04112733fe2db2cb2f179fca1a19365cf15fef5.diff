@@ -27,7 +27,7 @@ index ae9d907..3407954 100644
  
  class FixedOffset(tzinfo):
      ZERO = timedelta(0)
-@@ -17,7 +28,7 @@ def utcoffset(self, dt):
+@@ -17,7 +28,7 @@ class FixedOffset(tzinfo):
      def dst(self, dt):
          return self.ZERO
  
