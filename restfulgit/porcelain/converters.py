@@ -58,7 +58,7 @@ def _filename_to_patch_from(diff):
 
 def _convert_patch(repo_key, commit, patch, filename_to_patch):
     deleted = patch.status == 'D'
-    commit_sha = (commit.hex if not deleted else commit.parents[0].hex)
+    commit_sha = (commit.hex if not deleted else unicode(commit.parent_ids[0]))
     result = {
         "sha": patch.new_oid if not deleted else patch.old_oid,
         "status": GIT_STATUS_TO_NAME[patch.status],
