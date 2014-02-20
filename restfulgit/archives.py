@@ -54,7 +54,7 @@ def _walk_tree_recursively(repo, tree, blobs_only=False, base_path=''):
         if entry.filemode == GIT_MODE_SUBMODULE:
             continue  # FIX ME: handle submodules & symlinks
         path = base_path + entry.name
-        obj = repo[entry.oid]
+        obj = repo[entry.id]
         if not blobs_only or obj.type == GIT_OBJ_BLOB:
             yield path, entry.filemode, obj
 
@@ -64,7 +64,7 @@ def _walk_tree_recursively(repo, tree, blobs_only=False, base_path=''):
 
 
 def _wrapper_dir_name_for(repo_key, commit):
-    return "{}-{}".format(repo_key, commit.hex)
+    return "{}-{}".format(repo_key, unicode(commit.id))
 
 
 def _archive_filename_for(repo_key, refspec, ext):
@@ -106,7 +106,7 @@ def get_zip_file(repo_key, branch_or_tag_or_sha):
     """
     repo = get_repo(repo_key)
     commit = get_commit_for_refspec(repo, branch_or_tag_or_sha)
-    tree = get_tree(repo, commit.tree.hex)
+    tree = get_tree(repo, commit.tree_id)
 
     wrapper_dir = _wrapper_dir_name_for(repo_key, commit)
     temp_file = _make_temp_file(suffix=ZIP_EXTENSION)
@@ -132,14 +132,14 @@ def get_tarball(repo_key, branch_or_tag_or_sha):
     """
     repo = get_repo(repo_key)
     commit = get_commit_for_refspec(repo, branch_or_tag_or_sha)
-    tree = get_tree(repo, commit.tree.hex)
+    tree = get_tree(repo, commit.tree_id)
 
     wrapper_dir = _wrapper_dir_name_for(repo_key, commit)
     extension = (TGZ_EXTENSION if ZLIB_SUPPORT else TAR_EXTENSION)
     timestamp = int((datetime.utcnow() - EPOCH_START).total_seconds())  # FIX ME: use committer/author timestamp?
     temp_file = _make_temp_file(suffix=extension)
     with tarfile.open(fileobj=temp_file, mode=TARFILE_WRITE_MODE, encoding='utf-8') as tar_file:
-        tar_file.pax_headers = {u'comment': commit.hex.decode('ascii')}
+        tar_file.pax_headers = {u'comment': unicode(commit.id)}
 
         for path, filemode, obj in _walk_tree_recursively(repo, tree):
             tar_info = tarfile.TarInfo(os.path.join(wrapper_dir, path))

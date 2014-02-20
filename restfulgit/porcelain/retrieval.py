@@ -37,12 +37,12 @@ def get_commit_for_refspec(repo, branch_or_tag_or_sha):
     # branch?
     branch_ref = lookup_ref(repo, branch_or_tag_or_sha)
     if branch_ref is not None:
-        commit_sha = branch_ref.resolve().target.hex
+        commit_sha = branch_ref.resolve().target
     # tag?
     if commit_sha is None:
         ref_to_tag = lookup_ref(repo, "tags/" + branch_or_tag_or_sha)
         if ref_to_tag is not None:
-            commit_sha = ref_to_tag.get_object().hex
+            commit_sha = ref_to_tag.get_object().id
     # commit?
     if commit_sha is None:
         commit_sha = branch_or_tag_or_sha
@@ -69,7 +69,7 @@ def get_object_from_path(repo, tree, path):
         if not path_seg and i == len(path_segments) - 1:  # allow trailing slash in paths to directories
             continue
         try:
-            ctree = repo[ctree[path_seg].oid]
+            ctree = repo[ctree[path_seg].id]
         except KeyError:
             raise NotFound("invalid path; no such object")
     return ctree
@@ -119,11 +119,11 @@ def get_diff(repo, commit, against=None, context_lines=3):
 def get_blame(repo, file_path, newest_commit, oldest_refspec=None, min_line=1, max_line=None):  # pylint: disable=R0913
     kwargs = {
         'flags': (GIT_BLAME_TRACK_COPIES_SAME_COMMIT_MOVES | GIT_BLAME_TRACK_COPIES_SAME_COMMIT_COPIES),
-        'newest_commit': newest_commit.oid,
+        'newest_commit': newest_commit.id,
     }
     if oldest_refspec is not None:
         oldest_commit = get_commit_for_refspec(repo, oldest_refspec)
-        kwargs['oldest_commit'] = oldest_commit.oid
+        kwargs['oldest_commit'] = oldest_commit.id
     if min_line > 1:
         kwargs['min_line'] = min_line
     if max_line is not None:
@@ -146,18 +146,18 @@ def get_contents(repo_key, repo, refspec, file_path, obj, _recursing=False):
     # FIX ME: implement symlink and submodule cases
     if not _recursing and obj.type == GIT_OBJ_TREE:
         entries = [
-            get_contents(repo_key, repo, refspec, os.path.join(file_path, entry.name), repo[entry.oid], _recursing=True)
+            get_contents(repo_key, repo, refspec, os.path.join(file_path, entry.name), repo[entry.id], _recursing=True)
             for entry in obj
         ]
         entries.sort(key=lambda entry: entry["name"])
         return entries
 
     contents_url = url_for('porcelain.get_contents', _external=True, repo_key=repo_key, file_path=file_path, ref=refspec)
-    git_url = url_for('plumbing.get_' + GIT_OBJ_TYPE_TO_NAME[obj.type], _external=True, repo_key=repo_key, sha=obj.hex)
+    git_url = url_for('plumbing.get_' + GIT_OBJ_TYPE_TO_NAME[obj.type], _external=True, repo_key=repo_key, sha=unicode(obj.id))
 
     result = {
         "type": GIT_OBJ_TO_PORCELAIN_NAME[obj.type],
-        "sha": obj.hex,
+        "sha": unicode(obj.id),
         "name": os.path.basename(file_path),
         "path": file_path,
         "size": (obj.size if obj.type == GIT_OBJ_BLOB else 0),

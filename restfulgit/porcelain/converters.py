@@ -58,7 +58,7 @@ def _filename_to_patch_from(diff):
 
 def _convert_patch(repo_key, commit, patch, filename_to_patch):
     deleted = patch.status == 'D'
-    commit_sha = (commit.hex if not deleted else commit.parents[0].hex)
+    commit_sha = unicode(commit.id if not deleted else commit.parent_ids[0])
     result = {
         "sha": patch.new_oid if not deleted else patch.old_oid,
         "status": GIT_STATUS_TO_NAME[patch.status],
@@ -90,11 +90,11 @@ def convert_commit(repo_key, repo, commit, include_diff=False):
         "author": plain_commit_json['author'],
         "committer": plain_commit_json['committer'],
         "url": url_for('porcelain.get_commit', _external=True,
-                       repo_key=repo_key, branch_or_tag_or_sha=commit.hex),
+                       repo_key=repo_key, branch_or_tag_or_sha=unicode(commit.id)),
         "parents": [{
-            "sha": c.hex,
+            "sha": unicode(c.id),
             "url": url_for('porcelain.get_commit', _external=True,
-                           repo_key=repo_key, branch_or_tag_or_sha=c.hex)
+                           repo_key=repo_key, branch_or_tag_or_sha=unicode(c.id))
         } for c in commit.parents],
     }
     if include_diff:

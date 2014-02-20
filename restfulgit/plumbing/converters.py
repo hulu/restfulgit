@@ -39,19 +39,19 @@ def convert_commit(repo_key, commit, porcelain=False):
 
     return {
         "url": url_for('plumbing.get_commit', _external=True,
-                       repo_key=repo_key, sha=commit.hex),
-        "sha": commit.hex,
+                       repo_key=repo_key, sha=unicode(commit.id)),
+        "sha": unicode(commit.id),
         "author": _convert_signature(commit.author),
         "committer": _convert_signature(commit.committer),
         "message": commit.message.rstrip(),
         "tree": {
-            "sha": commit.tree.hex,
+            "sha": unicode(commit.tree_id),
             "url": url_for('plumbing.get_tree', _external=True,
-                           repo_key=repo_key, sha=commit.tree.hex),
+                           repo_key=repo_key, sha=unicode(commit.tree_id)),
         },
         "parents": [{
-            "sha": c.hex,
-            "url": commit_url_for(c.hex),
+            "sha": unicode(c.id),
+            "url": commit_url_for(unicode(c.id)),
         } for c in commit.parents]
     }
 
@@ -67,8 +67,8 @@ def convert_blob(repo_key, blob):
     encoding, data = encode_blob_data(blob.data)
     return {
         "url": url_for('plumbing.get_blob', _external=True,
-                       repo_key=repo_key, sha=blob.hex),
-        "sha": blob.hex,
+                       repo_key=repo_key, sha=unicode(blob.id)),
+        "sha": unicode(blob.id),
         "size": blob.size,
         "encoding": encoding,
         "content": data,
@@ -81,29 +81,29 @@ def _tree_entries(repo_key, repo, tree, recursive=False, path=''):
         if entry.filemode == GIT_MODE_SUBMODULE:
             entry_data = {
                 "path": entry.name,
-                "sha": entry.hex,
+                "sha": unicode(entry.id),
                 "type": "submodule",
             }
         else:
-            obj = repo[entry.oid]
+            obj = repo[entry.id]
             if obj.type == GIT_OBJ_BLOB:
                 entry_data = {
                     "path": '%s%s' % (path, entry.name),
-                    "sha": entry.hex,
+                    "sha": unicode(entry.id),
                     "type": "blob",
                     "size": obj.size,
                     "url": url_for('plumbing.get_blob', _external=True,
-                                   repo_key=repo_key, sha=entry.hex),
+                                   repo_key=repo_key, sha=unicode(entry.id)),
                 }
             elif obj.type == GIT_OBJ_TREE:
                 if recursive:
                     entry_list += _tree_entries(repo_key, repo, obj, True, '%s%s/' % (path, entry.name))
                 entry_data = {
                     "path": "%s%s" % (path, entry.name),
-                    "sha": entry.hex,
+                    "sha": unicode(entry.id),
                     "type": "tree",
                     "url": url_for('plumbing.get_tree', _external=True,
-                                   repo_key=repo_key, sha=entry.hex)
+                                   repo_key=repo_key, sha=unicode(entry.id))
                 }
         entry_data['mode'] = oct(entry.filemode)[1:].zfill(6)  # 6 octal digits without single leading base-indicating 0
         entry_list.append(entry_data)
@@ -115,19 +115,19 @@ def convert_tree(repo_key, repo, tree, recursive=False):
     entry_list.sort(key=lambda entry: entry['path'])
     return {
         "url": url_for('plumbing.get_tree', _external=True,
-                       repo_key=repo_key, sha=tree.hex),
-        "sha": tree.hex,
+                       repo_key=repo_key, sha=unicode(tree.id)),
+        "sha": unicode(tree.id),
         "tree": entry_list,
     }
 
 
 def _linkobj_for_gitobj(repo_key, obj, include_type=False):
     data = {}
-    data['sha'] = obj.hex
+    data['sha'] = unicode(obj.id)
     obj_type = GIT_OBJ_TYPE_TO_NAME.get(obj.type)
     if obj_type is not None:
         data['url'] = url_for('plumbing.get_' + obj_type, _external=True,
-                              repo_key=repo_key, sha=obj.hex)
+                              repo_key=repo_key, sha=unicode(obj.id))
     if include_type:
         data['type'] = obj_type
     return data
@@ -146,15 +146,15 @@ def convert_tag(repo_key, repo, tag):
     target_type_name = GIT_OBJ_TYPE_TO_NAME.get(repo[tag.target].type)
     return {
         "url": url_for('plumbing.get_tag', _external=True,
-                       repo_key=repo_key, sha=tag.hex),
-        "sha": tag.hex,
+                       repo_key=repo_key, sha=unicode(tag.id)),
+        "sha": unicode(tag.id),
         "tag": tag.name,
         "tagger": _convert_signature(tag.tagger),
         "message": tag.message,
         "object": {
             "type": target_type_name,
-            "sha": tag.target.hex,
+            "sha": unicode(tag.target),
             "url": url_for('plumbing.get_' + target_type_name, _external=True,
-                           repo_key=repo_key, sha=tag.target.hex),
+                           repo_key=repo_key, sha=unicode(tag.target)),
         },
     }
