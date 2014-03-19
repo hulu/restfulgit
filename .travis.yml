@@ -13,8 +13,8 @@ before_install:
   - "export LIBGIT2='/usr/local'"
   - "export LDFLAGS=\"-Wl,-rpath='$LIBGIT2/lib',--enable-new-dtags $LDFLAGS\""
 before_script:
-  - "pip install --allow-external twill --allow-unverified twill --use-mirrors pep8 pylint Flask-Testing coverage nose coveralls"
-  - "pip install --use-mirrors filemagic"
+  - "pip install --allow-external twill --allow-unverified twill pep8 pylint Flask-Testing coverage nose coveralls"
+  - "pip install filemagic"
   - "git fetch --unshallow || true"
   - "git fetch --all"
   - "git branch ambiguous 1f51b91ac383806df9d322ae67bbad3364f50811"
