@@ -18,8 +18,8 @@ Optional:
 
 The `restfulgit` package is a valid WSGI application.
 
-While the app can be run with `python -m restfulgit` -- this runs Flask in debug mode and should NOT be used in production.
-Instead, the app can be run with any WSGI server, such as gunicorn (`pip install gunicorn; gunicorn restfulgit`)
+While the app can be run with `python -m restfulgit.app` -- this runs Flask in debug mode and should NOT be used in production.
+Instead, the app can be run with any WSGI server, such as gunicorn (`pip install gunicorn; gunicorn restfulgit.app`)
 (Note: If you haven't installed restfulgit into your Python environment, you may need to explicitly set `PYTHONPATH` when running the above commands.)
 
 Configuration
