@@ -11,7 +11,7 @@ Modeled off the GitHub API for compatibility (see http://developer.github.com/v3
 Requires:
 - Python 2.7
 - Flask
-- pygit2 (= 0.20.2), which itself requires libgit2 (= 0.20.0)
+- pygit2 (= 0.20.3), which itself requires libgit2 (= 0.20.0)
 
 Optional:
 - filemagic (= 1.6) (offers improved MIME-type guessing), which itself requires libmagic (= 5.11)
