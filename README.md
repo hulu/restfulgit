@@ -215,3 +215,18 @@ Retrieve general information about a specific repo:
     "description": "REST API for Git data"
 }
 ```
+
+Archives
+--------
+Download a ZIP file or (gzipped) tarball of the contents of the repo at the specified branch, tag, or commit SHA:
+
+    GET /repos/restfulgit/zipball/:refspec/
+    GET /repos/restfulgit/tarball/:refspec/
+
+```
+Content-Type: application/zip
+Content-Disposition: attachment; filename=restfulgit-master.zip
+```
+
+The zipball and gzipped-tarball features require that the Python standard library module `zlib` be available.
+If `zlib` is unavailable, only the `/tarball/` endpoint will be available, and it will send an uncompressed TAR file instead of a gzipped one.
