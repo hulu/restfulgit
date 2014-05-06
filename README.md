@@ -210,9 +210,18 @@ Retrieve general information about a specific repo:
 
 ```json
 {
-    "url": "http://localhost:5000/repos/restfulgit/",
     "name": "restfulgit",
-    "description": "REST API for Git data"
+    "full_name": "restfulgit",
+    "description": "REST API for Git data",
+    "url": "http://localhost:5000/repos/restfulgit/",
+    "commits_url": "http://localhost:5000/repos/restfulgit/commits{/sha}",
+    "blobs_url": "http://localhost:5000/repos/restfulgit/git/blobs{/sha}",
+    "branches_url": "http://localhost:5000/repos/restfulgit/branches{/branch}",
+    "tags_url": "http://localhost:5000/repos/restfulgit/tags/",
+    "trees_url": "http://localhost:5000/repos/restfulgit/git/trees{/sha}",
+    "git_commits_url": "http://localhost:5000/repos/restfulgit/git/commits{/sha}",
+    "git_refs_url": "http://localhost:5000/repos/restfulgit/git/refs{/sha}",
+    "git_tags_url": "http://localhost:5000/repos/restfulgit/git/tags{/sha}"
 }
 ```
 
