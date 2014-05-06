@@ -194,9 +194,10 @@ Retrieves a list of general information about all of the repos:
 ```json
 [
     {
-        "url": "http://localhost:5000/repos/restfulgit/",
         "name": "restfulgit",
-        "description": "REST API for Git data"
+        "description": "REST API for Git data",
+        "url": "http://localhost:5000/repos/restfulgit/",
+        ...
     },
     ...
 ]
