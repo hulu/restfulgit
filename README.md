@@ -263,3 +263,62 @@ Retrieves a list of contributors for the given repo, in descending order by numb
 
 Contributors are presumed to be uniquely identifiable by their email address.
 Note that this endpoint may be slow as it involves walking through every single commit in the main branch and does no caching.
+
+Blame
+----------
+Retrieves blame information for lines in the given range of the given file at the specified branch, tag, or commit SHA:
+
+    GET /repos/:repo_key/blame/:refspec/:file_path
+
+    optional: ?firstLine=:line_num (default=1)
+    optional: ?lastLine=:line_num (default=number of lines in the file)
+    optional: ?oldest=:refspec (the oldest commit to consider; can be a branch, a tag, or a commit SHA)
+
+```json
+
+{
+    "lines": [
+        {
+            "commit": "bcb720a10cd8452626e037673b3958facac9a789",
+            "line": "# coding=utf-8",
+            "origPath": "restfulgit/app.py",
+            "lineNum": 1
+        },
+        {
+            "commit": "bcb720a10cd8452626e037673b3958facac9a789",
+            "line": "from __future__ import absolute_import, unicode_literals, print_function, division",
+            "origPath": "restfulgit/app.py",
+            "lineNum": 2
+        },
+        ...
+    ],
+    "commits": {
+        "bcb720a10cd8452626e037673b3958facac9a789": {
+            "committer": {
+                "date": "2014-01-15T20:36:39Z",
+                "name": "Chris Rebert",
+                "email": "chris.rebert@hulu.com"
+            },
+            "author": {
+                "date": "2014-01-04T01:10:41Z",
+                "name": "Chris Rebert",
+                "email": "chris.rebert@hulu.com"
+            },
+            "url": "http://localhost:5000/repos/restfulgit/git/commits/bcb720a10cd8452626e037673b3958facac9a789/",
+            "tree": {
+                "url": "http://localhost:5000/repos/restfulgit/git/trees/8d50e406c9581433d2ec19d069fa32f3f03c43d8/",
+                "sha": "8d50e406c9581433d2ec19d069fa32f3f03c43d8"
+            },
+            "sha": "bcb720a10cd8452626e037673b3958facac9a789",
+            "parents": [
+                {
+                    "url": "http://localhost:5000/repos/restfulgit/git/commits/29c9c6ef4a1f4f78aee60418e31a2a535d2bc923/",
+                    "sha": "29c9c6ef4a1f4f78aee60418e31a2a535d2bc923"
+                }
+            ],
+            "message": "refactoring: split things out into a bunch more packages+modules"
+        },
+        ...
+    }
+}
+```
