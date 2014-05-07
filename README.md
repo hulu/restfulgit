@@ -204,7 +204,7 @@ Retrieves a list of general information about all of the repos:
 ```
 
 Repository Info
------------------
+----------
 Retrieve general information about a specific repo:
 
     GET /repos/:repo_key/
@@ -227,11 +227,11 @@ Retrieve general information about a specific repo:
 ```
 
 Archives
---------
+----------
 Download a ZIP file or (gzipped) tarball of the contents of the repo at the specified branch, tag, or commit SHA:
 
-    GET /repos/restfulgit/zipball/:refspec/
-    GET /repos/restfulgit/tarball/:refspec/
+    GET /repos/:repo_key/zipball/:refspec/
+    GET /repos/:repo_key/tarball/:refspec/
 
 ```
 Content-Type: application/zip
