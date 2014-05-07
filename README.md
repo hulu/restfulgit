@@ -236,10 +236,12 @@ Download a ZIP file or (gzipped) tarball of the contents of the repo at the spec
 ```
 Content-Type: application/zip
 Content-Disposition: attachment; filename=restfulgit-master.zip
+...
 ```
 
 The zipball and gzipped-tarball features require that the Python standard library module `zlib` be available.
 If `zlib` is unavailable, only the `/tarball/` endpoint will be available, and it will send an uncompressed TAR file instead of a gzipped one.
+Note that this endpoint may be slow as it does no caching.
 
 Contributors
 ----------
