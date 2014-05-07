@@ -240,3 +240,24 @@ Content-Disposition: attachment; filename=restfulgit-master.zip
 
 The zipball and gzipped-tarball features require that the Python standard library module `zlib` be available.
 If `zlib` is unavailable, only the `/tarball/` endpoint will be available, and it will send an uncompressed TAR file instead of a gzipped one.
+
+Contributors
+----------
+Retrieves a list of contributors for the given repo, in descending order by number of commits in the main branch:
+
+    GET /repos/:repo_key/contributors/
+
+```json
+[
+    ...
+    {
+        "contributions": 23,
+        "email": "rajiv@hulu.com",
+        "name": "Rajiv Makhijani"
+    },
+    ...
+]
+```
+
+Contributors are presumed to be uniquely identifiable by their email address.
+Note that this endpoint may be slow as it involves walking through every single commit in the main branch and does no caching.
