@@ -87,6 +87,31 @@ Retrieves specific commit object:
 
     GET /repos/:repo_key/git/commits/:sha/
 
+Branches
+----------
+Retrieves a list of branches:
+
+    GET /repos/:repo_key/branches/
+
+```json
+[
+    {
+        "name": "master",
+        "commit": {
+            "url": "http://localhost:5000/repos/restfulgit/commits/7ad9ae851a4491ab55042bccbab24fc8d740aaea/",
+            "sha": "7ad9ae851a4491ab55042bccbab24fc8d740aaea"
+        }
+    },
+    {
+        "name": "ambiguous",
+        "commit": {
+            "url": "http://localhost:5000/repos/restfulgit/commits/1f51b91ac383806df9d322ae67bbad3364f50811/",
+            "sha": "1f51b91ac383806df9d322ae67bbad3364f50811"
+        }
+    }
+]
+```
+
 Blobs
 ----------
 Retrieves a specific blob object:
