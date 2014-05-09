@@ -528,7 +528,7 @@ Retrieves blame information for lines in the given range of the given file at th
 
     optional: ?firstLine=:line_num (default=1)
     optional: ?lastLine=:line_num (default=number of lines in the file)
-    optional: ?oldest=:refspec (the oldest commit to consider; can be a branch, a tag, or a commit SHA)
+    optional: ?oldest=:refspec (default=first commit in the repository; the oldest commit to consider; can be a branch, a tag, or a commit SHA)
 
 ```json
 
