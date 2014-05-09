@@ -468,6 +468,8 @@ Retrieve the diff between two commits each specified by branch name, tag name, o
 
     GET /repos/:repo_key/compare/:refspec_1...:refspec_2.diff
 
+    optional: ?context=:num_context_lines (default=3; the number of lines to display before and after each hunk of the diff)
+
 ```
 Content-Type: text/x-diff; charset=utf-8
 
