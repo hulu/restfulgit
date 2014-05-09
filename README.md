@@ -87,6 +87,23 @@ Retrieves specific commit object:
 
     GET /repos/:repo_key/git/commits/:sha/
 
+Retrieves a diff of the changes in a given commit (specified by branch name, tag name, or commit SHA):
+
+    GET /repos/:repo_key/commit/:refspec.diff
+
+```
+Content-Type: text/x-diff; charset=utf-8
+
+diff --git a/api.py b/api.py
+new file mode 100644
+index 0000000..ae9d907
+--- /dev/null
++++ b/api.py
+@@ -0,0 +1,179 @@
++from flask import Flask, url_for
+...
+```
+
 Branches
 ----------
 Retrieves a list of branches:
