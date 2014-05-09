@@ -576,3 +576,68 @@ Retrieves blame information for lines in the given range of the given file at th
     }
 }
 ```
+
+Contents
+----------
+Retrieves a listing of the contents of a given directory at the given branch, tag, or commit.
+
+    GET /repos/:repo_key/contents/:directory_path
+    
+    optional ?ref=:refspec (default=the default branch; can be a branch, a tag, or a commit SHA)
+
+```json
+[
+    {
+        "name": ".gitignore",
+        "path": ".gitignore",
+        "type": "file",
+        "size": 55,
+        "sha": "3eac043ba3a315bce813d557102bb69ff9511d19",
+        "url": "http://localhost:5000/repos/restfulgit/contents/.gitignore?ref=master",
+        "git_url": "http://localhost:5000/repos/restfulgit/git/blobs/3eac043ba3a315bce813d557102bb69ff9511d19/",
+        "_links": {
+            "self": "http://localhost:5000/repos/restfulgit/contents/.gitignore?ref=master",
+            "git": "http://localhost:5000/repos/restfulgit/git/blobs/3eac043ba3a315bce813d557102bb69ff9511d19/"
+        }
+    },
+    ...
+    {
+        "name": "restfulgit",
+        "path": "restfulgit",
+        "type": "dir",
+        "size": 0,
+        "sha": "48dd8b941913f02cd22a1fa8f18355a4f81c5d78",
+        "url": "http://localhost:5000/repos/restfulgit/contents/restfulgit?ref=master",
+        "git_url": "http://localhost:5000/repos/restfulgit/git/trees/48dd8b941913f02cd22a1fa8f18355a4f81c5d78/",
+        "_links": {
+            "self": "http://localhost:5000/repos/restfulgit/contents/restfulgit?ref=master",
+            "git":"http://localhost:5000/repos/restfulgit/git/trees/48dd8b941913f02cd22a1fa8f18355a4f81c5d78/"
+        }
+    },
+    ...
+]
+```
+
+Retrieves the contents of and the metadata about the given file at the given branch, tag, or commit.
+
+    GET /repos/:repo_key/contents/:file_path
+    
+    optional ?ref=:refspec (default=the default branch; can be a branch, a tag, or a commit SHA)
+
+```json
+{
+    "name": "LICENSE.md",
+    "path": "LICENSE.md",
+    "type": "file",
+    "encoding": "utf-8",
+    "size": 1056,
+    "sha": "bb27aa0a502f73c19837b96d1bd514ba95e0d404",
+    "url": "http://localhost:5000/repos/restfulgit/contents/LICENSE.md?ref=master",
+    "git_url": "http://localhost:5000/repos/restfulgit/git/blobs/bb27aa0a502f73c19837b96d1bd514ba95e0d404/",
+    "content": "...",
+    "_links": {
+        "self": "http://localhost:5000/repos/restfulgit/contents/LICENSE.md?ref=master",
+        "git": "http://localhost:5000/repos/restfulgit/git/blobs/bb27aa0a502f73c19837b96d1bd514ba95e0d404/"
+    }
+}
+```
