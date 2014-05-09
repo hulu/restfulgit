@@ -181,9 +181,71 @@ Retrieves a list of tags:
 ]
 ```
 
-Retrieves a specific tag object:
+Retrieves a specific tag object by name:
 
-    GET /repos/:repo_key/git/tags/:sha/
+    GET /repos/:repo_key/tags/:tag_name/
+
+```json
+{
+    "name": "initial",
+    "url": "http://localhost:5000/repos/restfulgit/tags/initial/",
+    "tag": {
+        "message": "initial commit\n",
+        "object": {
+            "sha": "07b9bf1540305153ceeb4519a50b588c35a35464",
+            "type": "commit",
+            "url": "http://localhost:5000/repos/restfulgit/git/commits/07b9bf1540305153ceeb4519a50b588c35a35464/"
+        },
+        "sha": "1dffc031c9beda43ff94c526cbc00a30d231c079",
+        "tag": "initial",
+        "tagger": {
+            "date": "2013-09-28T01:14:09Z",
+            "email": "chris.rebert@hulu.com",
+            "name": "Chris Rebert"
+        },
+        "url": "http://localhost:5000/repos/restfulgit/git/tags/1dffc031c9beda43ff94c526cbc00a30d231c079/"
+    },
+    "commit": {
+        "author": {
+            "date": "2013-02-24T13:25:46Z",
+            "email": "rajiv@hulu.com",
+            "name": "Rajiv Makhijani"
+        },
+        "commit": {
+            "author": {
+                "date": "2013-02-24T13:25:46Z",
+                "email": "rajiv@hulu.com",
+                "name": "Rajiv Makhijani"
+            },
+            "committer": {
+                "date": "2013-02-24T13:25:46Z",
+                "email": "rajiv@hulu.com",
+                "name": "Rajiv Makhijani"
+            },
+            "message": "Initial support for read-only REST api for Git plumbing",
+            "parents": [],
+            "sha": "07b9bf1540305153ceeb4519a50b588c35a35464",
+            "tree": {
+                "sha": "6ca22167185c31554aa6157306e68dfd612d6345",
+                "url": "http://localhost:5000/repos/restfulgit/git/trees/6ca22167185c31554aa6157306e68dfd612d6345/"
+            },
+            "url": "http://localhost:5000/repos/restfulgit/git/commits/07b9bf1540305153ceeb4519a50b588c35a35464/"
+        },
+        "committer": {
+            "date": "2013-02-24T13:25:46Z",
+            "email": "rajiv@hulu.com",
+            "name": "Rajiv Makhijani"
+        },
+        "parents": [],
+        "sha": "07b9bf1540305153ceeb4519a50b588c35a35464",
+        "url": "http://localhost:5000/repos/restfulgit/commits/07b9bf1540305153ceeb4519a50b588c35a35464/"
+    }
+}
+```
+
+Retrieves a specific tag object by SHA:
+
+    GET /repos/:repo_key/git/tags/:tag_sha/
 
 ```json
 {
