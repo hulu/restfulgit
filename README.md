@@ -585,7 +585,7 @@ Retrieves a listing of the contents of a given directory at the given branch, ta
 
     GET /repos/:repo_key/contents/:directory_path
     
-    optional ?ref=:refspec (default=the default branch; can be a branch, a tag, or a commit SHA)
+    optional: ?ref=:refspec (default=the default branch; can be a branch, a tag, or a commit SHA)
 
 ```json
 [
