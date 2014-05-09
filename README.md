@@ -156,6 +156,31 @@ Retrieves a specific tree object:
 
 Tags
 ----------
+Retrieves a list of tags:
+
+    GET /repos/:repo_key/tags/
+
+```json
+[
+    {
+        "name": "initial",
+        "url": "http://localhost:5000/repos/restfulgit/tags/initial/",
+        "commit": {
+            "url": "http://localhost:5000/repos/restfulgit/commits/07b9bf1540305153ceeb4519a50b588c35a35464/",
+            "sha": "07b9bf1540305153ceeb4519a50b588c35a35464"
+        }
+    },
+    {
+        "name": "ambiguous",
+        "url": "http://localhost:5000/repos/restfulgit/tags/ambiguous/",
+        "commit": {
+            "url": "http://localhost:5000/repos/restfulgit/commits/ff6405b71273b5c2c50d5c33d5cf962af5390542/",
+            "sha": "ff6405b71273b5c2c50d5c33d5cf962af5390542"
+        }
+    }
+]
+```
+
 Retrieves a specific tag object:
 
     GET /repos/:repo_key/git/tags/:sha/
