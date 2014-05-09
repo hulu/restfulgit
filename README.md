@@ -624,7 +624,7 @@ Retrieves the contents of and the metadata about the given file at the given bra
 
     GET /repos/:repo_key/contents/:file_path
     
-    optional ?ref=:refspec (default=the default branch; can be a branch, a tag, or a commit SHA)
+    optional: ?ref=:refspec (default=master; can be a branch, a tag, or a commit SHA)
 
 ```json
 {
