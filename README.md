@@ -183,6 +183,66 @@ Retrieves a list of branches:
 ]
 ```
 
+Retrieves a specific branch object:
+
+    GET /repos/:repo_key/branches/:branch_name/
+
+```json
+
+{
+    "name": "master",
+    "url": "http://localhost:5000/repos/restfulgit/branches/master/",
+    "commit": {
+        "sha": "dc745192fba83adc48361c36f73d0c7b6e060ed3",
+        "url": "http://localhost:5000/repos/restfulgit/commits/dc745192fba83adc48361c36f73d0c7b6e060ed3/",
+        "committer": {
+            "date": "2014-05-09T18:38:19Z",
+            "name": "Chris Rebert",
+            "email": "chris.rebert@hulu.com"
+        },
+        "author": {
+            "date": "2014-05-09T18:38:19Z",
+            "name": "Chris Rebert",
+            "email": "chris.rebert@hulu.com"
+        },
+        "parents": [
+            {
+                "sha": "6c1626a0d07e4bcfdbee4a11c898199a6f7d07b6",
+                "url": "http://localhost:5000/repos/restfulgit/commits/6c1626a0d07e4bcfdbee4a11c898199a6f7d07b6/"
+            }
+        ],
+        "commit": {
+            "sha": "dc745192fba83adc48361c36f73d0c7b6e060ed3",
+            "url": "http://localhost:5000/repos/restfulgit/git/commits/dc745192fba83adc48361c36f73d0c7b6e060ed3/",
+            "committer": {
+                "date": "2014-05-09T18:38:19Z",
+                "name": "Chris Rebert",
+                "email": "chris.rebert@hulu.com"
+            },
+            "author": {
+                "date": "2014-05-09T18:38:19Z",
+                "name": "Chris Rebert",
+                "email": "chris.rebert@hulu.com"
+            },
+            "tree": {
+                "url": "http://localhost:5000/repos/restfulgit/git/trees/3c02cb0f836416718a76d853583c3aae37c1dff7/",
+                "sha": "3c02cb0f836416718a76d853583c3aae37c1dff7"
+            },
+            "parents": [
+                {
+                    "url": "http://localhost:5000/repos/restfulgit/commits/6c1626a0d07e4bcfdbee4a11c898199a6f7d07b6/",
+                    "sha": "6c1626a0d07e4bcfdbee4a11c898199a6f7d07b6"
+                }
+            ],
+            "message": "document commit-in-porcelain-format endpoint in README"
+        }
+    },
+    "_links": {
+        "self": "http://localhost:5000/repos/restfulgit/branches/master/"
+    }
+}
+```
+
 Blobs
 ----------
 Retrieves a specific blob object:
