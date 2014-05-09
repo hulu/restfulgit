@@ -44,7 +44,7 @@ All of these routes return JSON unless otherwise specified.
 
 Commits
 ----------
-Retrieves a list of commit objects:
+Retrieves a list of commit objects (in plumbing format):
 
     GET /repos/:repo_key/git/commits/
     
@@ -83,9 +83,69 @@ Retrieves a list of commit objects:
 ]
 ```
 
-Retrieves specific commit object:
+Retrieves a specific commit object (plumbing format) given its SHA:
 
     GET /repos/:repo_key/git/commits/:sha/
+
+Retrieves a specific commit object (porcelain format) given a branch name, tag name, or commit SHA:
+
+    GET /repos/:repo_key/commits/:refspec/
+
+```json
+{
+    "sha": "07b9bf1540305153ceeb4519a50b588c35a35464",
+    "url": "http://localhost:5000/repos/restfulgit/commits/07b9bf1540305153ceeb4519a50b588c35a35464/",
+    "files": [
+        {
+            "filename": "api.py",
+            "status": "added",
+            "sha": "ae9d90706c632c26023ce599ac96cb152673da7c",
+            "raw_url": "http://localhost:5000/repos/restfulgit/raw/07b9bf1540305153ceeb4519a50b588c35a35464/api.py",
+            "contents_url": "http://localhost:5000/repos/restfulgit/contents/api.py?ref=07b9bf1540305153ceeb4519a50b588c35a35464",
+            "changes": 179,
+            "additions": 179,
+            "deletions": 0,
+            "patch": ...,
+        }
+    ],
+    "stats": {
+        "additions": 179,
+        "deletions": 0,
+        "total": 179
+    },
+    "author": {
+        "date": "2013-02-24T13:25:46Z",
+        "name": "Rajiv Makhijani",
+        "email": "rajiv@hulu.com"
+    },
+    "committer": {
+        "date": "2013-02-24T13:25:46Z",
+        "name": "Rajiv Makhijani",
+        "email": "rajiv@hulu.com"
+    },
+    "parents": [],
+    "commit": {
+        "committer": {
+            "date": "2013-02-24T13:25:46Z",
+            "name": "Rajiv Makhijani",
+            "email": "rajiv@hulu.com"
+        },
+        "author": {
+            "date": "2013-02-24T13:25:46Z",
+            "name": "Rajiv Makhijani",
+            "email": "rajiv@hulu.com"
+        },
+        "url": "http://localhost:5000/repos/restfulgit/git/commits/07b9bf1540305153ceeb4519a50b588c35a35464/",
+        "tree": {
+            "url": "http://localhost:5000/repos/restfulgit/git/trees/6ca22167185c31554aa6157306e68dfd612d6345/",
+            "sha": "6ca22167185c31554aa6157306e68dfd612d6345"
+        },
+        "sha": "07b9bf1540305153ceeb4519a50b588c35a35464",
+        "parents": [],
+        "message": "Initial support for read-only REST api for Git plumbing"
+    }
+}
+```
 
 Retrieves a diff of the changes in a given commit (specified by branch name, tag name, or commit SHA):
 
