@@ -119,13 +119,7 @@ Retrieves a list of branches:
             "sha": "7ad9ae851a4491ab55042bccbab24fc8d740aaea"
         }
     },
-    {
-        "name": "ambiguous",
-        "commit": {
-            "url": "http://localhost:5000/repos/restfulgit/commits/1f51b91ac383806df9d322ae67bbad3364f50811/",
-            "sha": "1f51b91ac383806df9d322ae67bbad3364f50811"
-        }
-    }
+    ...
 ]
 ```
 
@@ -187,14 +181,7 @@ Retrieves a list of tags:
             "sha": "07b9bf1540305153ceeb4519a50b588c35a35464"
         }
     },
-    {
-        "name": "ambiguous",
-        "url": "http://localhost:5000/repos/restfulgit/tags/ambiguous/",
-        "commit": {
-            "url": "http://localhost:5000/repos/restfulgit/commits/ff6405b71273b5c2c50d5c33d5cf962af5390542/",
-            "sha": "ff6405b71273b5c2c50d5c33d5cf962af5390542"
-        }
-    }
+    ...
 ]
 ```
 
