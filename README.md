@@ -462,6 +462,24 @@ Retrieve general information about a specific repo:
 }
 ```
 
+Compare Commits
+----------
+Retrieve the diff between two commits each specified by branch name, tag name, or commit SHA:
+
+    GET /repos/:repo_key/compare/:refspec_1...:refspec_2.diff
+
+```
+Content-Type: text/x-diff; charset=utf-8
+
+diff --git a/README.md b/README.md
+index 83e7371..c42b50e 100644
+--- a/README.md
++++ b/README.md
+@@ -183,6 +183,66 @@ Retrieves a list of branches:
+ ]
+...
+```
+
 Archives
 ----------
 Download a ZIP file or (gzipped) tarball of the contents of the repo at the specified branch, tag, or commit SHA:
