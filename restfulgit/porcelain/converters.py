@@ -48,7 +48,7 @@ def convert_branch_summary(repo_key, branch):
     }
 
 
-def convert_branch(repo_key, repo, branch):
+def convert_branch_verbose(repo_key, repo, branch):
     url = url_for('porcelain.get_branch', _external=True, repo_key=repo_key, branch_name=branch.branch_name)
     return {
         "name": branch.branch_name,

@@ -11,7 +11,7 @@ from werkzeug.exceptions import NotFound, BadRequest
 from restfulgit.plumbing.retrieval import get_repo, lookup_ref, get_tree
 from restfulgit.plumbing.converters import convert_tag
 from restfulgit.porcelain.retrieval import get_repo_names, get_commit_for_refspec, get_branch as _get_branch, get_object_from_path, get_raw_file_content, get_contents as _get_contents, get_diff as _get_diff, get_blame as _get_blame, get_authors
-from restfulgit.porcelain.converters import convert_repo, convert_branch, convert_branch_summary, convert_commit, convert_blame
+from restfulgit.porcelain.converters import convert_repo, convert_branch_verbose, convert_branch_summary, convert_commit, convert_blame
 from restfulgit.utils.json import jsonify
 from restfulgit.utils.cors import corsify
 from restfulgit.utils.json_err_pages import json_error_page, register_general_error_handler
@@ -72,7 +72,7 @@ def get_branches(repo_key):
 def get_branch(repo_key, branch_name):
     repo = get_repo(repo_key)
     branch = _get_branch(repo, branch_name)
-    return convert_branch(repo_key, repo, branch)
+    return convert_branch_verbose(repo_key, repo, branch)
 
 
 TAG_REF_PREFIX = "refs/tags/"
