@@ -37,6 +37,17 @@ def convert_repo(repo_key):
     }
 
 
+def convert_branch_summary(repo_key, branch):
+    url = url_for('porcelain.get_commit', _external=True, repo_key=repo_key, branch_or_tag_or_sha=unicode(branch.target))
+    return {
+        "name": branch.branch_name,
+        "commit": {
+            "sha": unicode(branch.target),
+            "url": url,
+        }
+    }
+
+
 def convert_branch(repo_key, repo, branch):
     url = url_for('porcelain.get_branch', _external=True, repo_key=repo_key, branch_name=branch.branch_name)
     return {
