@@ -189,7 +189,6 @@ Retrieves a specific branch object:
     GET /repos/:repo_key/branches/:branch_name/
 
 ```json
-
 {
     "name": "master",
     "url": "http://localhost:5000/repos/restfulgit/branches/master/",
@@ -242,6 +241,23 @@ Retrieves a specific branch object:
         "self": "http://localhost:5000/repos/restfulgit/branches/master/"
     }
 }
+```
+
+Retrieves a list of other branches that have been merged into the given branch:
+
+    GET /repos/:repo_key/branches/:branch_name/merged/
+
+```json
+[
+    {
+        "name": "ambiguous",
+        "commit": {
+            "sha": "1f51b91ac383806df9d322ae67bbad3364f50811",
+            "url": "http://localhost/repos/restfulgit/commits/1f51b91ac383806df9d322ae67bbad3364f50811/",
+        }
+    },
+    ...
+]
 ```
 
 Blobs
