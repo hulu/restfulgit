@@ -75,6 +75,27 @@ def get_branch(repo_key, branch_name):
     return convert_branch_verbose(repo_key, repo, branch)
 
 
+def _is_merged(repo, current_branch, other_branch):
+    """Returns a boolean indicating whether the other branch is fully merged into the current branch."""
+    merge_base_oid = repo.merge_base(current_branch.target, other_branch.target)
+    return merge_base_oid == other_branch.target
+
+
+@porcelain.route('/repos/<repo_key>/branches/<branch_name>/merged/')
+@corsify
+@jsonify
+def get_merged_branches(repo_key, branch_name):  # NOTE: This endpoint is a RestfulGit extension
+    repo = get_repo(repo_key)
+    branch = _get_branch(repo, branch_name)
+    other_branches = (
+        repo.lookup_branch(other_branch_name)
+        for other_branch_name in repo.listall_branches()
+        if other_branch_name != branch_name
+    )
+    merged_branches = (other_branch for other_branch in other_branches if _is_merged(repo, branch, other_branch))
+    return [convert_branch_summary(repo_key, merged_branch) for merged_branch in merged_branches]
+
+
 TAG_REF_PREFIX = "refs/tags/"
 
 
