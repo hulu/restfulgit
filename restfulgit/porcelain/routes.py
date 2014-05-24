@@ -11,7 +11,7 @@ from werkzeug.exceptions import NotFound, BadRequest
 from restfulgit.plumbing.retrieval import get_repo, lookup_ref, get_tree
 from restfulgit.plumbing.converters import convert_tag
 from restfulgit.porcelain.retrieval import get_repo_names, get_commit_for_refspec, get_branch as _get_branch, get_object_from_path, get_raw_file_content, get_contents as _get_contents, get_diff as _get_diff, get_blame as _get_blame, get_authors
-from restfulgit.porcelain.converters import convert_repo, convert_branch, convert_commit, convert_blame
+from restfulgit.porcelain.converters import convert_repo, convert_branch_verbose, convert_branch_summary, convert_commit, convert_blame
 from restfulgit.utils.json import jsonify
 from restfulgit.utils.cors import corsify
 from restfulgit.utils.json_err_pages import json_error_page, register_general_error_handler
@@ -63,17 +63,7 @@ def get_repo_info(repo_key):
 def get_branches(repo_key):
     repo = get_repo(repo_key)
     branches = (repo.lookup_branch(branch_name) for branch_name in repo.listall_branches())
-    return [
-        {
-            "name": branch.branch_name,
-            "commit": {
-                "sha": unicode(branch.target),
-                "url": url_for('porcelain.get_commit', _external=True,
-                               repo_key=repo_key, branch_or_tag_or_sha=unicode(branch.target)),
-            },
-        }
-        for branch in branches
-    ]
+    return [convert_branch_summary(repo_key, branch) for branch in branches]
 
 
 @porcelain.route('/repos/<repo_key>/branches/<branch_name>/')
@@ -82,7 +72,28 @@ def get_branches(repo_key):
 def get_branch(repo_key, branch_name):
     repo = get_repo(repo_key)
     branch = _get_branch(repo, branch_name)
-    return convert_branch(repo_key, repo, branch)
+    return convert_branch_verbose(repo_key, repo, branch)
+
+
+def _is_merged(repo, current_branch, other_branch):
+    """Returns a boolean indicating whether the other branch is fully merged into the current branch."""
+    merge_base_oid = repo.merge_base(current_branch.target, other_branch.target)
+    return merge_base_oid == other_branch.target
+
+
+@porcelain.route('/repos/<repo_key>/branches/<branch_name>/merged/')
+@corsify
+@jsonify
+def get_merged_branches(repo_key, branch_name):  # NOTE: This endpoint is a RestfulGit extension
+    repo = get_repo(repo_key)
+    branch = _get_branch(repo, branch_name)
+    other_branches = (
+        repo.lookup_branch(other_branch_name)
+        for other_branch_name in repo.listall_branches()
+        if other_branch_name != branch_name
+    )
+    merged_branches = (other_branch for other_branch in other_branches if _is_merged(repo, branch, other_branch))
+    return [convert_branch_summary(repo_key, merged_branch) for merged_branch in merged_branches]
 
 
 TAG_REF_PREFIX = "refs/tags/"

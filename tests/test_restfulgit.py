@@ -850,6 +850,45 @@ class SimpleSHATestCase(_RestfulGitTestCase):
         resp = self.client.get('/repos/restfulgit/branches/this-branch-does-not-exist/')
         self.assertJson404(resp)
 
+    def test_get_merged_branches_inclusion(self):
+        resp = self.client.get('/repos/restfulgit/branches/master/merged/')
+        self.assert200(resp)
+        json = resp.json
+        self.assertIsInstance(json, list)
+        for item in json:
+            self.assertIsInstance(item, dict)
+            self.assertIn('name', item)
+        branch_names = {item['name'] for item in json}
+        self.assertIn('ambiguous', branch_names)
+
+    def test_get_merged_branches_format(self):
+        resp = self.client.get('/repos/restfulgit/branches/master/merged/')
+        self.assert200(resp)
+        json = resp.json
+        self.assertIsInstance(json, list)
+        for item in json:
+            self.assertIsInstance(item, dict)
+            self.assertIn('name', item)
+        name_to_branch = {item['name']: item for item in json}
+        reference = {
+            "name": "ambiguous",
+            "commit": {
+                "sha": "1f51b91ac383806df9d322ae67bbad3364f50811",
+                "url": "http://localhost/repos/restfulgit/commits/1f51b91ac383806df9d322ae67bbad3364f50811/",
+            }
+        }
+        self.assertEqual(reference, name_to_branch.get('ambiguous'))
+
+    def test_get_merged_branches_exclusion(self):
+        resp = self.client.get('/repos/restfulgit/branches/ambiguous/merged/')
+        self.assert200(resp)
+        branches = {branch['name'] for branch in resp.json}
+        self.assertNotIn('master', branches)
+
+    def test_get_merged_branches_with_nonexistent_branch(self):
+        resp = self.client.get('/repos/restfulgit/branches/this-branch-does-not-exist/merged/')
+        self.assertJson404(resp)
+
     def test_get_repo_commit_works(self):
         # From https://api.github.com/repos/hulu/restfulgit/commits/d408fc2428bc6444cabd7f7b46edbe70b6992b16 with necessary adjustments
         reference = {
