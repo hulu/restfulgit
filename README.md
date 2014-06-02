@@ -17,7 +17,7 @@ Requires:
 Optional:
 - filemagic (= 1.6) (offers improved MIME-type guessing), which itself requires libmagic (= 5.11)
 
-The `restfulgit` package is a valid WSGI application.
+The `restfulgit.app` module is a valid WSGI application.
 
 While the app can be run with `python -m restfulgit.app` -- this runs Flask in debug mode and should NOT be used in production.
 Instead, the app can be run with any WSGI server, such as gunicorn (`pip install gunicorn; gunicorn restfulgit.app`)
