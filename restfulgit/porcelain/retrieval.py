@@ -5,7 +5,7 @@ import os
 
 from flask import current_app, url_for, safe_join
 from werkzeug.exceptions import NotFound, BadRequest
-from pygit2 import GIT_OBJ_BLOB, GIT_OBJ_TREE, GIT_OBJ_TAG, GIT_BLAME_TRACK_COPIES_SAME_COMMIT_MOVES, GIT_BLAME_TRACK_COPIES_SAME_COMMIT_COPIES, GIT_SORT_NONE
+from pygit2 import GIT_OBJ_BLOB, GIT_OBJ_TREE, GIT_OBJ_TAG, GIT_REF_SYMBOLIC, GIT_BLAME_TRACK_COPIES_SAME_COMMIT_MOVES, GIT_BLAME_TRACK_COPIES_SAME_COMMIT_COPIES, GIT_SORT_NONE
 from restfulgit.plumbing.converters import GIT_OBJ_TYPE_TO_NAME, encode_blob_data
 
 
@@ -159,3 +159,30 @@ def get_contents(repo_key, repo, refspec, file_path, obj, _recursing=False):
         result["encoding"] = encoding
         result["content"] = data
     return result
+
+
+def _get_common_ancestor_or_none(repo, left_oid, right_oid):
+    try:
+        return repo.merge_base(left_oid, right_oid)
+    except KeyError:
+        # Couldn't find merge base
+        return None
+
+
+def _get_other_nonsymbolic_refs(repo, main_ref_name):
+    for ref_name in repo.listall_references():
+        if ref_name == main_ref_name:
+            continue
+        ref = repo.lookup_reference(ref_name)
+        if ref.type == GIT_REF_SYMBOLIC:
+            continue
+        yield ref
+
+
+def get_commits_unique_to_branch(repo, branch, sort=GIT_SORT_NONE):
+    common_ancestor_oids = set(_get_common_ancestor_or_none(repo, branch.target, ref.target) for ref in _get_other_nonsymbolic_refs(repo, branch.name))
+    common_ancestor_oids.discard(None)
+    walker = repo.walk(branch.target, sort)
+    for ancestor in common_ancestor_oids:
+        walker.hide(ancestor)
+    return walker
