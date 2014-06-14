@@ -7,10 +7,11 @@ from collections import defaultdict
 
 from flask import request, Response, Blueprint, url_for
 from werkzeug.exceptions import NotFound, BadRequest
+from pygit2 import GIT_SORT_TOPOLOGICAL, GIT_SORT_TIME, GIT_SORT_REVERSE
 
 from restfulgit.plumbing.retrieval import get_repo, lookup_ref, get_tree
 from restfulgit.plumbing.converters import convert_tag
-from restfulgit.porcelain.retrieval import get_repo_names, get_commit_for_refspec, get_branch as _get_branch, get_object_from_path, get_raw_file_content, get_contents as _get_contents, get_diff as _get_diff, get_blame as _get_blame, get_authors
+from restfulgit.porcelain.retrieval import get_repo_names, get_commit_for_refspec, get_branch as _get_branch, get_object_from_path, get_raw_file_content, get_contents as _get_contents, get_diff as _get_diff, get_blame as _get_blame, get_commits_unique_to_branch as _get_commits_unique_to_branch, get_authors
 from restfulgit.porcelain.converters import convert_repo, convert_branch_verbose, convert_branch_summary, convert_commit, convert_blame
 from restfulgit.utils.json import jsonify
 from restfulgit.utils.cors import corsify
@@ -94,6 +95,22 @@ def get_merged_branches(repo_key, branch_name):  # NOTE: This endpoint is a Rest
     )
     merged_branches = (other_branch for other_branch in other_branches if _is_merged(repo, branch, other_branch))
     return [convert_branch_summary(repo_key, merged_branch) for merged_branch in merged_branches]
+
+
+@porcelain.route('/repos/<repo_key>/branches/<branch_name>/unique-commits/sorted/<any(topological,chronological):sort>/')
+@corsify
+@jsonify
+def get_commits_unique_to_branch(repo_key, branch_name, sort):  # NOTE: This endpoint is a RestfulGit extension
+    repo = get_repo(repo_key)
+    branch = _get_branch(repo, branch_name)
+    if sort == 'chronological':
+        sort = GIT_SORT_TIME | GIT_SORT_REVERSE
+    else:
+        sort = GIT_SORT_TOPOLOGICAL | GIT_SORT_REVERSE
+    commits = list(_get_commits_unique_to_branch(repo, branch, sort))
+    return {
+        "commits": [convert_commit(repo_key, repo, commit) for commit in commits]
+    }
 
 
 TAG_REF_PREFIX = "refs/tags/"
