@@ -78,7 +78,11 @@ def get_branch(repo_key, branch_name):
 
 def _is_merged(repo, current_branch, other_branch):
     """Returns a boolean indicating whether the other branch is fully merged into the current branch."""
-    merge_base_oid = repo.merge_base(current_branch.target, other_branch.target)
+    try:
+        merge_base_oid = repo.merge_base(current_branch.target, other_branch.target)
+    except KeyError:
+        # No merge base found
+        return False
     return merge_base_oid == other_branch.target
 
 
