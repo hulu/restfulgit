@@ -1064,7 +1064,7 @@ class RawFileTestCase(_RestfulGitTestCase):
         # FIXME: implement
         pass
 
-    def test_branches_trump_tags(self):
+    def test_tags_trump_branches(self):
         # branch "ambiguous" = commit 1f51b91
         #     api.py's SHA-512 = e948e8d0b0d0703d972279382a002c90040ff19d636e96927262d63e1f1429526539ea781744d2f3a65a5938b59e0c5f57adadc26f797480efcfc6f7dcff3d81
         # tag "ambiguous" = commit ff6405b
@@ -1072,7 +1072,7 @@ class RawFileTestCase(_RestfulGitTestCase):
         resp = self.client.get("/repos/restfulgit/raw/ambiguous/api.py")
         self.assert200(resp)
         self.assertEqual(
-            'e948e8d0b0d0703d972279382a002c90040ff19d636e96927262d63e1f1429526539ea781744d2f3a65a5938b59e0c5f57adadc26f797480efcfc6f7dcff3d81',
+            'a50e02753d282c0e35630bbbc16a525ea4e0b2e2af668135b603c8e1467c7269bcbe9075886baf3f08ce195a7eab1e0b8179080af08a2c0f3eda3b9518650fa1',
             sha512(resp.data).hexdigest()
         )
 

@@ -5,9 +5,7 @@ import os
 
 from flask import current_app, url_for, safe_join
 from werkzeug.exceptions import NotFound, BadRequest
-from pygit2 import GIT_OBJ_BLOB, GIT_OBJ_TREE, GIT_BLAME_TRACK_COPIES_SAME_COMMIT_MOVES, GIT_BLAME_TRACK_COPIES_SAME_COMMIT_COPIES, GIT_SORT_NONE
-
-from restfulgit.plumbing.retrieval import lookup_ref, get_commit
+from pygit2 import GIT_OBJ_BLOB, GIT_OBJ_TREE, GIT_OBJ_TAG, GIT_BLAME_TRACK_COPIES_SAME_COMMIT_MOVES, GIT_BLAME_TRACK_COPIES_SAME_COMMIT_COPIES, GIT_SORT_NONE
 from restfulgit.plumbing.converters import GIT_OBJ_TYPE_TO_NAME, encode_blob_data
 
 
@@ -31,24 +29,12 @@ def get_repo_names():
 
 
 def get_commit_for_refspec(repo, branch_or_tag_or_sha):
-    # Precedence order GitHub uses (& that we copy):
-    # 1. Branch  2. Tag  3. Commit SHA
-    commit_sha = None
-    # branch?
-    branch_ref = lookup_ref(repo, branch_or_tag_or_sha)
-    if branch_ref is not None:
-        commit_sha = branch_ref.resolve().target
-    # tag?
-    if commit_sha is None:
-        ref_to_tag = lookup_ref(repo, "tags/" + branch_or_tag_or_sha)
-        if ref_to_tag is not None:
-            commit_sha = ref_to_tag.get_object().id
-    # commit?
-    if commit_sha is None:
-        commit_sha = branch_or_tag_or_sha
     try:
-        return get_commit(repo, commit_sha)
-    except (ValueError, NotFound):
+        commit = repo.revparse_single(branch_or_tag_or_sha)
+        if commit.type == GIT_OBJ_TAG:
+            commit = commit.get_object()
+        return commit
+    except KeyError:
         raise NotFound("no such branch, tag, or commit SHA")
 
 
