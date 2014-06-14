@@ -14,6 +14,7 @@ from subprocess import check_call
 from json import load as load_json_file
 
 from flask.ext.testing import TestCase as _FlaskTestCase
+import pygit2
 
 from restfulgit.app_factory import create_app
 
@@ -2106,6 +2107,801 @@ class ContributorsTestCase(_RestfulGitTestCase):
         counts = [contributor['contributions'] for contributor in contributors]
         sorted_counts = sorted(counts, reverse=True)
         self.assertEqual(sorted_counts, counts)
+
+
+class CommitsUniqueToBranchTestCase(_RestfulGitTestCase):  # NOTE: This API is a RestfulGit extension
+    _MINUTE = 60
+
+    @property
+    def _author(self):
+        sig = pygit2.Signature('Alien Celebrity', 'brains@hulu.example', time=self._time, offset=0)
+        self._time += self._MINUTE
+        return sig
+
+    def _tree(self, repo, name):
+        blob_oid = repo.create_blob(name)
+
+        tree_builder = repo.TreeBuilder()
+        tree_builder.insert(name, blob_oid, pygit2.GIT_FILEMODE_BLOB)
+        tree_oid = tree_builder.write()
+        return tree_oid
+
+    def _commit(self, repo, name, parents=(), with_branch=False):
+        ref_name = None
+        commit_oid = repo.create_commit(ref_name, self._author, self._author, name, self._tree(repo, name), list(parents))
+        if with_branch:
+            repo.create_branch(name, repo[commit_oid])
+        return commit_oid
+
+    @property
+    @contextmanager
+    def _base_repo_and_commit(self):
+        self._time = 0
+        with self.temporary_directory(suffix='.restfulgit') as temp_repos_dir:
+            self.app.config['RESTFULGIT_REPO_BASE_PATH'] = temp_repos_dir
+
+            repo_dir = os.path.join(temp_repos_dir, 'example')
+            os.mkdir(repo_dir)
+
+            repo = pygit2.init_repository(repo_dir, False)
+            # first commit A
+            a = self._commit(repo, b"A", with_branch=True)
+
+            yield repo, a
+
+    @contextmanager
+    def _example_repo(self, b_before_e=True):
+        """
+        Sets up an example repo with the following commits:
+
+        [A]--B--C--D--[I aka J]
+          \--E--F--G--/
+              \---[H]
+
+        [X]s denote commits that are branch tips
+        """
+        with self._base_repo_and_commit as pair:
+            repo, a = pair
+
+            def make_bcd():
+                b = self._commit(repo, b"B", [a])
+                c = self._commit(repo, b"C", [b])
+                d = self._commit(repo, b"D", [c])
+                return b ,c, d
+
+            def make_efg():
+                e = self._commit(repo, b"E", [a])
+                f = self._commit(repo, b"F", [e])
+                g = self._commit(repo, b"G", [f])
+                return e, f, g
+
+            if b_before_e:
+                b, c, d = make_bcd()
+                e, f, g = make_efg()
+            else:
+                e, f, g = make_efg()
+                b, c, d = make_bcd()
+            # H branch
+            h = self._commit(repo, b"H", [e], with_branch=True)
+            # I branch, from D & G
+            i = self._commit(repo, b"I", [d, g], with_branch=True)
+
+            yield dict(locals())
+
+    def test_invalid_sort_404s(self):
+        with self._base_repo_and_commit:
+            resp = self.client.get('/repos/example/branches/A/unique-commits/sorted/astrological/')
+            self.assertJson404(resp)
+
+    def test_first_commit(self):
+        with self._base_repo_and_commit:
+            resp = self.client.get('/repos/example/branches/A/unique-commits/sorted/topological/')
+            self.assert200(resp)
+            self.assertEqual(resp.json, {'commits': [{
+                'author': {
+                    'date': '1970-01-01T00:00:00Z',
+                    'email': 'brains@hulu.example',
+                    'name': 'Alien Celebrity'
+                },
+                'commit': {
+                    'author': {
+                        'date': '1970-01-01T00:00:00Z',
+                        'email': 'brains@hulu.example',
+                        'name': 'Alien Celebrity'
+                    },
+                    'committer': {
+                        'date': '1970-01-01T00:01:00Z',
+                        'email': 'brains@hulu.example',
+                        'name': 'Alien Celebrity'
+                    },
+                    'message': 'A',
+                    'parents': [],
+                    'sha': 'c655dffe0fed2a78dc5f38c1bc8e5628e2605017',
+                    'tree': {
+                        'sha': '617601c79811cbbae338512798318b4e5b70c9ac',
+                        'url': 'http://localhost/repos/example/git/trees/617601c79811cbbae338512798318b4e5b70c9ac/'
+                    },
+                    'url': 'http://localhost/repos/example/git/commits/c655dffe0fed2a78dc5f38c1bc8e5628e2605017/'
+                },
+                'committer': {
+                    'date': '1970-01-01T00:01:00Z',
+                    'email': 'brains@hulu.example',
+                    'name': 'Alien Celebrity'
+                },
+                'parents': [],
+                'sha': 'c655dffe0fed2a78dc5f38c1bc8e5628e2605017',
+                'url': 'http://localhost/repos/example/commits/c655dffe0fed2a78dc5f38c1bc8e5628e2605017/'
+            }]})
+
+    def test_only_branch(self):
+        with self._base_repo_and_commit as pair:
+            repo, a = pair
+            b = self._commit(repo, b"B", [a])
+            repo.create_branch(b"A", repo[b], True)  # overwrite A
+            resp = self.client.get('/repos/example/branches/A/unique-commits/sorted/topological/')
+            self.assert200(resp)
+            self.assertEqual(resp.json, {'commits': [
+                {
+                    'author': {
+                        'date': '1970-01-01T00:00:00Z',
+                        'email': 'brains@hulu.example',
+                        'name': 'Alien Celebrity'
+                    },
+                    'commit': {
+                        'author': {
+                            'date': '1970-01-01T00:00:00Z',
+                            'email': 'brains@hulu.example',
+                            'name': 'Alien Celebrity'
+                        },
+                        'committer': {
+                            'date': '1970-01-01T00:01:00Z',
+                            'email': 'brains@hulu.example',
+                            'name': 'Alien Celebrity'
+                        },
+                        'message': 'A',
+                        'parents': [],
+                        'sha': 'c655dffe0fed2a78dc5f38c1bc8e5628e2605017',
+                        'tree': {
+                            'sha': '617601c79811cbbae338512798318b4e5b70c9ac',
+                            'url': 'http://localhost/repos/example/git/trees/617601c79811cbbae338512798318b4e5b70c9ac/'
+                        },
+                        'url': 'http://localhost/repos/example/git/commits/c655dffe0fed2a78dc5f38c1bc8e5628e2605017/'
+                    },
+                    'committer': {
+                        'date': '1970-01-01T00:01:00Z',
+                        'email': 'brains@hulu.example',
+                        'name': 'Alien Celebrity'
+                    },
+                    'parents': [],
+                    'sha': 'c655dffe0fed2a78dc5f38c1bc8e5628e2605017',
+                    'url': 'http://localhost/repos/example/commits/c655dffe0fed2a78dc5f38c1bc8e5628e2605017/'
+                },
+                {
+                    'author': {
+                        'date': '1970-01-01T00:02:00Z',
+                        'email': 'brains@hulu.example',
+                        'name': 'Alien Celebrity'
+                    },
+                    'commit': {
+                        'author': {
+                        'date': '1970-01-01T00:02:00Z',
+                        'email': 'brains@hulu.example',
+                        'name': 'Alien Celebrity'
+                    },
+                    'committer': {
+                        'date': '1970-01-01T00:03:00Z',
+                        'email': 'brains@hulu.example',
+                       'name': 'Alien Celebrity'
+                    },
+                    'message': 'B',
+                    'parents': [
+                        {
+                            'sha': 'c655dffe0fed2a78dc5f38c1bc8e5628e2605017',
+                            'url': 'http://localhost/repos/example/commits/c655dffe0fed2a78dc5f38c1bc8e5628e2605017/'
+                        }
+                    ],
+                    'sha': 'e11c39e288519302f75f281b8b9a5ab585f678db',
+                    'tree': {
+                        'sha': '1a321342ee655cb18be26a1a9632bb9629fb3642',
+                        'url': 'http://localhost/repos/example/git/trees/1a321342ee655cb18be26a1a9632bb9629fb3642/'
+                    },
+                    'url': 'http://localhost/repos/example/git/commits/e11c39e288519302f75f281b8b9a5ab585f678db/'
+                },
+                'committer': {
+                    'date': '1970-01-01T00:03:00Z',
+                    'email': 'brains@hulu.example',
+                    'name': 'Alien Celebrity'
+                    },
+                    'parents': [
+                        {
+                            'sha': 'c655dffe0fed2a78dc5f38c1bc8e5628e2605017',
+                            'url': 'http://localhost/repos/example/commits/c655dffe0fed2a78dc5f38c1bc8e5628e2605017/'
+                        }
+                    ],
+                    'sha': 'e11c39e288519302f75f281b8b9a5ab585f678db',
+                    'url': 'http://localhost/repos/example/commits/e11c39e288519302f75f281b8b9a5ab585f678db/'
+                }
+            ]})
+
+    def test_duplicate_is_empty(self):
+        with self._example_repo() as commits:
+            repo = commits['repo']
+            # J branch = I branch
+            repo.create_branch(b"J", repo[commits['i']])
+            resp = self.client.get('/repos/example/branches/J/unique-commits/sorted/topological/')
+            self.assert200(resp)
+            self.assertEqual(resp.json, {'commits': []})
+
+    def test_inclusion_exclusion_topological_ordering(self):
+        # B,C,D,,F,G,I
+        with self._example_repo() as commits:
+            resp = self.client.get('/repos/example/branches/I/unique-commits/sorted/topological/')
+            self.assert200(resp)
+            self.assertEqual(resp.json,  {'commits': [
+                {
+                    'author': {
+                        'date': '1970-01-01T00:02:00Z',
+                        'email': 'brains@hulu.example',
+                        'name': 'Alien Celebrity'
+                    },
+                    'commit': {
+                        'author': {
+                            'date': '1970-01-01T00:02:00Z',
+                            'email': 'brains@hulu.example',
+                            'name': 'Alien Celebrity'
+                        },
+                        'committer': {
+                            'date': '1970-01-01T00:03:00Z',
+                            'email': 'brains@hulu.example',
+                            'name': 'Alien Celebrity'
+                        },
+                        'message': 'B',
+                        'parents': [
+                            {
+                                'sha': 'c655dffe0fed2a78dc5f38c1bc8e5628e2605017',
+                                'url': 'http://localhost/repos/example/commits/c655dffe0fed2a78dc5f38c1bc8e5628e2605017/'
+                            }
+                        ],
+                        'sha': 'e11c39e288519302f75f281b8b9a5ab585f678db',
+                        'tree': {
+                            'sha': '1a321342ee655cb18be26a1a9632bb9629fb3642',
+                            'url': 'http://localhost/repos/example/git/trees/1a321342ee655cb18be26a1a9632bb9629fb3642/'
+                        },
+                        'url': 'http://localhost/repos/example/git/commits/e11c39e288519302f75f281b8b9a5ab585f678db/'
+                    },
+                    'committer': {
+                        'date': '1970-01-01T00:03:00Z',
+                        'email': 'brains@hulu.example',
+                        'name': 'Alien Celebrity'
+                    },
+                    'parents': [
+                        {
+                            'sha': 'c655dffe0fed2a78dc5f38c1bc8e5628e2605017',
+                            'url': 'http://localhost/repos/example/commits/c655dffe0fed2a78dc5f38c1bc8e5628e2605017/'
+                        }
+                    ],
+                    'sha': 'e11c39e288519302f75f281b8b9a5ab585f678db',
+                    'url': 'http://localhost/repos/example/commits/e11c39e288519302f75f281b8b9a5ab585f678db/'
+                },
+                {
+                    'author': {
+                        'date': '1970-01-01T00:04:00Z',
+                        'email': 'brains@hulu.example',
+                        'name': 'Alien Celebrity'
+                    },
+                    'commit': {
+                        'author': {
+                            'date': '1970-01-01T00:04:00Z',
+                            'email': 'brains@hulu.example',
+                            'name': 'Alien Celebrity'
+                        },
+                        'committer': {
+                            'date': '1970-01-01T00:05:00Z',
+                            'email': 'brains@hulu.example',
+                            'name': 'Alien Celebrity'
+                        },
+                        'message': 'C',
+                        'parents': [
+                            {
+                                'sha': 'e11c39e288519302f75f281b8b9a5ab585f678db',
+                                'url': 'http://localhost/repos/example/commits/e11c39e288519302f75f281b8b9a5ab585f678db/'
+                            }
+                        ],
+                        'sha': 'd982d1115b558a8abe447f8bf46cc3ab8761e19f',
+                        'tree': {
+                            'sha': 'adaf4189f869749deba4ed69005ece57a4c2f19c',
+                            'url': 'http://localhost/repos/example/git/trees/adaf4189f869749deba4ed69005ece57a4c2f19c/'
+                        },
+                        'url': 'http://localhost/repos/example/git/commits/d982d1115b558a8abe447f8bf46cc3ab8761e19f/'
+                    },
+                    'committer': {
+                        'date': '1970-01-01T00:05:00Z',
+                        'email': 'brains@hulu.example',
+                        'name': 'Alien Celebrity'
+                    },
+                    'parents': [
+                        {
+                            'sha': 'e11c39e288519302f75f281b8b9a5ab585f678db',
+                            'url': 'http://localhost/repos/example/commits/e11c39e288519302f75f281b8b9a5ab585f678db/'
+                        }
+                    ],
+                    'sha': 'd982d1115b558a8abe447f8bf46cc3ab8761e19f',
+                    'url': 'http://localhost/repos/example/commits/d982d1115b558a8abe447f8bf46cc3ab8761e19f/'
+                },
+                {
+                    'author': {
+                        'date': '1970-01-01T00:06:00Z',
+                        'email': 'brains@hulu.example',
+                        'name': 'Alien Celebrity'
+                    },
+                    'commit': {
+                        'author': {
+                            'date': '1970-01-01T00:06:00Z',
+                            'email': 'brains@hulu.example',
+                            'name': 'Alien Celebrity'
+                        },
+                        'committer': {
+                            'date': '1970-01-01T00:07:00Z',
+                            'email': 'brains@hulu.example',
+                            'name': 'Alien Celebrity'
+                        },
+                        'message': 'D',
+                        'parents': [
+                            {
+                                'sha': 'd982d1115b558a8abe447f8bf46cc3ab8761e19f',
+                                'url': 'http://localhost/repos/example/commits/d982d1115b558a8abe447f8bf46cc3ab8761e19f/'
+                            }
+                        ],
+                        'sha': '24c57d21498c2fc3b44153713308510d86142fe6',
+                        'tree': {
+                            'sha': 'c1397c050b9d4341e85d04f4b311a1cf382d7961',
+                            'url': 'http://localhost/repos/example/git/trees/c1397c050b9d4341e85d04f4b311a1cf382d7961/'
+                        },
+                        'url': 'http://localhost/repos/example/git/commits/24c57d21498c2fc3b44153713308510d86142fe6/'
+                    },
+                    'committer': {
+                        'date': '1970-01-01T00:07:00Z',
+                        'email': 'brains@hulu.example',
+                        'name': 'Alien Celebrity'
+                    },
+                    'parents': [
+                        {
+                            'sha': 'd982d1115b558a8abe447f8bf46cc3ab8761e19f',
+                            'url': 'http://localhost/repos/example/commits/d982d1115b558a8abe447f8bf46cc3ab8761e19f/'
+                        }
+                    ],
+                    'sha': '24c57d21498c2fc3b44153713308510d86142fe6',
+                    'url': 'http://localhost/repos/example/commits/24c57d21498c2fc3b44153713308510d86142fe6/'
+                },
+                {
+                   'author': {
+                       'date': '1970-01-01T00:10:00Z',
+                            'email': 'brains@hulu.example',
+                            'name': 'Alien Celebrity'
+                        },
+                        'commit': {
+                            'author': {
+                                'date': '1970-01-01T00:10:00Z',
+                                'email': 'brains@hulu.example',
+                                'name': 'Alien Celebrity'
+                            },
+                            'committer': {
+                                'date': '1970-01-01T00:11:00Z',
+                                'email': 'brains@hulu.example',
+                                'name': 'Alien Celebrity'
+                            },
+                            'message': 'F',
+                            'parents': [
+                                {
+                                    'sha': '3423be4854bc3316c12f3a9c699e6cd2209fd8ea',
+                                    'url': 'http://localhost/repos/example/commits/3423be4854bc3316c12f3a9c699e6cd2209fd8ea/'
+                                }
+                            ],
+                            'sha': '1d040035bfb8936bd760ff226cb5c9f2c2b817a3',
+                            'tree': {
+                                'sha': 'ab220b156431b575f3cb3607644d05954d5e859a',
+                                'url': 'http://localhost/repos/example/git/trees/ab220b156431b575f3cb3607644d05954d5e859a/'
+                            },
+                            'url': 'http://localhost/repos/example/git/commits/1d040035bfb8936bd760ff226cb5c9f2c2b817a3/'
+                        },
+                        'committer': {
+                            'date': '1970-01-01T00:11:00Z',
+                            'email': 'brains@hulu.example',
+                            'name': 'Alien Celebrity'
+                        },
+                        'parents': [
+                            {
+                                'sha': '3423be4854bc3316c12f3a9c699e6cd2209fd8ea',
+                                'url': 'http://localhost/repos/example/commits/3423be4854bc3316c12f3a9c699e6cd2209fd8ea/'
+                            }
+                        ],
+                        'sha': '1d040035bfb8936bd760ff226cb5c9f2c2b817a3',
+                        'url': 'http://localhost/repos/example/commits/1d040035bfb8936bd760ff226cb5c9f2c2b817a3/'
+                    },
+                    {
+                    'author': {
+                        'date': '1970-01-01T00:12:00Z',
+                        'email': 'brains@hulu.example',
+                        'name': 'Alien Celebrity'
+                    },
+                    'commit': {
+                        'author': {
+                            'date': '1970-01-01T00:12:00Z',
+                            'email': 'brains@hulu.example',
+                            'name': 'Alien Celebrity'
+                        },
+                        'committer': {
+                            'date': '1970-01-01T00:13:00Z',
+                            'email': 'brains@hulu.example',
+                            'name': 'Alien Celebrity'
+                        },
+                        'message': 'G',
+                        'parents': [
+                            {
+                                'sha': '1d040035bfb8936bd760ff226cb5c9f2c2b817a3',
+                                'url': 'http://localhost/repos/example/commits/1d040035bfb8936bd760ff226cb5c9f2c2b817a3/'
+                            }
+                        ],
+                        'sha': 'cb46532dc9a103d31a0183b5d8a5a08c09f4b94d',
+                        'tree': {
+                            'sha': '95146dee2fed3d5783f625fe4e48202dae4606ef',
+                            'url': 'http://localhost/repos/example/git/trees/95146dee2fed3d5783f625fe4e48202dae4606ef/'
+                        },
+                        'url': 'http://localhost/repos/example/git/commits/cb46532dc9a103d31a0183b5d8a5a08c09f4b94d/'
+                    },
+                    'committer': {
+                        'date': '1970-01-01T00:13:00Z',
+                        'email': 'brains@hulu.example',
+                        'name': 'Alien Celebrity'
+                    },
+                    'parents': [
+                        {
+                            'sha': '1d040035bfb8936bd760ff226cb5c9f2c2b817a3',
+                            'url': 'http://localhost/repos/example/commits/1d040035bfb8936bd760ff226cb5c9f2c2b817a3/'
+                        }
+                    ],
+                    'sha': 'cb46532dc9a103d31a0183b5d8a5a08c09f4b94d',
+                    'url': 'http://localhost/repos/example/commits/cb46532dc9a103d31a0183b5d8a5a08c09f4b94d/'
+                },
+                {
+                    'author': {
+                        'date': '1970-01-01T00:16:00Z',
+                        'email': 'brains@hulu.example',
+                        'name': 'Alien Celebrity'
+                    },
+                    'commit': {
+                        'author': {
+                            'date': '1970-01-01T00:16:00Z',
+                            'email': 'brains@hulu.example',
+                            'name': 'Alien Celebrity'
+                        },
+                        'committer': {
+                            'date': '1970-01-01T00:17:00Z',
+                            'email': 'brains@hulu.example',
+                            'name': 'Alien Celebrity'
+                        },
+                        'message': 'I',
+                        'parents': [
+                            {
+                                'sha': '24c57d21498c2fc3b44153713308510d86142fe6',
+                                'url': 'http://localhost/repos/example/commits/24c57d21498c2fc3b44153713308510d86142fe6/'
+                            },
+                            {
+                                'sha': 'cb46532dc9a103d31a0183b5d8a5a08c09f4b94d',
+                                'url': 'http://localhost/repos/example/commits/cb46532dc9a103d31a0183b5d8a5a08c09f4b94d/'
+                            }
+                        ],
+                        'sha': '1622ddc3695d1263c629bdbb0bcdf235510ee068',
+                        'tree': {
+                            'sha': '0ed66f14f8548241624bcbd1d39d3d06f277a9b4',
+                            'url': 'http://localhost/repos/example/git/trees/0ed66f14f8548241624bcbd1d39d3d06f277a9b4/'
+                        },
+                        'url': 'http://localhost/repos/example/git/commits/1622ddc3695d1263c629bdbb0bcdf235510ee068/'
+                    },
+                    'committer': {
+                        'date': '1970-01-01T00:17:00Z',
+                        'email': 'brains@hulu.example',
+                        'name': 'Alien Celebrity'
+                    },
+                    'parents': [
+                        {
+                            'sha': '24c57d21498c2fc3b44153713308510d86142fe6',
+                            'url': 'http://localhost/repos/example/commits/24c57d21498c2fc3b44153713308510d86142fe6/'
+                        },
+                        {
+                            'sha': 'cb46532dc9a103d31a0183b5d8a5a08c09f4b94d',
+                            'url': 'http://localhost/repos/example/commits/cb46532dc9a103d31a0183b5d8a5a08c09f4b94d/'
+                        }
+                    ],
+                    'sha': '1622ddc3695d1263c629bdbb0bcdf235510ee068',
+                    'url': 'http://localhost/repos/example/commits/1622ddc3695d1263c629bdbb0bcdf235510ee068/'
+                }
+            ]})
+
+    def test_inclusion_exclusion_chronological_ordering(self):
+        with self._example_repo(b_before_e=False) as commits:
+            resp = self.client.get('/repos/example/branches/I/unique-commits/sorted/chronological/')
+            self.assert200(resp)
+            self.assertEqual(resp.json, {'commits': [
+                {
+                    'author': {
+                        'date': '1970-01-01T00:04:00Z',
+                        'email': 'brains@hulu.example',
+                        'name': 'Alien Celebrity'
+                    },
+                    'commit': {
+                        'author': {
+                            'date': '1970-01-01T00:04:00Z',
+                            'email': 'brains@hulu.example',
+                            'name': 'Alien Celebrity'
+                        },
+                        'committer': {
+                            'date': '1970-01-01T00:05:00Z',
+                            'email': 'brains@hulu.example',
+                            'name': 'Alien Celebrity'
+                        },
+                        'message': 'F',
+                        'parents': [
+                            {
+                                'sha': '2d5ea1e6bf086d0ce420180f892dbf9e08d9835e',
+                                'url': 'http://localhost/repos/example/commits/2d5ea1e6bf086d0ce420180f892dbf9e08d9835e/'
+                            }
+                        ],
+                        'sha': '6ccf9dc00992617fa4206ff67ffed2dcb895135c',
+                        'tree': {
+                            'sha': 'ab220b156431b575f3cb3607644d05954d5e859a',
+                            'url': 'http://localhost/repos/example/git/trees/ab220b156431b575f3cb3607644d05954d5e859a/'
+                        },
+                        'url': 'http://localhost/repos/example/git/commits/6ccf9dc00992617fa4206ff67ffed2dcb895135c/'
+                    },
+                    'committer': {
+                        'date': '1970-01-01T00:05:00Z',
+                        'email': 'brains@hulu.example',
+                        'name': 'Alien Celebrity'
+                    },
+                    'parents': [
+                        {
+                            'sha': '2d5ea1e6bf086d0ce420180f892dbf9e08d9835e',
+                            'url': 'http://localhost/repos/example/commits/2d5ea1e6bf086d0ce420180f892dbf9e08d9835e/'
+                        }
+                    ],
+                    'sha': '6ccf9dc00992617fa4206ff67ffed2dcb895135c',
+                    'url': 'http://localhost/repos/example/commits/6ccf9dc00992617fa4206ff67ffed2dcb895135c/'
+                },
+                {
+                    'author': {
+                        'date': '1970-01-01T00:06:00Z',
+                        'email': 'brains@hulu.example',
+                        'name': 'Alien Celebrity'
+                    },
+                    'commit': {
+                        'author': {
+                            'date': '1970-01-01T00:06:00Z',
+                            'email': 'brains@hulu.example',
+                            'name': 'Alien Celebrity'
+                        },
+                        'committer': {
+                            'date': '1970-01-01T00:07:00Z',
+                            'email': 'brains@hulu.example',
+                                'name': 'Alien Celebrity'
+                        },
+                        'message': 'G',
+                        'parents': [
+                            {
+                                'sha': '6ccf9dc00992617fa4206ff67ffed2dcb895135c',
+                                'url': 'http://localhost/repos/example/commits/6ccf9dc00992617fa4206ff67ffed2dcb895135c/'
+                            }
+                        ],
+                        'sha': 'aea62655228b0b0d33f6226cf038607cfc3db8bd',
+                        'tree': {
+                            'sha': '95146dee2fed3d5783f625fe4e48202dae4606ef',
+                            'url': 'http://localhost/repos/example/git/trees/95146dee2fed3d5783f625fe4e48202dae4606ef/'
+                        },
+                        'url': 'http://localhost/repos/example/git/commits/aea62655228b0b0d33f6226cf038607cfc3db8bd/'
+                    },
+                    'committer': {
+                        'date': '1970-01-01T00:07:00Z',
+                        'email': 'brains@hulu.example',
+                        'name': 'Alien Celebrity'
+                    },
+                    'parents': [
+                        {
+                            'sha': '6ccf9dc00992617fa4206ff67ffed2dcb895135c',
+                            'url': 'http://localhost/repos/example/commits/6ccf9dc00992617fa4206ff67ffed2dcb895135c/'
+                        }
+                    ],
+                    'sha': 'aea62655228b0b0d33f6226cf038607cfc3db8bd',
+                    'url': 'http://localhost/repos/example/commits/aea62655228b0b0d33f6226cf038607cfc3db8bd/'
+                },
+                {
+                    'author': {
+                        'date': '1970-01-01T00:08:00Z',
+                        'email': 'brains@hulu.example',
+                        'name': 'Alien Celebrity'
+                    },
+                    'commit': {
+                        'author': {
+                            'date': '1970-01-01T00:08:00Z',
+                            'email': 'brains@hulu.example',
+                            'name': 'Alien Celebrity'
+                        },
+                        'committer': {
+                            'date': '1970-01-01T00:09:00Z',
+                            'email': 'brains@hulu.example',
+                            'name': 'Alien Celebrity'
+                        },
+                        'message': 'B',
+                        'parents': [
+                            {
+                                'sha': 'c655dffe0fed2a78dc5f38c1bc8e5628e2605017',
+                                'url': 'http://localhost/repos/example/commits/c655dffe0fed2a78dc5f38c1bc8e5628e2605017/'
+                            }
+                        ],
+                        'sha': '8e994dcc81dd6d4aee6d627f946ef326363360f3',
+                        'tree': {
+                            'sha': '1a321342ee655cb18be26a1a9632bb9629fb3642',
+                            'url': 'http://localhost/repos/example/git/trees/1a321342ee655cb18be26a1a9632bb9629fb3642/'
+                        },
+                        'url': 'http://localhost/repos/example/git/commits/8e994dcc81dd6d4aee6d627f946ef326363360f3/'
+                    },
+                    'committer': {
+                        'date': '1970-01-01T00:09:00Z',
+                        'email': 'brains@hulu.example',
+                        'name': 'Alien Celebrity'
+                    },
+                    'parents': [
+                        {
+                            'sha': 'c655dffe0fed2a78dc5f38c1bc8e5628e2605017',
+                            'url': 'http://localhost/repos/example/commits/c655dffe0fed2a78dc5f38c1bc8e5628e2605017/'
+                        }
+                    ],
+                    'sha': '8e994dcc81dd6d4aee6d627f946ef326363360f3',
+                    'url': 'http://localhost/repos/example/commits/8e994dcc81dd6d4aee6d627f946ef326363360f3/'
+                },
+                {
+                    'author': {
+                        'date': '1970-01-01T00:10:00Z',
+                        'email': 'brains@hulu.example',
+                        'name': 'Alien Celebrity'
+                    },
+                    'commit': {
+                        'author': {
+                            'date': '1970-01-01T00:10:00Z',
+                            'email': 'brains@hulu.example',
+                            'name': 'Alien Celebrity'
+                        },
+                        'committer': {
+                            'date': '1970-01-01T00:11:00Z',
+                            'email': 'brains@hulu.example',
+                            'name': 'Alien Celebrity'
+                        },
+                        'message': 'C',
+                        'parents': [
+                            {
+                                'sha': '8e994dcc81dd6d4aee6d627f946ef326363360f3',
+                                'url': 'http://localhost/repos/example/commits/8e994dcc81dd6d4aee6d627f946ef326363360f3/'
+                            }
+                        ],
+                        'sha': '729ef1b328ac57d209a608c89734043128e3be3a',
+                        'tree': {
+                            'sha': 'adaf4189f869749deba4ed69005ece57a4c2f19c',
+                            'url': 'http://localhost/repos/example/git/trees/adaf4189f869749deba4ed69005ece57a4c2f19c/'
+                        },
+                        'url': 'http://localhost/repos/example/git/commits/729ef1b328ac57d209a608c89734043128e3be3a/'
+                    },
+                    'committer': {
+                        'date': '1970-01-01T00:11:00Z',
+                        'email': 'brains@hulu.example',
+                        'name': 'Alien Celebrity'
+                    },
+                    'parents': [
+                        {
+                            'sha': '8e994dcc81dd6d4aee6d627f946ef326363360f3',
+                            'url': 'http://localhost/repos/example/commits/8e994dcc81dd6d4aee6d627f946ef326363360f3/'
+                        }
+                    ],
+                    'sha': '729ef1b328ac57d209a608c89734043128e3be3a',
+                    'url': 'http://localhost/repos/example/commits/729ef1b328ac57d209a608c89734043128e3be3a/'
+                },
+                {
+                    'author': {
+                        'date': '1970-01-01T00:12:00Z',
+                        'email': 'brains@hulu.example',
+                        'name': 'Alien Celebrity'
+                    },
+                    'commit': {
+                        'author': {
+                            'date': '1970-01-01T00:12:00Z',
+                            'email': 'brains@hulu.example',
+                            'name': 'Alien Celebrity'
+                        },
+                        'committer': {
+                            'date': '1970-01-01T00:13:00Z',
+                            'email': 'brains@hulu.example',
+                            'name': 'Alien Celebrity'
+                        },
+                        'message': 'D',
+                        'parents': [
+                            {
+                                'sha': '729ef1b328ac57d209a608c89734043128e3be3a',
+                                'url': 'http://localhost/repos/example/commits/729ef1b328ac57d209a608c89734043128e3be3a/'
+                            }
+                        ],
+                        'sha': '842548f32658e940fc054f8c328c7639fc5c9053',
+                        'tree': {
+                            'sha': 'c1397c050b9d4341e85d04f4b311a1cf382d7961',
+                            'url': 'http://localhost/repos/example/git/trees/c1397c050b9d4341e85d04f4b311a1cf382d7961/'
+                        },
+                        'url': 'http://localhost/repos/example/git/commits/842548f32658e940fc054f8c328c7639fc5c9053/'
+                    },
+                    'committer': {
+                        'date': '1970-01-01T00:13:00Z',
+                        'email': 'brains@hulu.example',
+                        'name': 'Alien Celebrity'
+                    },
+                    'parents': [
+                        {
+                            'sha': '729ef1b328ac57d209a608c89734043128e3be3a',
+                            'url': 'http://localhost/repos/example/commits/729ef1b328ac57d209a608c89734043128e3be3a/'
+                        }
+                    ],
+                    'sha': '842548f32658e940fc054f8c328c7639fc5c9053',
+                    'url': 'http://localhost/repos/example/commits/842548f32658e940fc054f8c328c7639fc5c9053/'
+                },
+                {
+                    'author': {
+                        'date': '1970-01-01T00:16:00Z',
+                        'email': 'brains@hulu.example',
+                        'name': 'Alien Celebrity'
+                    },
+                    'commit': {
+                        'author': {
+                            'date': '1970-01-01T00:16:00Z',
+                            'email': 'brains@hulu.example',
+                            'name': 'Alien Celebrity'
+                        },
+                        'committer': {
+                            'date': '1970-01-01T00:17:00Z',
+                            'email': 'brains@hulu.example',
+                            'name': 'Alien Celebrity'
+                        },
+                        'message': 'I',
+                        'parents': [
+                            {
+                                'sha': '842548f32658e940fc054f8c328c7639fc5c9053',
+                                'url': 'http://localhost/repos/example/commits/842548f32658e940fc054f8c328c7639fc5c9053/'
+                            },
+                            {
+                                'sha': 'aea62655228b0b0d33f6226cf038607cfc3db8bd',
+                                'url': 'http://localhost/repos/example/commits/aea62655228b0b0d33f6226cf038607cfc3db8bd/'
+                            }
+                        ],
+                        'sha': '02d221a9d6f0619a77cbf1be4ac8a27057c2b4da',
+                        'tree': {
+                            'sha': '0ed66f14f8548241624bcbd1d39d3d06f277a9b4',
+                            'url': 'http://localhost/repos/example/git/trees/0ed66f14f8548241624bcbd1d39d3d06f277a9b4/'
+                        },
+                        'url': 'http://localhost/repos/example/git/commits/02d221a9d6f0619a77cbf1be4ac8a27057c2b4da/'
+                    },
+                    'committer': {
+                        'date': '1970-01-01T00:17:00Z',
+                        'email': 'brains@hulu.example',
+                        'name': 'Alien Celebrity'
+                    },
+                    'parents': [
+                        {
+                            'sha': '842548f32658e940fc054f8c328c7639fc5c9053',
+                            'url': 'http://localhost/repos/example/commits/842548f32658e940fc054f8c328c7639fc5c9053/'
+                        },
+                        {
+                            'sha': 'aea62655228b0b0d33f6226cf038607cfc3db8bd',
+                            'url': 'http://localhost/repos/example/commits/aea62655228b0b0d33f6226cf038607cfc3db8bd/'
+                        }
+                    ],
+                    'sha': '02d221a9d6f0619a77cbf1be4ac8a27057c2b4da',
+                    'url': 'http://localhost/repos/example/commits/02d221a9d6f0619a77cbf1be4ac8a27057c2b4da/'
+                }
+            ]})
 
 
 if __name__ == '__main__':
