@@ -260,6 +260,35 @@ Retrieves a list of other branches that have been merged into the given branch:
 ]
 ```
 
+Retrieves a list of commits that are unique to the branch (not in any other ref), sorted either chronologically or topologically:
+
+    GET /repos/example/branches/:branch_name/unique-commits/sorted/chronological/
+    GET /repos/example/branches/:branch_name/unique-commits/sorted/topological/
+
+```json
+{
+    "commits": [
+        {
+            "sha": "c655dffe0fed2a78dc5f38c1bc8e5628e2605017",
+            "url": "http://localhost/repos/my-project/commits/c655dffe0fed2a78dc5f38c1bc8e5628e2605017/",
+            "commit": {
+                "sha": "c655dffe0fed2a78dc5f38c1bc8e5628e2605017",
+                "url": "http://localhost/repos/example/git/commits/c655dffe0fed2a78dc5f38c1bc8e5628e2605017/",
+                "author": {...},
+                "committer": {...},
+                "message": "",
+                "parents": [...],
+                "tree": {...}
+            },
+            "author": {...},
+            "committer": {...},
+            "parents": [...]
+        },
+        ...
+    ]
+}
+```
+
 Blobs
 ----------
 Retrieves a specific blob object:
