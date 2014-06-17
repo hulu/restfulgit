@@ -12,6 +12,7 @@ from tempfile import mkdtemp, mkstemp
 from shutil import rmtree
 from subprocess import check_call
 from json import load as load_json_file
+from time import time as time_now
 
 from flask.ext.testing import TestCase as _FlaskTestCase
 import pygit2
@@ -109,6 +110,84 @@ class _RestfulGitTestCase(_FlaskTestCase):
         new_dir = os.path.join(extant_parent, new_child)
         os.mkdir(new_dir)
         return new_dir
+
+    _MINUTE = 60
+
+    @property
+    def _author(self):
+        sig = pygit2.Signature('Alien Celebrity', 'brains@hulu.example', time=self._time, offset=0)
+        self._time += self._MINUTE
+        return sig
+
+    def _tree(self, repo, name):
+        blob_oid = repo.create_blob(name)
+
+        tree_builder = repo.TreeBuilder()
+        tree_builder.insert(name, blob_oid, pygit2.GIT_FILEMODE_BLOB)
+        tree_oid = tree_builder.write()
+        return tree_oid
+
+    def _commit(self, repo, name, parents=(), with_branch=False):
+        ref_name = None
+        commit_oid = repo.create_commit(ref_name, self._author, self._author, name, self._tree(repo, name), list(parents))
+        if with_branch:
+            repo.create_branch(name, repo[commit_oid])
+        return commit_oid
+
+    @property
+    @contextmanager
+    def _base_repo_and_commit(self):
+        self._time = 0
+        with self.temporary_directory(suffix='.restfulgit') as temp_repos_dir:
+            self.app.config['RESTFULGIT_REPO_BASE_PATH'] = temp_repos_dir
+
+            repo_dir = os.path.join(temp_repos_dir, 'example')
+            os.mkdir(repo_dir)
+
+            repo = pygit2.init_repository(repo_dir, False)
+            # first commit A
+            a = self._commit(repo, b"A", with_branch=True)
+
+            yield repo, a
+
+    @contextmanager
+    def _example_repo(self, b_before_e=True):
+        """
+        Sets up an example repo with the following commits:
+
+        [A]--B--C--D--[I aka J]
+          \--E--F--G--/
+              \---[H]
+
+        [X]s denote commits that are branch tips
+        """
+        with self._base_repo_and_commit as pair:
+            repo, a = pair
+
+            def make_bcd():
+                b = self._commit(repo, b"B", [a])
+                c = self._commit(repo, b"C", [b])
+                d = self._commit(repo, b"D", [c])
+                return b ,c, d
+
+            def make_efg():
+                e = self._commit(repo, b"E", [a])
+                f = self._commit(repo, b"F", [e])
+                g = self._commit(repo, b"G", [f])
+                return e, f, g
+
+            if b_before_e:
+                b, c, d = make_bcd()
+                e, f, g = make_efg()
+            else:
+                e, f, g = make_efg()
+                b, c, d = make_bcd()
+            # H branch
+            h = self._commit(repo, b"H", [e], with_branch=True)
+            # I branch, from D & G
+            i = self._commit(repo, b"I", [d, g], with_branch=True)
+
+            yield dict(locals())
 
 
 class RepoKeyTestCase(_RestfulGitTestCase):
@@ -299,6 +378,116 @@ class CommitsTestCase(_RestfulGitTestCase):
         )
 
     #FIXME: test combos
+
+
+class MergeBaseTestCase(_RestfulGitTestCase):  # NOTE: RestfulGit extension
+    _INITIAL_COMMIT_JSON = {
+        'author': {
+            'date': '2013-02-24T13:25:46Z',
+            'email': 'rajiv@hulu.com',
+            'name': 'Rajiv Makhijani'
+        },
+        'committer': {
+            'date': '2013-02-24T13:25:46Z',
+            'email': 'rajiv@hulu.com',
+            'name': 'Rajiv Makhijani'
+        },
+        'message': 'Initial support for read-only REST api for Git plumbing',
+        'parents': [],
+        'sha': '07b9bf1540305153ceeb4519a50b588c35a35464',
+        'tree': {
+            'sha': '6ca22167185c31554aa6157306e68dfd612d6345',
+            'url': 'http://localhost/repos/restfulgit/git/trees/6ca22167185c31554aa6157306e68dfd612d6345/'
+        },
+        'url': 'http://localhost/repos/restfulgit/git/commits/07b9bf1540305153ceeb4519a50b588c35a35464/'
+    }
+
+    def _make_another_initial_commit(self):
+        repo = pygit2.Repository(RESTFULGIT_REPO)
+        blob_oid = repo.create_blob("First post!")
+        tree_builder = repo.TreeBuilder()
+        tree_builder.insert("FirstPost.txt", blob_oid, pygit2.GIT_FILEMODE_BLOB)
+        tree_oid = tree_builder.write()
+
+        author = pygit2.Signature('Alien Celebrity', 'brains@hulu.example', time=time_now(), offset=0)
+        ref_name = None
+        parents = []
+        evil_twin_genesis_commit_oid = repo.create_commit(ref_name, author, author, "Other initial commit", tree_oid, parents)
+        return evil_twin_genesis_commit_oid
+
+    def test_nonexistent_sha_404s(self):
+        resp = self.client.get('/repos/restfulgit/git/commits/{0}/merge-base/{0}/'.format(IMPROBABLE_SHA))
+        self.assertJson404(resp)
+
+    def test_unrelateds_is_200_but_null(self):
+        other_unrelated_initial_commit_oid = self._make_another_initial_commit()
+        resp = self.client.get('/repos/restfulgit/git/commits/{}/merge-base/{}/'.format(FIRST_COMMIT, unicode(other_unrelated_initial_commit_oid)))
+        self.assert200(resp)
+        self.assertEqual(resp.json, None)
+
+    def test_left(self):
+        resp = self.client.get('/repos/restfulgit/git/commits/{}/merge-base/{}/'.format(FIRST_COMMIT, FIFTH_COMMIT))
+        self.assert200(resp)
+        self.assertEqual(resp.json, self._INITIAL_COMMIT_JSON)
+
+    def test_right(self):
+        resp = self.client.get('/repos/restfulgit/git/commits/{}/merge-base/{}/'.format(FIFTH_COMMIT, FIRST_COMMIT))
+        self.assert200(resp)
+        self.assertEqual(resp.json, self._INITIAL_COMMIT_JSON)
+
+    def test_branch_siblings(self):
+        with self._example_repo() as commits:
+            d = unicode(commits['d'])
+            g = unicode(commits['g'])
+            resp = self.client.get('/repos/example/git/commits/{}/merge-base/{}/'.format(d, g))
+        self.assert200(resp)
+        self.assertEqual(resp.json, {
+            'author': {
+                'date': '1970-01-01T00:00:00Z',
+                'email': 'brains@hulu.example',
+                'name': 'Alien Celebrity'
+            },
+            'committer': {
+                'date': '1970-01-01T00:01:00Z',
+                'email': 'brains@hulu.example',
+                'name': 'Alien Celebrity'
+            },
+            'message': 'A',
+            'parents': [],
+            'sha': 'c655dffe0fed2a78dc5f38c1bc8e5628e2605017',
+            'tree': {
+                'sha': '617601c79811cbbae338512798318b4e5b70c9ac',
+                'url': 'http://localhost/repos/example/git/trees/617601c79811cbbae338512798318b4e5b70c9ac/'
+            },
+            'url': 'http://localhost/repos/example/git/commits/c655dffe0fed2a78dc5f38c1bc8e5628e2605017/'
+        })
+
+    def test_same_commit_twice_results_in_same(self):
+        resp = self.client.get('/repos/restfulgit/git/commits/{0}/merge-base/{0}/'.format(FIFTH_COMMIT))
+        self.assert200(resp)
+        self.assertEqual(resp.json, {
+            'author': {
+                'date': '2013-02-27T03:14:13Z',
+                'email': 'rajiv@hulu.com',
+                'name': 'Rajiv Makhijani'
+            },
+            'committer': {
+                'date': '2013-02-27T03:14:13Z',
+                'email': 'rajiv@hulu.com',
+                'name': 'Rajiv Makhijani'
+            },
+            'message': 'add file mode',
+            'parents': [{
+                'sha': '326d80cd68ec3413fe6eaca99c52c59ca428a0d0',
+                'url': 'http://localhost/repos/restfulgit/git/commits/326d80cd68ec3413fe6eaca99c52c59ca428a0d0/'
+            }],
+            'sha': 'c04112733fe2db2cb2f179fca1a19365cf15fef5',
+            'tree': {
+                'sha': '3fdeafb3d2f69a4f7d8bb499b81f836aa10b06eb',
+                'url': 'http://localhost/repos/restfulgit/git/trees/3fdeafb3d2f69a4f7d8bb499b81f836aa10b06eb/'
+            },
+            'url': 'http://localhost/repos/restfulgit/git/commits/c04112733fe2db2cb2f179fca1a19365cf15fef5/'
+        })
 
 
 class SimpleSHATestCase(_RestfulGitTestCase):
@@ -2110,84 +2299,6 @@ class ContributorsTestCase(_RestfulGitTestCase):
 
 
 class CommitsUniqueToBranchTestCase(_RestfulGitTestCase):  # NOTE: This API is a RestfulGit extension
-    _MINUTE = 60
-
-    @property
-    def _author(self):
-        sig = pygit2.Signature('Alien Celebrity', 'brains@hulu.example', time=self._time, offset=0)
-        self._time += self._MINUTE
-        return sig
-
-    def _tree(self, repo, name):
-        blob_oid = repo.create_blob(name)
-
-        tree_builder = repo.TreeBuilder()
-        tree_builder.insert(name, blob_oid, pygit2.GIT_FILEMODE_BLOB)
-        tree_oid = tree_builder.write()
-        return tree_oid
-
-    def _commit(self, repo, name, parents=(), with_branch=False):
-        ref_name = None
-        commit_oid = repo.create_commit(ref_name, self._author, self._author, name, self._tree(repo, name), list(parents))
-        if with_branch:
-            repo.create_branch(name, repo[commit_oid])
-        return commit_oid
-
-    @property
-    @contextmanager
-    def _base_repo_and_commit(self):
-        self._time = 0
-        with self.temporary_directory(suffix='.restfulgit') as temp_repos_dir:
-            self.app.config['RESTFULGIT_REPO_BASE_PATH'] = temp_repos_dir
-
-            repo_dir = os.path.join(temp_repos_dir, 'example')
-            os.mkdir(repo_dir)
-
-            repo = pygit2.init_repository(repo_dir, False)
-            # first commit A
-            a = self._commit(repo, b"A", with_branch=True)
-
-            yield repo, a
-
-    @contextmanager
-    def _example_repo(self, b_before_e=True):
-        """
-        Sets up an example repo with the following commits:
-
-        [A]--B--C--D--[I aka J]
-          \--E--F--G--/
-              \---[H]
-
-        [X]s denote commits that are branch tips
-        """
-        with self._base_repo_and_commit as pair:
-            repo, a = pair
-
-            def make_bcd():
-                b = self._commit(repo, b"B", [a])
-                c = self._commit(repo, b"C", [b])
-                d = self._commit(repo, b"D", [c])
-                return b ,c, d
-
-            def make_efg():
-                e = self._commit(repo, b"E", [a])
-                f = self._commit(repo, b"F", [e])
-                g = self._commit(repo, b"G", [f])
-                return e, f, g
-
-            if b_before_e:
-                b, c, d = make_bcd()
-                e, f, g = make_efg()
-            else:
-                e, f, g = make_efg()
-                b, c, d = make_bcd()
-            # H branch
-            h = self._commit(repo, b"H", [e], with_branch=True)
-            # I branch, from D & G
-            i = self._commit(repo, b"I", [d, g], with_branch=True)
-
-            yield dict(locals())
-
     def test_invalid_sort_404s(self):
         with self._base_repo_and_commit:
             resp = self.client.get('/repos/example/branches/A/unique-commits/sorted/astrological/')

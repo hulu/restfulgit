@@ -67,6 +67,22 @@ def get_commit(repo_key, sha):
     return convert_commit(repo_key, commit)
 
 
+@plumbing.route('/repos/<repo_key>/git/commits/<sha:left_sha>/merge-base/<sha:right_sha>/')
+@corsify
+@jsonify
+def get_merge_base_for_commits(repo_key, left_sha, right_sha):  # NOTE: RestfulGit extension
+    repo = get_repo(repo_key)
+    left_commit = _get_commit(repo, left_sha)
+    right_commit = _get_commit(repo, right_sha)
+    try:
+        merge_base_oid = repo.merge_base(left_commit.id, right_commit.id)
+        merge_base_commit = repo[merge_base_oid]
+    except KeyError:
+        return None
+    else:
+        return convert_commit(repo_key, merge_base_commit)
+
+
 @plumbing.route('/repos/<repo_key>/git/trees/<sha:sha>/')
 @corsify
 @jsonify

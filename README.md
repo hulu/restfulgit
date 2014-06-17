@@ -165,6 +165,33 @@ index 0000000..ae9d907
 ...
 ```
 
+Given two commits, retrieves as good a common ancestor commit as possible for a merge. If there is no common ancestor, returns `null` (and HTTP 200 OK).
+
+    GET /repos/<repo_key>/git/commits/<sha:left_sha>/merge-base/<sha:right_sha>/
+
+```json
+{
+    "committer": {
+        "date": "2013-02-24T13:25:46Z",
+        "name": "Rajiv Makhijani",
+        "email": "rajiv@hulu.com"
+    },
+    "author": {
+        "date": "2013-02-24T13:25:46Z",
+        "name": "Rajiv Makhijani",
+        "email": "rajiv@hulu.com"
+    },
+    "url": "http://localhost:5000/repos/restfulgit/git/commits/07b9bf1540305153ceeb4519a50b588c35a35464/",
+    "tree": {
+        "url": "http://localhost:5000/repos/restfulgit/git/trees/6ca22167185c31554aa6157306e68dfd612d6345/",
+        "sha": "6ca22167185c31554aa6157306e68dfd612d6345"
+    },
+    "sha": "07b9bf1540305153ceeb4519a50b588c35a35464",
+    "parents": [],
+    "message": "Initial support for read-only REST api for Git plumbing"
+}
+```
+
 Branches
 ----------
 Retrieves a list of branches:
