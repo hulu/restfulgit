@@ -2274,7 +2274,7 @@ class CompareTestCase(_RestfulGitTestCase):
         resp = self.client.get('/repos/restfulgit/compare/{}...{}.diff?context=1'.format('initial', FIFTH_COMMIT))
         self.assert200(resp)
         self.assertContentTypeIsDiff(resp)
-        self.assertBytesEqualFixture(resp.get_data(), 'initial_c04112733fe2db2cb2f179fca1a19365cf15fef5_context_1.diff')
+        self.assertBytesEqualFixture(resp.get_data(), 'initial-c04112733fe2db2cb2f179fca1a19365cf15fef5-context-1.diff')
 
 
 class ContributorsTestCase(_RestfulGitTestCase):
