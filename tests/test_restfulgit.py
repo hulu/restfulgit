@@ -1134,6 +1134,7 @@ class SimpleSHATestCase(_RestfulGitTestCase):
                 {
                     "sha": "c65dc8c22cc3dc5d37a1c39e5a9f336f1dd6fe34",
                     "filename": "README.md",
+                    "old_filename": "README.md",  # NOTE: RestfulGit extension
                     "status": "modified",
                     "additions": 5,
                     "deletions": 0,
@@ -1145,6 +1146,7 @@ class SimpleSHATestCase(_RestfulGitTestCase):
                 {
                     "sha": "da23f6c1cf961369faa90c8c4f4c242a09205ce6",
                     "filename": "requirements.txt",
+                    "old_filename": "requirements.txt",  # NOTE: RestfulGit extension
                     "status": "added",
                     "additions": 5,
                     "deletions": 0,
@@ -1156,6 +1158,84 @@ class SimpleSHATestCase(_RestfulGitTestCase):
             ]
         }
         resp = self.client.get('/repos/restfulgit/commits/d408fc2428bc6444cabd7f7b46edbe70b6992b16/')
+        self.assert200(resp)
+        self.assertEqual(reference, resp.json)
+
+    def test_get_repo_commit_involving_file_rename_works(self):
+        self.maxDiff = None
+        # From https://api.github.com/repos/hulu/restfulgit/commits/d3ebb7b3eec6ce13fbe77025c8b0e0240031379e with necessary adjustments
+        reference = {
+            "sha": "d3ebb7b3eec6ce13fbe77025c8b0e0240031379e",
+            "commit": {
+                "author": {
+                    "name": "Chris Rebert",
+                    "email": "chris.rebert@hulu.com",
+                    "date": "2014-06-27T22:39:07Z"
+                },
+                "committer": {
+                    "name": "Chris Rebert",
+                    "email": "chris.rebert@hulu.com",
+                    "date": "2014-06-27T22:39:07Z"
+                },
+                "message": "somewhat arbitrarily rename one of the test fixtures",
+                'sha': 'd3ebb7b3eec6ce13fbe77025c8b0e0240031379e',
+                'parents': [{
+                    'sha': 'e8617a0c479f44e0b677481c2223995b5a8fa623',
+                    'url': 'http://localhost/repos/restfulgit/commits/e8617a0c479f44e0b677481c2223995b5a8fa623/'
+                }],
+                "tree": {
+                    "sha": "fffee3c6675060068f95c1c61ca5fa4db8595c0e",
+                    "url": "http://localhost/repos/restfulgit/git/trees/fffee3c6675060068f95c1c61ca5fa4db8595c0e/"
+                },
+                "url": "http://localhost/repos/restfulgit/git/commits/d3ebb7b3eec6ce13fbe77025c8b0e0240031379e/",
+            },
+            "url": "http://localhost/repos/restfulgit/commits/d3ebb7b3eec6ce13fbe77025c8b0e0240031379e/",
+            "author": {
+                "name": "Chris Rebert",
+                "email": "chris.rebert@hulu.com",
+                "date": "2014-06-27T22:39:07Z"
+            },
+            "committer": {
+                'date': '2014-06-27T22:39:07Z',
+                'email': 'chris.rebert@hulu.com',
+                'name': 'Chris Rebert'
+            },
+            "parents": [{
+                  "sha": "e8617a0c479f44e0b677481c2223995b5a8fa623",
+                  "url": "http://localhost/repos/restfulgit/commits/e8617a0c479f44e0b677481c2223995b5a8fa623/",
+            }],
+            "stats": {
+                "total": 2,
+                "additions": 1,
+                "deletions": 1
+            },
+            "files": [
+                {
+                    "sha": "45a751524f43f703d5e776d48a1c495ae9e34b3e",
+                    "filename": "tests/fixtures/initial-c04112733fe2db2cb2f179fca1a19365cf15fef5-context-1.diff",
+                    'old_filename': 'tests/fixtures/initial_c04112733fe2db2cb2f179fca1a19365cf15fef5_context_1.diff',  # NOTE: RestfulGit extension
+                    "status": "renamed",
+                    "additions": 0,
+                    "deletions": 0,
+                    "changes": 0,
+                    "raw_url": "http://localhost/repos/restfulgit/raw/d3ebb7b3eec6ce13fbe77025c8b0e0240031379e/tests/fixtures/initial-c04112733fe2db2cb2f179fca1a19365cf15fef5-context-1.diff",
+                    "contents_url": "http://localhost/repos/restfulgit/contents/tests/fixtures/initial-c04112733fe2db2cb2f179fca1a19365cf15fef5-context-1.diff?ref=d3ebb7b3eec6ce13fbe77025c8b0e0240031379e"
+                },
+                {
+                    "sha": "d6d92aa58b97f090596c2b5afe30ac40e4f8e0b3",
+                    "filename": "tests/test_restfulgit.py",
+                    "old_filename": "tests/test_restfulgit.py",  # NOTE: RestfulGit extension
+                    "status": "modified",
+                    "additions": 1,
+                    "deletions": 1,
+                    "changes": 2,
+                    "raw_url": "http://localhost/repos/restfulgit/raw/d3ebb7b3eec6ce13fbe77025c8b0e0240031379e/tests/test_restfulgit.py",
+                    "contents_url": "http://localhost/repos/restfulgit/contents/tests/test_restfulgit.py?ref=d3ebb7b3eec6ce13fbe77025c8b0e0240031379e",
+                    "patch": "@@ -2274,7 +2274,7 @@ class CompareTestCase(_RestfulGitTestCase):\n         resp = self.client.get('/repos/restfulgit/compare/{}...{}.diff?context=1'.format('initial', FIFTH_COMMIT))\n         self.assert200(resp)\n         self.assertContentTypeIsDiff(resp)\n-        self.assertBytesEqualFixture(resp.get_data(), 'initial_c04112733fe2db2cb2f179fca1a19365cf15fef5_context_1.diff')\n+        self.assertBytesEqualFixture(resp.get_data(), 'initial-c04112733fe2db2cb2f179fca1a19365cf15fef5-context-1.diff')\n \n \n class ContributorsTestCase(_RestfulGitTestCase):"
+                }
+            ]
+        }
+        resp = self.client.get('/repos/restfulgit/commits/d3ebb7b3eec6ce13fbe77025c8b0e0240031379e/')
         self.assert200(resp)
         self.assertEqual(reference, resp.json)
 

@@ -74,6 +74,7 @@ def _convert_patch(repo_key, commit, patch, filename_to_patch):
         "sha": patch.new_oid if not deleted else patch.old_oid,
         "status": GIT_STATUS_TO_NAME[patch.status],
         "filename": patch.new_file_path,
+        "old_filename": patch.old_file_path,  # NOTE: RestfulGit extension
         "additions": patch.additions,
         "deletions": patch.deletions,
         "changes": patch.additions + patch.deletions,
