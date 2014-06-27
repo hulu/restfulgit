@@ -16,7 +16,7 @@ GIT_STATUS_TO_NAME = {
     'R': 'renamed',
     'D': 'removed',
 }
-SPLIT_PATCH_TXT_RE = re.compile(r'^\+\+\+\ b\/(.*?)\n(@@.*?)(?=\n^diff|\n\Z)', re.M | re.S)
+SPLIT_PATCH_TXT_RE = re.compile(r'^\+\+\+\ b\/([^\n]*?)\n(@@.*?)(?=\n^diff|\n\Z)', re.M | re.S)
 
 
 def convert_repo(repo_key):
