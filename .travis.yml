@@ -12,6 +12,7 @@ before_install:
   - "cd .. && rm -rf libgit2-*"
   - "export LIBGIT2='/usr/local'"
   - "export LDFLAGS=\"-Wl,-rpath='$LIBGIT2/lib',--enable-new-dtags $LDFLAGS\""
+  - "pip install cffi"
 before_script:
   - "pip install pep8 pylint Flask-Testing coverage nose coveralls"
   - "pip install filemagic"
