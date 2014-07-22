@@ -119,7 +119,7 @@ def get_blame(repo, file_path, newest_commit, oldest_refspec=None, min_line=1, m
         return repo.blame(file_path, **kwargs)
     except KeyError as no_such_file_err:
         raise NotFound(no_such_file_err.message)
-    except ValueError:
+    except ValueError:  # pragma: no cover
         raise BadRequest("path resolved to non-blob object")
 
 

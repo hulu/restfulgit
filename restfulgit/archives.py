@@ -8,7 +8,7 @@ from datetime import datetime
 from tempfile import mkstemp as _make_temp_file_handle
 try:
     from cStringIO import StringIO
-except ImportError:
+except ImportError:  # pragma: no cover
     from StringIO import StringIO
 
 from flask import current_app, Blueprint, send_file
@@ -75,7 +75,7 @@ def _make_temp_file(prefix='tmp_restfulgit_', suffix='', text=False):
     handle, filepath = _make_temp_file_handle(prefix=prefix, suffix=suffix, text=text)
     try:
         os.remove(filepath)
-    except (OSError, IOError):
+    except (OSError, IOError):  # pragma: no cover
         current_app.logger.exception("Encountered error when attempting to delete temporary file.")
     # Our handle is now the only way to access the temp file.
     # The OS will delete the file completely once our handle is closed (at the end of the HTTP request).

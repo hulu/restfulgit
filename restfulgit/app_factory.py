@@ -30,7 +30,7 @@ def create_app(config_obj_dotted_path=None):
     app = Flask(__name__)
 
     app.config.from_object(DefaultConfig)
-    if config_obj_dotted_path is not None:
+    if config_obj_dotted_path is not None:  # pragma: no cover
         app.config.from_object(config_obj_dotted_path)
 
     register_general_error_handler(app, json_error_page)
