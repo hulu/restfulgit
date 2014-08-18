@@ -136,8 +136,7 @@ class _RestfulGitTestCase(_FlaskTestCase):
 
     @property
     @contextmanager
-    def _base_repo_and_commit(self):
-        self._time = 0
+    def _empty_repo(self):
         with self.temporary_directory(suffix='.restfulgit') as temp_repos_dir:
             self.app.config['RESTFULGIT_REPO_BASE_PATH'] = temp_repos_dir
 
@@ -145,6 +144,13 @@ class _RestfulGitTestCase(_FlaskTestCase):
             os.mkdir(repo_dir)
 
             repo = pygit2.init_repository(repo_dir, False)
+            yield repo
+
+    @property
+    @contextmanager
+    def _base_repo_and_commit(self):
+        self._time = 0
+        with self._empty_repo as repo:
             # first commit A
             a = self._commit(repo, b"A", with_branch=True)
 
