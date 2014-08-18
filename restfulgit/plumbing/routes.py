@@ -45,7 +45,14 @@ def get_commit_list(repo_key):
         ref = lookup_ref(repo, ref_name)
         if ref is None:
             raise NotFound("reference not found")
-        start_commit_id = lookup_ref(repo, ref_name).resolve().target
+        start_ref = lookup_ref(repo, ref_name)
+        try:
+            start_commit_id = start_ref.resolve().target
+        except KeyError:
+            if ref_name == "HEAD":
+                return []
+            else:
+                raise NotFound("reference not found")
 
     try:
         walker = repo.walk(start_commit_id, GIT_SORT_TIME)
