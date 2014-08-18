@@ -2368,6 +2368,12 @@ class ContributorsTestCase(_RestfulGitTestCase):
         resp = self.client.get('/repos/this-repo-does-not-exist/contributors/')
         self.assert404(resp)
 
+    def test_empty_repo(self):
+        with self._empty_repo:
+            resp = self.client.get('/repos/example/contributors/')
+            self.assert200(resp)
+            self.assertEqual(resp.json, [])
+
     def test_results_well_formed(self):
         resp = self.client.get('/repos/restfulgit/contributors/')
         self.assert200(resp)

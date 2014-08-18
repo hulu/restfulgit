@@ -5,7 +5,7 @@ import os
 
 from flask import current_app, url_for, safe_join
 from werkzeug.exceptions import NotFound, BadRequest
-from pygit2 import GIT_OBJ_BLOB, GIT_OBJ_TREE, GIT_OBJ_TAG, GIT_REF_SYMBOLIC, GIT_BLAME_TRACK_COPIES_SAME_COMMIT_MOVES, GIT_BLAME_TRACK_COPIES_SAME_COMMIT_COPIES, GIT_SORT_NONE
+from pygit2 import GIT_OBJ_BLOB, GIT_OBJ_TREE, GIT_OBJ_TAG, GIT_REF_SYMBOLIC, GIT_BLAME_TRACK_COPIES_SAME_COMMIT_MOVES, GIT_BLAME_TRACK_COPIES_SAME_COMMIT_COPIES, GIT_SORT_NONE, GitError
 from restfulgit.plumbing.converters import GIT_OBJ_TYPE_TO_NAME, encode_blob_data
 
 
@@ -124,7 +124,12 @@ def get_blame(repo, file_path, newest_commit, oldest_refspec=None, min_line=1, m
 
 
 def get_authors(repo):
-    return (commit.author for commit in repo.walk(repo.head.target, GIT_SORT_NONE))  # pylint: disable=E1103
+    try:
+        target = repo.head.target
+    except GitError:
+        return ()
+    else:
+        return (commit.author for commit in repo.walk(target, GIT_SORT_NONE))  # pylint: disable=E1103
 
 
 # FIX ME: should be in different module?
