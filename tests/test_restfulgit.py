@@ -268,6 +268,12 @@ class SHAConverterTestCase(_RestfulGitTestCase):
 
 class CommitsTestCase(_RestfulGitTestCase):
     """Tests the "commits" endpoint."""
+    def test_empty_repo(self):
+        with self._empty_repo:
+            resp = self.client.get('/repos/example/git/commits/')
+            self.assert200(resp)
+            self.assertEqual(resp.json, [])
+
     def test_nonexistent_start_sha(self):
         resp = self.client.get('/repos/restfulgit/git/commits/?start_sha=1234567890abcdef')
         self.assertJson404(resp)
@@ -958,6 +964,12 @@ class SimpleSHATestCase(_RestfulGitTestCase):
         resp = self.client.get('/repos/this-repo-does-not-exist/tags/')
         self.assertJson404(resp)
 
+    def test_get_repo_tags_with_empty_repo(self):
+        with self._empty_repo:
+            resp = self.client.get('/repos/example/tags/')
+            self.assert200(resp)
+            self.assertEqual(resp.json, [])
+
     def test_get_repo_branches_works(self):
         # From https://api.github.com/repos/hulu/restfulgit/branches with necessary adjustments
         reference_branch = {
@@ -982,6 +994,12 @@ class SimpleSHATestCase(_RestfulGitTestCase):
     def test_get_repo_branches_with_nonexistent_repo(self):
         resp = self.client.get('/repos/this-repo-does-not-exist/branches/')
         self.assertJson404(resp)
+
+    def test_get_repo_branches_with_empty_repo(self):
+        with self._empty_repo:
+            resp = self.client.get('/repos/example/branches/')
+            self.assert200(resp)
+            self.assertEqual(resp.json, [])
 
     def test_get_repo_branch_works(self):
         # From https://api.github.com/repos/hulu/restfulgit/branches/ambiguous with necessary adjustments
@@ -1303,6 +1321,12 @@ class RefsTestCase(_RestfulGitTestCase):
         self.assertIsInstance(ref_list, list)
         self.assertIn(reference_initial_tag_ref, ref_list)
         self.assertIn(reference_ambiguous_branch_ref, ref_list)
+
+    def test_empty_repo(self):
+        with self._empty_repo:
+            resp = self.client.get('/repos/example/git/refs/')
+            self.assert200(resp)
+            self.assertEqual(resp.json, [])
 
     def test_invalid_ref_path(self):
         resp = self.client.get('/repos/restfulgit/git/refs/this_ref/path_does/not_exist')
