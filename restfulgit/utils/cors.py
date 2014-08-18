@@ -23,7 +23,9 @@ def corsify(func):
         else:
             resp = make_response(func(*args, **kwargs))
         headers = resp.headers
-        headers[b'Access-Control-Allow-Methods'] = options_resp.headers[b'allow']
+        options_header_allow = options_resp.headers.get(b'allow')
+        if options_header_allow:
+            headers[b'Access-Control-Allow-Methods'] = options_header_allow
         headers[b'Access-Control-Allow-Origin'] = current_app.config['RESTFULGIT_CORS_ALLOWED_ORIGIN']
         headers[b'Access-Control-Allow-Credentials'] = str(current_app.config['RESTFULGIT_CORS_ALLOW_CREDENTIALS']).lower()
         allowed_headers = current_app.config['RESTFULGIT_CORS_ALLOWED_HEADERS']
