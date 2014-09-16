@@ -134,7 +134,7 @@ def convert_blame(repo_key, repo, blame, raw_lines, start_line):
         commit_sha = hunk.final_commit_id
         commit_shas.add(commit_sha)
         annotated_lines.append({
-            'commit': commit_sha,
+            'commit': unicode(commit_sha),
             'origPath': hunk.orig_path,
             'lineNum': line_num,
             'line': line,
@@ -143,7 +143,7 @@ def convert_blame(repo_key, repo, blame, raw_lines, start_line):
     return {
         'lines': annotated_lines,
         'commits': {
-            commit_sha: _plumbing_convert_commit(repo_key, get_commit(repo, commit_sha))
+            unicode(commit_sha): _plumbing_convert_commit(repo_key, get_commit(repo, commit_sha))
             for commit_sha in commit_shas
         }
     }
