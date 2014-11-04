@@ -5,7 +5,7 @@ import os
 
 from flask import current_app, url_for, safe_join
 from werkzeug.exceptions import NotFound, BadRequest
-from pygit2 import GIT_OBJ_BLOB, GIT_OBJ_TREE, GIT_OBJ_TAG, GIT_REF_SYMBOLIC, GIT_BLAME_TRACK_COPIES_SAME_COMMIT_MOVES, GIT_BLAME_TRACK_COPIES_SAME_COMMIT_COPIES, GIT_SORT_NONE, GitError
+from pygit2 import GIT_OBJ_COMMIT, GIT_OBJ_BLOB, GIT_OBJ_TREE, GIT_OBJ_TAG, GIT_REF_SYMBOLIC, GIT_BLAME_TRACK_COPIES_SAME_COMMIT_MOVES, GIT_BLAME_TRACK_COPIES_SAME_COMMIT_COPIES, GIT_SORT_NONE, GitError
 from restfulgit.plumbing.converters import GIT_OBJ_TYPE_TO_NAME, encode_blob_data
 
 
@@ -32,7 +32,7 @@ def get_commit_for_refspec(repo, branch_or_tag_or_sha):
     try:
         commit = repo.revparse_single(branch_or_tag_or_sha)
         if commit.type == GIT_OBJ_TAG:
-            commit = commit.get_object()
+            commit = commit.peel(GIT_OBJ_COMMIT)
         return commit
     except KeyError:
         raise NotFound("no such branch, tag, or commit SHA")

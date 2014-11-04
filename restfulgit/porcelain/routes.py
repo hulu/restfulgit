@@ -131,9 +131,9 @@ def get_tags(repo_key):
         {
             "name": tag.shorthand,
             "commit": {
-                "sha": unicode(tag.get_object().id),
+                "sha": unicode(tag.peel().id),
                 "url": url_for('porcelain.get_commit', _external=True,
-                               repo_key=repo_key, branch_or_tag_or_sha=unicode(tag.get_object().id)),
+                               repo_key=repo_key, branch_or_tag_or_sha=unicode(tag.peel().id)),
             },
             "url": url_for('porcelain.get_tag', _external=True,  # NOTE: This is RestfulGit extension
                            repo_key=repo_key, tag_name=tag.shorthand),
@@ -152,12 +152,12 @@ def get_tag(repo_key, tag_name):  # NOTE: This endpoint is a RestfulGit extensio
         raise NotFound("tag not found")
     result = {
         "name": tag.shorthand,
-        "commit": convert_commit(repo_key, repo, tag.get_object()),
+        "commit": convert_commit(repo_key, repo, tag.peel()),
         "url": url_for('porcelain.get_tag', _external=True,
                        repo_key=repo_key, tag_name=tag.shorthand),
     }
     # simple tag
-    if tag.target != tag.get_object().id:
+    if tag.target != tag.peel().id:
         tag_obj = repo[tag.target]
         result['tag'] = convert_tag(repo_key, repo, tag_obj)
     return result
