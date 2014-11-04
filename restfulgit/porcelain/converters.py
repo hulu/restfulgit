@@ -52,7 +52,7 @@ def convert_branch_verbose(repo_key, repo, branch):
     url = url_for('porcelain.get_branch', _external=True, repo_key=repo_key, branch_name=branch.branch_name)
     return {
         "name": branch.branch_name,
-        "commit": convert_commit(repo_key, repo, branch.get_object()),
+        "commit": convert_commit(repo_key, repo, branch.peel()),
         "url": url,
         "_links": {
             # For some reason GitHub API for branch does the self-link like this
