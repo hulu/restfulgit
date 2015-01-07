@@ -48,9 +48,6 @@ disable=C0111,C0301,R0903,I0011,W0142,C0302
 # mypackage.mymodule.MyReporterClass.
 output-format=parseable
 
-# Include message's id in output
-include-ids=yes
-
 # Put messages in a separate file for each module / package specified on the
 # command line instead of printing them on stdout. Reports (if any) will be
 # written in a file name "pylint_global.[txt|html]".
