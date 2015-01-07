@@ -204,7 +204,7 @@ def get_diff(repo_key, branch_or_tag_or_sha=None):
     repo = get_repo(repo_key)
     commit = get_commit_for_refspec(repo, branch_or_tag_or_sha)
     diff = _get_diff(repo, commit)
-    return Response(diff.patch, mimetype=mime_types.DIFF)
+    return Response(diff.patch or '', mimetype=mime_types.DIFF)
 
 
 @porcelain.route('/repos/<repo_key>/compare/<old_branch_or_tag_or_sha>...<new_branch_or_tag_or_sha>.diff')
@@ -222,7 +222,7 @@ def get_compare_diff(repo_key, old_branch_or_tag_or_sha, new_branch_or_tag_or_sh
     old_commit = get_commit_for_refspec(repo, old_branch_or_tag_or_sha)
     new_commit = get_commit_for_refspec(repo, new_branch_or_tag_or_sha)
     diff = _get_diff(repo, new_commit, against=old_commit, context_lines=context)
-    return Response(diff.patch, mimetype=mime_types.DIFF)
+    return Response(diff.patch or '', mimetype=mime_types.DIFF)
 
 
 @porcelain.route('/repos/<repo_key>/blame/<branch_or_tag_or_sha>/<path:file_path>')  # NOTE: This endpoint is a RestfulGit extension

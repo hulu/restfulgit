@@ -63,6 +63,8 @@ def convert_branch_verbose(repo_key, repo, branch):
 
 
 def _filename_to_patch_from(diff):
+    if diff.patch is None:
+        return {}
     matches = re.findall(SPLIT_PATCH_TXT_RE, diff.patch)
     return dict(m for m in matches)
 
