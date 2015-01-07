@@ -34,6 +34,7 @@ TREE_OF_FIRST_COMMIT = "6ca22167185c31554aa6157306e68dfd612d6345"
 BLOB_FROM_FIRST_COMMIT = "ae9d90706c632c26023ce599ac96cb152673da7c"
 TAG_FOR_FIRST_COMMIT = "1dffc031c9beda43ff94c526cbc00a30d231c079"
 FIFTH_COMMIT = "c04112733fe2db2cb2f179fca1a19365cf15fef5"
+EMPTY_COMMIT = "c8ec343d7260ba9577045a05bccd931867644f28"
 IMPROBABLE_SHA = "f" * 40
 
 
@@ -560,6 +561,43 @@ class SimpleSHATestCase(_RestfulGitTestCase):
                 },
                 "message": "Initial support for read-only REST api for Git plumbing",
                 "parents": []
+            }
+        )
+
+    def test_get_empty_git_commit_works(self):
+        # From https://api.github.com/repos/hulu/restfulgit/git/commits/c8ec343d7260ba9577045a05bccd931867644f28 with necessary adjustments
+        resp = self.client.get('/repos/restfulgit/git/commits/{}/'.format(EMPTY_COMMIT))
+        self.assert200(resp)
+        self.assertEqual(
+            resp.json,
+            {
+                "sha": "c8ec343d7260ba9577045a05bccd931867644f28",
+                "url": "http://localhost/repos/restfulgit/git/commits/c8ec343d7260ba9577045a05bccd931867644f28/",
+                "author": {
+                    "name": "Chris Rebert",
+                    "email": "github@rebertia.com",
+                    "date": "2015-01-07T20:15:08Z"
+                },
+                "committer": {
+                    "name": "Chris Rebert",
+                    "email": "github@rebertia.com",
+                    "date": "2015-01-07T20:15:08Z"
+                },
+                "tree": {
+                    "sha": "9268fd675df04e7c09bceddaf9dfc38fb78787d2",
+                    "url": "http://localhost/repos/restfulgit/git/trees/9268fd675df04e7c09bceddaf9dfc38fb78787d2/"
+                },
+                "message": "Merge pull request #96 from hulu/empty-commit\n\nAdd deliberately empty commit for testing purposes",
+                "parents": [
+                    {
+                        "sha": "4fb38539d25983c9b9b99588901a1025658d05d4",
+                        "url": "http://localhost/repos/restfulgit/git/commits/4fb38539d25983c9b9b99588901a1025658d05d4/",
+                    },
+                    {
+                        "sha": "6f4fa9af844f69137bfee3c247feec0fb03a3913",
+                        "url": "http://localhost/repos/restfulgit/git/commits/6f4fa9af844f69137bfee3c247feec0fb03a3913/",
+                    }
+                ]
             }
         )
 
@@ -1185,6 +1223,71 @@ class SimpleSHATestCase(_RestfulGitTestCase):
         self.assert200(resp)
         self.assertEqual(reference, resp.json)
 
+    def test_get_empty_repo_commit(self):
+        # From https://api.github.com/repos/hulu/restfulgit/commits/c8ec343d7260ba9577045a05bccd931867644f28 with necessary adjustments
+        reference = {
+            "sha": "c8ec343d7260ba9577045a05bccd931867644f28",
+            "commit": {
+                "author": {
+                    "name": "Chris Rebert",
+                    "email": "github@rebertia.com",
+                    "date": "2015-01-07T20:15:08Z"
+                },
+                "committer": {
+                    "name": "Chris Rebert",
+                    "email": "github@rebertia.com",
+                    "date": "2015-01-07T20:15:08Z"
+                },
+                "message": "Merge pull request #96 from hulu/empty-commit\n\nAdd deliberately empty commit for testing purposes",
+                "parents": [
+                    {
+                        "sha": "4fb38539d25983c9b9b99588901a1025658d05d4",
+                        "url": "http://localhost/repos/restfulgit/commits/4fb38539d25983c9b9b99588901a1025658d05d4/"
+                    },
+                    {
+                        "sha": "6f4fa9af844f69137bfee3c247feec0fb03a3913",
+                        "url": "http://localhost/repos/restfulgit/commits/6f4fa9af844f69137bfee3c247feec0fb03a3913/"
+                    }
+                ],
+                "sha": "c8ec343d7260ba9577045a05bccd931867644f28",
+                "tree": {
+                    "sha": "9268fd675df04e7c09bceddaf9dfc38fb78787d2",
+                    "url": "http://localhost/repos/restfulgit/git/trees/9268fd675df04e7c09bceddaf9dfc38fb78787d2/"
+                },
+                "url": "http://localhost/repos/restfulgit/git/commits/c8ec343d7260ba9577045a05bccd931867644f28/",
+            },
+            "url": "http://localhost/repos/restfulgit/commits/c8ec343d7260ba9577045a05bccd931867644f28/",
+            "author": {
+                "name": "Chris Rebert",
+                "email": "github@rebertia.com",
+                "date": "2015-01-07T20:15:08Z"
+            },
+            "committer": {
+                "name": "Chris Rebert",
+                "email": "github@rebertia.com",
+                "date": "2015-01-07T20:15:08Z"
+            },
+            "parents": [
+                {
+                    "sha": "4fb38539d25983c9b9b99588901a1025658d05d4",
+                    "url": "http://localhost/repos/restfulgit/commits/4fb38539d25983c9b9b99588901a1025658d05d4/",
+                },
+                {
+                    "sha": "6f4fa9af844f69137bfee3c247feec0fb03a3913",
+                    "url": "http://localhost/repos/restfulgit/commits/6f4fa9af844f69137bfee3c247feec0fb03a3913/",
+                }
+            ],
+            "stats": {
+              "total": 0,
+              "additions": 0,
+              "deletions": 0
+            },
+            "files": []
+        }
+        resp = self.client.get('/repos/restfulgit/commits/{}/'.format(EMPTY_COMMIT))
+        self.assert200(resp)
+        self.assertEqual(reference, resp.json)
+
     def test_get_repo_commit_involving_file_rename_works(self):
         self.maxDiff = None
         # From https://api.github.com/repos/hulu/restfulgit/commits/d3ebb7b3eec6ce13fbe77025c8b0e0240031379e with necessary adjustments
@@ -1272,6 +1375,13 @@ class SimpleSHATestCase(_RestfulGitTestCase):
         self.assert200(resp)
         self.assertContentTypeIsDiff(resp)
         self.assertBytesEqualFixture(resp.get_data(), 'd408fc2428bc6444cabd7f7b46edbe70b6992b16.diff')
+
+    def test_get_diff_of_empty_commit(self):
+        resp = self.client.get('/repos/restfulgit/commit/{}.diff'.format(EMPTY_COMMIT))
+        self.assert200(resp)
+        self.assertContentTypeIsDiff(resp)
+        # Verified against https://github.com/hulu/restfulgit/commit/c8ec343d7260ba9577045a05bccd931867644f28.diff
+        self.assertEqual(resp.get_data(), b'')
 
     def test_get_diff_with_parentless_commit(self):  # NOTE: RestfulGit extension; GitHub gives a 404 in this case
         resp = self.client.get('/repos/restfulgit/commit/07b9bf1540305153ceeb4519a50b588c35a35464.diff')
@@ -1723,7 +1833,7 @@ class ArchiveDownloadTestCase(_RestfulGitTestCase):
         self.assertJson404(resp)
 
 
-class BlameTestCase(_RestfulGitTestCase):
+class BlameTestCase(_RestfulGitTestCase):  # NOTE: This API is a RestfulGit extension
     def test_nonexistent_repo(self):
         resp = self.client.get('/repos/this-repo-does-not-exist/blame/master/README')
         self.assertJson404(resp)
