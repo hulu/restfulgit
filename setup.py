@@ -50,7 +50,8 @@ setup(
     author='Rajiv Makhijani',
     url='https://github.com/hulu/restfulgit',
     provides=[NAME],
-    packages=['restfulgit'],
+    packages=['restfulgit', 'restfulgit.plumbing', 'restfulgit.porcelain',
+              'restfulgit.utils'],
     zip_safe=True,
     install_requires=requirements
 )
