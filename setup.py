@@ -39,6 +39,16 @@ if sys.version_info < MIN_PYTHON_VERSION or sys.version_info[0] >= MIN_UNSUPPORT
 with open(os.path.join(os.path.dirname(__file__), 'requirements.txt')) as f:
     requirements = f.readlines()
 
+
+def get_packages(root_pkg_name):
+    pkgs = []
+    for dirs, _, files in os.walk(os.path.join(root_pkg_name)):
+        if '__init__.py' in files:
+            package = dirs.replace(os.sep, '.')
+            pkgs.append(package)
+    return pkgs
+
+
 setup(
     name=NAME,
     version=VERSION,
@@ -50,7 +60,7 @@ setup(
     author='Rajiv Makhijani',
     url='https://github.com/hulu/restfulgit',
     provides=[NAME],
-    packages=['restfulgit'],
+    packages=get_packages('restfulgit'),
     zip_safe=True,
     install_requires=requirements
 )
