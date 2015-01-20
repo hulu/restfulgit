@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from distutils.core import setup
+from setuptools import setup, find_packages
 import os
 import sys
 
@@ -60,7 +60,7 @@ setup(
     author='Rajiv Makhijani',
     url='https://github.com/hulu/restfulgit',
     provides=[NAME],
-    packages=get_packages('restfulgit'),
+    packages=find_packages(exclude=['tests']),
     zip_safe=True,
     install_requires=requirements
 )
