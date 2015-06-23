@@ -78,9 +78,10 @@ def convert_blob(repo_key, blob):
 def _tree_entries(repo_key, repo, tree, recursive=False, path=''):
     entry_list = []
     for entry in tree:
+        entry_name = unicode(entry.name, 'utf-8')
         if entry.filemode == GIT_MODE_SUBMODULE:
             entry_data = {
-                "path": entry.name,
+                "path": entry_name,
                 "sha": unicode(entry.id),
                 "type": "submodule",
             }
@@ -88,7 +89,7 @@ def _tree_entries(repo_key, repo, tree, recursive=False, path=''):
             obj = repo[entry.id]
             if obj.type == GIT_OBJ_BLOB:
                 entry_data = {
-                    "path": '%s%s' % (path, entry.name),
+                    "path": '%s%s' % (path, entry_name),
                     "sha": unicode(entry.id),
                     "type": "blob",
                     "size": obj.size,
@@ -97,9 +98,9 @@ def _tree_entries(repo_key, repo, tree, recursive=False, path=''):
                 }
             elif obj.type == GIT_OBJ_TREE:
                 if recursive:
-                    entry_list += _tree_entries(repo_key, repo, obj, True, '%s%s/' % (path, entry.name))
+                    entry_list += _tree_entries(repo_key, repo, obj, True, '%s%s/' % (path, entry_name))
                 entry_data = {
-                    "path": "%s%s" % (path, entry.name),
+                    "path": "%s%s" % (path, entry_name),
                     "sha": unicode(entry.id),
                     "type": "tree",
                     "url": url_for('plumbing.get_tree', _external=True,
