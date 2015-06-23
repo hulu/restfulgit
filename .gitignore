@@ -5,3 +5,5 @@ cover
 /build
 /dist
 MANIFEST
+ENV/
+config.py
