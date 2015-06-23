@@ -26,12 +26,15 @@ def get_commit(repo, sha):
 
 def get_tree(repo, sha):
     try:
-        tree = repo[unicode(sha)]
+        obj = repo[unicode(sha)]
     except KeyError:
         raise NotFound("tree not found")
-    if tree.type != GIT_OBJ_TREE:
-        raise NotFound("object not a tree")
-    return tree
+    if obj.type == GIT_OBJ_TREE:
+        return obj
+    elif obj.type == GIT_OBJ_COMMIT:
+        return obj.tree
+    else:
+        raise NotFound("object not a tree or a commit")
 
 
 def get_blob(repo, sha):
