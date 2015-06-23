@@ -100,7 +100,7 @@ def _tree_entries(repo_key, repo, tree, recursive=False, path=''):
                 if recursive:
                     entry_list += _tree_entries(repo_key, repo, obj, True, '%s%s/' % (path, entry_name))
                 entry_data = {
-                    "path": "%s%s" % (path, entry_name),
+                    "path": '%s%s' % (path, entry_name),
                     "sha": unicode(entry.id),
                     "type": "tree",
                     "url": url_for('plumbing.get_tree', _external=True,
