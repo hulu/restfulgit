@@ -504,13 +504,38 @@ class MergeBaseTestCase(_RestfulGitTestCase):  # NOTE: RestfulGit extension
 
 
 class SimpleSHATestCase(_RestfulGitTestCase):
+    _INITIAL_COMMIT_TREE_JSON = {
+        "sha": "6ca22167185c31554aa6157306e68dfd612d6345",
+        "url": "http://localhost/repos/restfulgit/git/trees/6ca22167185c31554aa6157306e68dfd612d6345/",
+        "tree": [
+            {
+                "mode": "100644",
+                "type": "blob",
+                "sha": "ae9d90706c632c26023ce599ac96cb152673da7c",
+                "path": "api.py",
+                "size": 5543,
+                "url": "http://localhost/repos/restfulgit/git/blobs/ae9d90706c632c26023ce599ac96cb152673da7c/"
+            }
+        ]
+    }
+
     def test_get_commit_with_non_commit_sha(self):
         resp = self.client.get('/repos/restfulgit/git/commits/{}/'.format(BLOB_FROM_FIRST_COMMIT))
         self.assertJson404(resp)
 
-    def test_get_tree_with_non_tree_sha(self):
+    def test_get_tree_with_blob_sha(self):
         resp = self.client.get('/repos/restfulgit/git/trees/{}/'.format(BLOB_FROM_FIRST_COMMIT))
         self.assertJson404(resp)
+
+    def test_get_tree_with_commit_sha(self):
+        resp = self.client.get('/repos/restfulgit/git/trees/{}/'.format(FIRST_COMMIT))
+        self.assert200(resp)
+        self.assertEqual(resp.json, self._INITIAL_COMMIT_TREE_JSON)
+
+    def test_get_tree_with_tag_sha(self):
+        resp = self.client.get('/repos/restfulgit/git/trees/{}/'.format(TAG_FOR_FIRST_COMMIT))
+        self.assert200(resp)
+        self.assertEqual(resp.json, self._INITIAL_COMMIT_TREE_JSON)
 
     def test_get_blob_with_non_blob_sha(self):
         resp = self.client.get('/repos/restfulgit/git/blobs/{}/'.format(FIRST_COMMIT))
@@ -605,23 +630,7 @@ class SimpleSHATestCase(_RestfulGitTestCase):
         # From https://api.github.com/repos/hulu/restfulgit/git/trees/6ca22167185c31554aa6157306e68dfd612d6345 with necessary adjustments
         resp = self.client.get('/repos/restfulgit/git/trees/{}/'.format(TREE_OF_FIRST_COMMIT))
         self.assert200(resp)
-        self.assertEqual(
-            resp.json,
-            {
-                "sha": "6ca22167185c31554aa6157306e68dfd612d6345",
-                "url": "http://localhost/repos/restfulgit/git/trees/6ca22167185c31554aa6157306e68dfd612d6345/",
-                "tree": [
-                    {
-                        "mode": "100644",
-                        "type": "blob",
-                        "sha": "ae9d90706c632c26023ce599ac96cb152673da7c",
-                        "path": "api.py",
-                        "size": 5543,
-                        "url": "http://localhost/repos/restfulgit/git/blobs/ae9d90706c632c26023ce599ac96cb152673da7c/"
-                    }
-                ]
-            }
-        )
+        self.assertEqual(resp.json, self._INITIAL_COMMIT_TREE_JSON)
 
     def test_get_nested_tree_works(self):
         # From https://api.github.com/repos/hulu/restfulgit/git/trees/fc0fddc986c93f8444d754c7ec93c8b87f3d7c7e with necessary adjustments
