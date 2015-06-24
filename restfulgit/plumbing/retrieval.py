@@ -33,8 +33,11 @@ def get_tree(repo, sha):
         return obj
     elif obj.type == GIT_OBJ_COMMIT:
         return obj.tree
+    elif obj.type == GIT_OBJ_TAG:
+        commit = repo[obj.target]
+        return commit.tree
     else:
-        raise NotFound("object not a tree or a commit")
+        raise NotFound("object not a tree, a commit or a tag")
 
 
 def get_blob(repo, sha):
