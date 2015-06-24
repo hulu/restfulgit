@@ -34,8 +34,11 @@ def get_tree(repo, sha):
     elif obj.type == GIT_OBJ_COMMIT:
         return obj.tree
     elif obj.type == GIT_OBJ_TAG:
-        commit = repo[obj.target]
-        return commit.tree
+        obj = repo[obj.target]
+        if obj.type == GIT_OBJ_TAG:
+            return get_tree(repo, obj.target)
+        else:
+            return obj.tree
     else:
         raise NotFound("object not a tree, a commit or a tag")
 
