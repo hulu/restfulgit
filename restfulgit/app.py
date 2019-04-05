@@ -2,6 +2,9 @@
 from __future__ import absolute_import, unicode_literals, print_function, division
 
 from restfulgit.app_factory import create_app
+import sys 
+reload(sys) 
+sys.setdefaultencoding('utf-8') 
 
 
 application = create_app()
