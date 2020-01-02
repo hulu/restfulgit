@@ -10,18 +10,47 @@ Provides a read-only restful interface for accessing data from Git repositories 
 Modeled off the GitHub API for compatibility (see http://developer.github.com/v3/).
 
 Requires:
-- Python 2.7
+- Python 3
 - Flask
-- pygit2 (= 0.22.0), which itself requires libgit2 (= 0.22.0)
+- pygit2 (This project works ok with the latest version 1.0.1 as of Jan 2020), which itself requires the C library [libgit2](https://libgit2.org/). Before installing the Python pygit2 package first install the libgit2 dependency:
+    - On Mac `brew install libgit2`
+    - On Linux `sudo apt install libgit2-dev`
 
 Optional:
-- filemagic (= 1.6) (offers improved MIME-type guessing), which itself requires libmagic (= 5.11)
+- filemagic (= 1.6) (offers improved MIME-type guessing), which itself requires libmagic (= 5.11)  
+*Note: [filemagic](https://pypi.org/project/filemagic/) usage not yet tested with this Python 3 port, though filemagic is still the same version 1.6 as of Jan 2020*
 
 The `restfulgit.app` module is a valid WSGI application.
 
 While the app can be run with `python -m restfulgit.app` -- this runs Flask in debug mode and should NOT be used in production.
 Instead, the app can be run with any WSGI server, such as gunicorn (`pip install gunicorn; gunicorn restfulgit.app`)
 (Note: If you haven't installed restfulgit into your Python environment, you may need to explicitly set `PYTHONPATH` when running the above commands.)
+
+Example installation, config and run:
+------------------------------------
+Assuming Mac.
+```
+brew install libgit2
+cp example_config.py config.py
+```
+Edit `config.py` e.g. set the root directory to look for git repositories `RESTFULGIT_REPO_BASE_PATH = '/tmp/myrepos/'`
+
+Create a virtual environment and install dependencies - assuming Pipenv:
+```
+pipenv --python 3
+pipenv install
+pipenv shell
+```
+otherwise set up a virtual enviroment using your favourite technique (if you choose to use a virtual environment) then run the usual `pip -r requirements.txt`
+
+Running the server on a development machine:
+```
+export RESTFULGIT_CONFIG=/.../config.py
+python -m restfulgit.app
+```
+The `RESTFULGIT_CONFIG` environment variable should point to the `config.py` you just edited.
+
+The `-m` parameter `restfulgit.app` refers to the module path and thus to the file `restfulgit/app.py` where you can see this project's bootstrapping code for Flask.
 
 Configuration
 ----------------

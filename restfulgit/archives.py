@@ -1,5 +1,5 @@
 # coding=utf-8
-from __future__ import absolute_import, unicode_literals, print_function, division
+
 
 import tarfile
 import zipfile
@@ -7,9 +7,9 @@ import os
 from datetime import datetime
 from tempfile import mkstemp as _make_temp_file_handle
 try:
-    from cStringIO import StringIO
+    from io import StringIO
 except ImportError:  # pragma: no cover
-    from StringIO import StringIO
+    from io import StringIO
 
 from flask import current_app, Blueprint, send_file
 from pygit2 import GIT_OBJ_BLOB, GIT_OBJ_TREE
@@ -64,7 +64,7 @@ def _walk_tree_recursively(repo, tree, blobs_only=False, base_path=''):
 
 
 def _wrapper_dir_name_for(repo_key, commit):
-    return "{}-{}".format(repo_key, unicode(commit.id))
+    return "{}-{}".format(repo_key, str(commit.id))
 
 
 def _archive_filename_for(repo_key, refspec, ext):
@@ -139,7 +139,7 @@ def get_tarball(repo_key, branch_or_tag_or_sha):
     timestamp = int((datetime.utcnow() - EPOCH_START).total_seconds())  # FIX ME: use committer/author timestamp?
     temp_file = _make_temp_file(suffix=extension)
     with tarfile.open(fileobj=temp_file, mode=TARFILE_WRITE_MODE, encoding='utf-8') as tar_file:
-        tar_file.pax_headers = {u'comment': unicode(commit.id)}
+        tar_file.pax_headers = {'comment': str(commit.id)}
 
         for path, filemode, obj in _walk_tree_recursively(repo, tree):
             tar_info = tarfile.TarInfo(os.path.join(wrapper_dir, path))

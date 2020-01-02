@@ -1,5 +1,5 @@
 # coding=utf-8
-from __future__ import absolute_import, unicode_literals
+
 
 import unittest
 from hashlib import sha512
@@ -55,7 +55,7 @@ class _RestfulGitTestCase(_FlaskTestCase):
     def assertJsonError(self, resp):
         json = resp.json
         self.assertIsInstance(json, dict)
-        self.assertIsInstance(json.get('error'), unicode)
+        self.assertIsInstance(json.get('error'), str)
 
     def assertJson400(self, resp):
         self.assert400(resp)
@@ -434,7 +434,7 @@ class MergeBaseTestCase(_RestfulGitTestCase):  # NOTE: RestfulGit extension
 
     def test_unrelateds_is_200_but_null(self):
         other_unrelated_initial_commit_oid = self._make_another_initial_commit()
-        resp = self.client.get('/repos/restfulgit/git/commits/{}/merge-base/{}/'.format(FIRST_COMMIT, unicode(other_unrelated_initial_commit_oid)))
+        resp = self.client.get('/repos/restfulgit/git/commits/{}/merge-base/{}/'.format(FIRST_COMMIT, str(other_unrelated_initial_commit_oid)))
         self.assert200(resp)
         self.assertEqual(resp.json, None)
 
@@ -450,8 +450,8 @@ class MergeBaseTestCase(_RestfulGitTestCase):  # NOTE: RestfulGit extension
 
     def test_branch_siblings(self):
         with self._example_repo() as commits:
-            d = unicode(commits['d'])
-            g = unicode(commits['g'])
+            d = str(commits['d'])
+            g = str(commits['g'])
             resp = self.client.get('/repos/example/git/commits/{}/merge-base/{}/'.format(d, g))
         self.assert200(resp)
         self.assertEqual(resp.json, {
@@ -1658,7 +1658,7 @@ class CorsTestCase(_RestfulGitTestCase):
         self.assertIn('Access-Control-Allow-Credentials', resp.headers)
 
     def assert_cors_disabled_for(self, resp):
-        for header in resp.headers.keys():
+        for header in list(resp.headers.keys()):
             self.assertFalse(header.lower().startswith('access-control'), msg="CORS-related header present")
 
     def test_disabled_really_disables(self):
@@ -1696,7 +1696,7 @@ class CorsTestCase(_RestfulGitTestCase):
         max_age = timedelta(minutes=427)
         with self.cors_enabled:
             with self.config_override('RESTFULGIT_CORS_MAX_AGE', max_age):
-                self.assert_header_equal('Access-Control-Max-Age', unicode(int(max_age.total_seconds())))
+                self.assert_header_equal('Access-Control-Max-Age', str(int(max_age.total_seconds())))
 
     def test_enabled_allow_credentials_honored(self):
         with self.cors_enabled:
@@ -2291,7 +2291,7 @@ class BlameTestCase(_RestfulGitTestCase):  # NOTE: This API is a RestfulGit exte
         self.assert200(resp)
         json = resp.json
         relevant_commits = {'129458e24667a9c32db4cb1a0549e3554bff0965', '13e9ff41ba4704d6ca91988f9216adeeee8c79b5'}
-        self.assertEqual(relevant_commits, set(json['commits'].viewkeys()))
+        self.assertEqual(relevant_commits, set(json['commits'].keys()))
         self.assertEqual(relevant_commits, {line['commit'] for line in json['lines']})
 
 
@@ -2523,8 +2523,8 @@ class ContributorsTestCase(_RestfulGitTestCase):
         contributors = resp.json
         for contributor in contributors:
             self.assertIsInstance(contributor, dict)
-            self.assertIsInstance(contributor.get('name'), unicode)
-            self.assertIsInstance(contributor.get('email'), unicode)
+            self.assertIsInstance(contributor.get('name'), str)
+            self.assertIsInstance(contributor.get('email'), str)
             count = contributor.get('contributions')
             self.assertIsInstance(count, int)
             self.assertGreater(count, 0)

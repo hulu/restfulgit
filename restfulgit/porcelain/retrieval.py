@@ -1,5 +1,5 @@
 # coding=utf-8
-from __future__ import absolute_import, unicode_literals, print_function, division
+
 
 import os
 
@@ -144,11 +144,11 @@ def get_contents(repo_key, repo, refspec, file_path, obj, _recursing=False):
         return entries
 
     contents_url = url_for('porcelain.get_contents', _external=True, repo_key=repo_key, file_path=file_path, ref=refspec)
-    git_url = url_for('plumbing.get_' + GIT_OBJ_TYPE_TO_NAME[obj.type], _external=True, repo_key=repo_key, sha=unicode(obj.id))
+    git_url = url_for('plumbing.get_' + GIT_OBJ_TYPE_TO_NAME[obj.type], _external=True, repo_key=repo_key, sha=str(obj.id))
 
     result = {
         "type": GIT_OBJ_TO_PORCELAIN_NAME[obj.type],
-        "sha": unicode(obj.id),
+        "sha": str(obj.id),
         "name": os.path.basename(file_path),
         "path": file_path,
         "size": (obj.size if obj.type == GIT_OBJ_BLOB else 0),

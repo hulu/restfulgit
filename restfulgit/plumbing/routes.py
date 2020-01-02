@@ -1,7 +1,7 @@
 # coding=utf-8
-from __future__ import absolute_import, unicode_literals, print_function, division
 
-from itertools import ifilter, islice
+
+from itertools import islice
 
 from flask import current_app, request, Blueprint
 from werkzeug.exceptions import NotFound, BadRequest
@@ -128,9 +128,9 @@ def get_refs(repo_key, ref_path=None):
     else:
         ref_path = ""
     repo = get_repo(repo_key)
-    ref_names = ifilter(lambda x: x.startswith(ref_path), repo.listall_references())
+    ref_names = filter(lambda x: x.startswith(ref_path), repo.listall_references())
     references = (repo.lookup_reference(ref_name) for ref_name in ref_names)
-    nonsymbolic_refs = ifilter(lambda x: x.type != GIT_REF_SYMBOLIC, references)
+    nonsymbolic_refs = filter(lambda x: x.type != GIT_REF_SYMBOLIC, references)
     ref_data = [
         convert_ref(repo_key, reference, repo[reference.target])
         for reference in nonsymbolic_refs

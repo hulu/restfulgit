@@ -1,8 +1,8 @@
 # coding=utf-8
-from __future__ import absolute_import, unicode_literals, print_function, division
+
 
 import os
-from itertools import ifilter
+
 from collections import defaultdict
 
 from flask import request, Response, Blueprint, url_for
@@ -125,15 +125,15 @@ TAG_REF_PREFIX = "refs/tags/"
 @jsonify
 def get_tags(repo_key):
     repo = get_repo(repo_key)
-    ref_names = ifilter(lambda ref_name: ref_name.startswith(TAG_REF_PREFIX), repo.listall_references())
+    ref_names = filter(lambda ref_name: ref_name.startswith(TAG_REF_PREFIX), repo.listall_references())
     tags = (repo.lookup_reference(ref_name) for ref_name in ref_names)
     return [
         {
             "name": tag.shorthand,
             "commit": {
-                "sha": unicode(tag.peel().id),
+                "sha": str(tag.peel().id),
                 "url": url_for('porcelain.get_commit', _external=True,
-                               repo_key=repo_key, branch_or_tag_or_sha=unicode(tag.peel().id)),
+                               repo_key=repo_key, branch_or_tag_or_sha=str(tag.peel().id)),
             },
             "url": url_for('porcelain.get_tag', _external=True,  # NOTE: This is RestfulGit extension
                            repo_key=repo_key, tag_name=tag.shorthand),
@@ -286,7 +286,7 @@ def get_contributors(repo_key):
         email = author.email
         email_to_name.setdefault(email, author.name)
         commit_counts[email] += 1
-    leaderboard = commit_counts.items()
+    leaderboard = list(commit_counts.items())
     leaderboard.sort(key=(lambda pair: pair[1]), reverse=True)
     return [
         {

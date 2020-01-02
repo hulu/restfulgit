@@ -1,5 +1,5 @@
 # coding=utf-8
-from __future__ import absolute_import, unicode_literals, print_function, division
+
 
 from flask import current_app, safe_join
 from werkzeug.exceptions import NotFound
@@ -16,7 +16,7 @@ def get_repo(repo_key):
 
 def get_commit(repo, sha):
     try:
-        commit = repo[unicode(sha)]
+        commit = repo[str(sha)]
     except KeyError:
         raise NotFound("commit not found")
     if commit.type != GIT_OBJ_COMMIT:
@@ -26,7 +26,7 @@ def get_commit(repo, sha):
 
 def get_tree(repo, sha):
     try:
-        obj = repo[unicode(sha)]
+        obj = repo[str(sha)]
     except KeyError:
         raise NotFound("tree not found")
     if obj.type == GIT_OBJ_TREE:
@@ -45,7 +45,7 @@ def get_tree(repo, sha):
 
 def get_blob(repo, sha):
     try:
-        blob = repo[unicode(sha)]
+        blob = repo[str(sha)]
     except KeyError:
         raise NotFound("blob not found")
     if blob.type != GIT_OBJ_BLOB:
@@ -55,7 +55,7 @@ def get_blob(repo, sha):
 
 def get_tag(repo, sha):
     try:
-        tag = repo[unicode(sha)]
+        tag = repo[str(sha)]
     except KeyError:
         raise NotFound("tag not found")
     if tag.type != GIT_OBJ_TAG:
