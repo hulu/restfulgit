@@ -1,5 +1,5 @@
 # coding=utf-8
-from __future__ import absolute_import, unicode_literals, print_function, division
+
 
 import re
 
@@ -38,11 +38,11 @@ def convert_repo(repo_key):
 
 
 def convert_branch_summary(repo_key, branch):
-    url = url_for('porcelain.get_commit', _external=True, repo_key=repo_key, branch_or_tag_or_sha=unicode(branch.target))
+    url = url_for('porcelain.get_commit', _external=True, repo_key=repo_key, branch_or_tag_or_sha=str(branch.target))
     return {
         "name": branch.branch_name,
         "commit": {
-            "sha": unicode(branch.target),
+            "sha": str(branch.target),
             "url": url,
         }
     }
@@ -71,9 +71,9 @@ def _filename_to_patch_from(diff):
 
 def _convert_patch(repo_key, commit, patch, filename_to_patch):
     deleted = patch.status == 'D'
-    commit_sha = unicode(commit.id if not deleted else commit.parent_ids[0])
+    commit_sha = str(commit.id if not deleted else commit.parent_ids[0])
     result = {
-        "sha": unicode(patch.new_id if not deleted else patch.old_id),
+        "sha": str(patch.new_id if not deleted else patch.old_id),
         "status": GIT_STATUS_TO_NAME[patch.status],
         "filename": patch.new_file_path,
         "old_filename": patch.old_file_path,  # NOTE: RestfulGit extension
@@ -104,11 +104,11 @@ def convert_commit(repo_key, repo, commit, include_diff=False):
         "author": plain_commit_json['author'],
         "committer": plain_commit_json['committer'],
         "url": url_for('porcelain.get_commit', _external=True,
-                       repo_key=repo_key, branch_or_tag_or_sha=unicode(commit.id)),
+                       repo_key=repo_key, branch_or_tag_or_sha=str(commit.id)),
         "parents": [{
-            "sha": unicode(c.id),
+            "sha": str(c.id),
             "url": url_for('porcelain.get_commit', _external=True,
-                           repo_key=repo_key, branch_or_tag_or_sha=unicode(c.id))
+                           repo_key=repo_key, branch_or_tag_or_sha=str(c.id))
         } for c in commit.parents],
     }
     if include_diff:
@@ -136,7 +136,7 @@ def convert_blame(repo_key, repo, blame, raw_lines, start_line):
         commit_sha = hunk.final_commit_id
         commit_shas.add(commit_sha)
         annotated_lines.append({
-            'commit': unicode(commit_sha),
+            'commit': str(commit_sha),
             'origPath': hunk.orig_path,
             'lineNum': line_num,
             'line': line,
@@ -145,7 +145,7 @@ def convert_blame(repo_key, repo, blame, raw_lines, start_line):
     return {
         'lines': annotated_lines,
         'commits': {
-            unicode(commit_sha): _plumbing_convert_commit(repo_key, get_commit(repo, commit_sha))
+            str(commit_sha): _plumbing_convert_commit(repo_key, get_commit(repo, commit_sha))
             for commit_sha in commit_shas
         }
     }
