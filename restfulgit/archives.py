@@ -6,10 +6,7 @@ import zipfile
 import os
 from datetime import datetime
 from tempfile import mkstemp as _make_temp_file_handle
-try:
-    from io import StringIO
-except ImportError:  # pragma: no cover
-    from io import StringIO
+from io import BytesIO
 
 from flask import current_app, Blueprint, send_file
 from pygit2 import GIT_OBJ_BLOB, GIT_OBJ_TREE
@@ -154,7 +151,7 @@ def get_tarball(repo_key, branch_or_tag_or_sha):
 
             if obj.type == GIT_OBJ_BLOB:
                 tar_info.type = tarfile.REGTYPE
-                content = StringIO(obj.data)
+                content = BytesIO(obj.data)
             elif obj.type == GIT_OBJ_TREE:
                 tar_info.type = tarfile.DIRTYPE
                 content = None

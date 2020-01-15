@@ -60,7 +60,7 @@ def encode_blob_data(data):
     try:
         return 'utf-8', data.decode('utf-8')
     except UnicodeDecodeError:
-        return 'base64', b64encode(data)
+        return 'base64', b64encode(data).decode()
 
 
 def convert_blob(repo_key, blob):
@@ -106,7 +106,7 @@ def _tree_entries(repo_key, repo, tree, recursive=False, path=''):
                     "url": url_for('plumbing.get_tree', _external=True,
                                    repo_key=repo_key, sha=str(entry.id))
                 }
-        entry_data['mode'] = oct(entry.filemode)[1:].zfill(6)  # 6 octal digits without single leading base-indicating 0
+        entry_data['mode'] = oct(entry.filemode)[2:].zfill(6)  # 6 octal digits without single leading base-indicating 0
         entry_list.append(entry_data)
     return entry_list
 

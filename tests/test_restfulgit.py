@@ -6,6 +6,7 @@ from hashlib import sha512
 import os
 import os.path
 import io
+from base64 import b64decode
 from contextlib import contextmanager
 from datetime import timedelta
 from tempfile import mkdtemp, mkstemp
@@ -14,7 +15,7 @@ from subprocess import check_call
 from json import load as load_json_file
 from time import time as time_now
 
-from flask.ext.testing import TestCase as _FlaskTestCase
+from flask_testing import TestCase as _FlaskTestCase
 import pygit2
 
 from restfulgit.app_factory import create_app
@@ -66,7 +67,7 @@ class _RestfulGitTestCase(_FlaskTestCase):
         self.assertJsonError(resp)
 
     def assertContentTypeIsDiff(self, resp):
-        self.assertEqual(resp.headers.get_all('Content-Type'), [b'text/x-diff; charset=utf-8'])
+        self.assertEqual(resp.headers.get_all('Content-Type'), ['text/x-diff; charset=utf-8'])
 
     @contextmanager
     def config_override(self, key, val):
@@ -82,8 +83,9 @@ class _RestfulGitTestCase(_FlaskTestCase):
 
     def _get_fixture_bytes(self, filename):
         filepath = self.get_fixture_path(filename)
-        with open(filepath, 'r') as fixture_file:
-            return fixture_file.read()
+        with open(filepath, 'rb') as fixture_file:
+            content = fixture_file.read()
+            return content
 
     def assertBytesEqualFixture(self, text, fixture):
         self.assertEqual(text, self._get_fixture_bytes(fixture))
@@ -153,7 +155,7 @@ class _RestfulGitTestCase(_FlaskTestCase):
         self._time = 0
         with self._empty_repo as repo:
             # first commit A
-            a = self._commit(repo, b"A", with_branch=True)
+            a = self._commit(repo, "A", with_branch=True)
 
             yield repo, a
 
@@ -172,15 +174,15 @@ class _RestfulGitTestCase(_FlaskTestCase):
             repo, a = pair
 
             def make_bcd():
-                b = self._commit(repo, b"B", [a])
-                c = self._commit(repo, b"C", [b])
-                d = self._commit(repo, b"D", [c])
+                b = self._commit(repo, "B", [a])
+                c = self._commit(repo, "C", [b])
+                d = self._commit(repo, "D", [c])
                 return b ,c, d
 
             def make_efg():
-                e = self._commit(repo, b"E", [a])
-                f = self._commit(repo, b"F", [e])
-                g = self._commit(repo, b"G", [f])
+                e = self._commit(repo, "E", [a])
+                f = self._commit(repo, "F", [e])
+                g = self._commit(repo, "G", [f])
                 return e, f, g
 
             if b_before_e:
@@ -190,9 +192,9 @@ class _RestfulGitTestCase(_FlaskTestCase):
                 e, f, g = make_efg()
                 b, c, d = make_bcd()
             # H branch
-            h = self._commit(repo, b"H", [e], with_branch=True)
+            h = self._commit(repo, "H", [e], with_branch=True)
             # I branch, from D & G
-            i = self._commit(repo, b"I", [d, g], with_branch=True)
+            i = self._commit(repo, "I", [d, g], with_branch=True)
 
             yield dict(locals())
 
@@ -422,7 +424,7 @@ class MergeBaseTestCase(_RestfulGitTestCase):  # NOTE: RestfulGit extension
         tree_builder.insert("FirstPost.txt", blob_oid, pygit2.GIT_FILEMODE_BLOB)
         tree_oid = tree_builder.write()
 
-        author = pygit2.Signature('Alien Celebrity', 'brains@hulu.example', time=time_now(), offset=0)
+        author = pygit2.Signature('Alien Celebrity', 'brains@hulu.example', time=int(time_now()), offset=0)
         ref_name = None
         parents = []
         evil_twin_genesis_commit_oid = repo.create_commit(ref_name, author, author, "Other initial commit", tree_oid, parents)
@@ -864,7 +866,7 @@ class SimpleSHATestCase(_RestfulGitTestCase):
         self.assertIsInstance(json, dict)
         self.assertIn("content", json)
         self.assertEqual(
-            sha512(json["content"]).hexdigest(),
+            sha512(json["content"].encode()).hexdigest(),
             '1c846bb4d44c08073c487316a7dc02d97d825aecf50546caf9bf10277c01d17e19860d5f86de877268dd969bd081c7595991c325e0ab492374b956e3a6c9967f'
         )
         del json["content"]
@@ -887,7 +889,7 @@ class SimpleSHATestCase(_RestfulGitTestCase):
         self.assertIn('content', json)
         content = json['content']
         del json['content']
-        self.assertBytesEqualFixture(content.decode('base64'), 'example.png')
+        self.assertBytesEqualFixture(b64decode(content), 'example.png')
         self.assertEqual(
             json,
             {
@@ -1650,7 +1652,12 @@ class CorsTestCase(_RestfulGitTestCase):
         resp = self.arbitrary_response
         headers = resp.headers
         self.assertIn(header, headers)
-        self.assertEqual(headers[header], value)
+        if header == 'Access-Control-Allow-Methods':
+            expected_methods = set(value.split(', '))
+            actual_methods = set(headers[header].split(', '))
+            self.assertEqual(actual_methods, expected_methods)
+        else:
+            self.assertEqual(headers[header], value)
 
     def assert_cors_enabled_for(self, resp):
         self.assertIn('Access-Control-Allow-Methods', resp.headers)
@@ -2313,7 +2320,7 @@ class RepoContentsTestCase(_RestfulGitTestCase):
         self.assert200(resp)
         json = resp.json
         content = json.pop('content')
-        self.assertEqual(sha512(content).hexdigest(), '1966b04df26b4b9168d9c294d12ff23794fc36ba7bd7e96997541f5f31814f0d2f640dd6f0c0fe719a74815439154890df467ec5b9c4322d785902b18917fecc')
+        self.assertEqual(sha512(content.encode()).hexdigest(), '1966b04df26b4b9168d9c294d12ff23794fc36ba7bd7e96997541f5f31814f0d2f640dd6f0c0fe719a74815439154890df467ec5b9c4322d785902b18917fecc')
         # From https://api.github.com/repos/hulu/restfulgit/contents/tests/fixtures/d408fc2428bc6444cabd7f7b46edbe70b6992b16.diff?ref=7da1a61e2f566cf3094c2fea4b18b111d2638a8f with necessary adjustments
         self.assertEqual(json, {
             "name": "d408fc2428bc6444cabd7f7b46edbe70b6992b16.diff",
@@ -2582,8 +2589,8 @@ class CommitsUniqueToBranchTestCase(_RestfulGitTestCase):  # NOTE: This API is a
     def test_only_branch(self):
         with self._base_repo_and_commit as pair:
             repo, a = pair
-            b = self._commit(repo, b"B", [a])
-            repo.create_branch(b"A", repo[b], True)  # overwrite A
+            b = self._commit(repo, "B", [a])
+            repo.create_branch("A", repo[b], True)  # overwrite A
             resp = self.client.get('/repos/example/branches/A/unique-commits/sorted/topological/')
             self.assert200(resp)
             self.assertEqual(resp.json, {'commits': [
@@ -2673,7 +2680,7 @@ class CommitsUniqueToBranchTestCase(_RestfulGitTestCase):  # NOTE: This API is a
         with self._example_repo() as commits:
             repo = commits['repo']
             # J branch = I branch
-            repo.create_branch(b"J", repo[commits['i']])
+            repo.create_branch("J", repo[commits['i']])
             resp = self.client.get('/repos/example/branches/J/unique-commits/sorted/topological/')
             self.assert200(resp)
             self.assertEqual(resp.json, {'commits': []})
