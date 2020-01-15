@@ -84,7 +84,7 @@ def get_merge_base_for_commits(repo_key, left_sha, right_sha):  # NOTE: RestfulG
     try:
         merge_base_oid = repo.merge_base(left_commit.id, right_commit.id)
         merge_base_commit = repo[merge_base_oid]
-    except KeyError:
+    except TypeError:
         return None
     else:
         return convert_commit(repo_key, merge_base_commit)

@@ -3,14 +3,14 @@
 
 from flask import current_app, safe_join
 from werkzeug.exceptions import NotFound
-from pygit2 import Repository, GIT_OBJ_COMMIT, GIT_OBJ_BLOB, GIT_OBJ_TREE, GIT_OBJ_TAG
+from pygit2 import Repository, GIT_OBJ_COMMIT, GIT_OBJ_BLOB, GIT_OBJ_TREE, GIT_OBJ_TAG, GitError
 
 
 def get_repo(repo_key):
     path = safe_join(current_app.config['RESTFULGIT_REPO_BASE_PATH'], repo_key)
     try:
         return Repository(path)
-    except KeyError:
+    except GitError:
         raise NotFound("repository not found")
 
 

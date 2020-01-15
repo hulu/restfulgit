@@ -7,10 +7,7 @@ import sys
 
 NAME = 'restfulgit'
 
-VERSION = '0.1.0'
-
-MIN_PYTHON_VERSION = (2, 7)
-MIN_UNSUPPORTED_VERSION = 3
+VERSION = '0.1.1'
 
 CLASSIFIERS = [
     'Development Status :: 2 - Beta',
@@ -19,22 +16,12 @@ CLASSIFIERS = [
     'Intended Audience :: Developers',
     'License :: OSI Approved :: MIT License',
     'Operating System :: POSIX :: Linux',
-    'Programming Language :: Python :: 2.7',
+    'Programming Language :: Python :: 3.7',
     'Topic :: Internet :: WWW/HTTP :: WSGI :: Application',
     'Topic :: Software Development :: Libraries',
     'Topic :: Software Development :: Version Control'
 ]
 
-
-if sys.version_info < MIN_PYTHON_VERSION or sys.version_info[0] >= MIN_UNSUPPORTED_VERSION:
-    raise Exception(
-        '%s==%s requires Python >= %s and Python < %d' % (
-            NAME,
-            VERSION,
-            '.'.join([str(x) for x in MIN_PYTHON_VERSION]),
-            MIN_UNSUPPORTED_VERSION
-        )
-    )
 
 with open(os.path.join(os.path.dirname(__file__), 'requirements.txt')) as f:
     requirements = f.readlines()

@@ -70,29 +70,29 @@ def _filename_to_patch_from(diff):
 
 
 def _convert_patch(repo_key, commit, patch, filename_to_patch):
-    deleted = patch.status == 'D'
+    deleted = patch.delta.status_char() == 'D'
     commit_sha = str(commit.id if not deleted else commit.parent_ids[0])
     result = {
-        "sha": str(patch.new_id if not deleted else patch.old_id),
-        "status": GIT_STATUS_TO_NAME[patch.status],
-        "filename": patch.new_file_path,
-        "old_filename": patch.old_file_path,  # NOTE: RestfulGit extension
-        "additions": patch.additions,
-        "deletions": patch.deletions,
-        "changes": patch.additions + patch.deletions,
+        "sha": str(patch.delta.new_file.id if not deleted else patch.delta.old_file.id),
+        "status": GIT_STATUS_TO_NAME[patch.delta.status_char()],
+        "filename": patch.delta.new_file.path,
+        "old_filename": patch.delta.old_file.path,  # NOTE: RestfulGit extension
+        "additions": patch.line_stats[1],
+        "deletions": patch.line_stats[2],
+        "changes": patch.line_stats[1] + patch.line_stats[2],
         "raw_url": url_for('porcelain.get_raw',
                            _external=True,
                            repo_key=repo_key,
                            branch_or_tag_or_sha=commit_sha,
-                           file_path=patch.new_file_path),
+                           file_path=patch.delta.new_file.path),
         "contents_url": url_for('porcelain.get_contents',
                                 _external=True,
                                 repo_key=repo_key,
-                                file_path=patch.new_file_path,
+                                file_path=patch.delta.new_file.path,
                                 ref=commit_sha),
     }
-    if patch.new_file_path in filename_to_patch:
-        result['patch'] = filename_to_patch[patch.new_file_path]
+    if patch.delta.new_file.path in filename_to_patch:
+        result['patch'] = filename_to_patch[patch.delta.new_file.path]
     return result
 
 
@@ -115,8 +115,8 @@ def convert_commit(repo_key, repo, commit, include_diff=False):
         diff = get_diff(repo, commit)
         patches = list(diff)
         filename_to_patch = _filename_to_patch_from(diff)
-        patches_additions = sum(patch.additions for patch in patches)
-        patches_deletions = sum(patch.deletions for patch in patches)
+        patches_additions = sum(patch.line_stats[1] for patch in patches)
+        patches_deletions = sum(patch.line_stats[2] for patch in patches)
         result.update({
             "stats": {
                 "additions": patches_additions,
@@ -139,7 +139,7 @@ def convert_blame(repo_key, repo, blame, raw_lines, start_line):
             'commit': str(commit_sha),
             'origPath': hunk.orig_path,
             'lineNum': line_num,
-            'line': line,
+            'line': line.decode(),
         })
 
     return {
