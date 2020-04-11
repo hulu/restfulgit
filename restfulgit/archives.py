@@ -15,7 +15,7 @@ from restfulgit.plumbing.retrieval import get_repo, get_tree
 from restfulgit.plumbing.converters import GIT_MODE_SUBMODULE
 from restfulgit.porcelain.retrieval import get_commit_for_refspec
 from restfulgit.utils.json_err_pages import json_error_page, register_general_error_handler
-from restfulgit.utils.url_converters import SHAConverter, register_converter
+from restfulgit.utils.url_converters import RepoConverter, SHAConverter, register_converter
 from restfulgit.utils.cors import corsify
 from restfulgit.utils import mime_types
 
@@ -43,6 +43,7 @@ EPOCH_START = datetime(1970, 1, 1)
 
 archives = Blueprint('archives', __name__)  # pylint: disable=C0103
 register_converter(archives, 'sha', SHAConverter)
+register_converter(archives, 'repo', RepoConverter)
 register_general_error_handler(archives, json_error_page)
 
 
@@ -94,7 +95,7 @@ def _send_transient_file_as_attachment(source_filename_or_fp, attachment_filenam
     )
 
 
-@archives.route('/repos/<repo_key>/zipball/<branch_or_tag_or_sha>/')
+@archives.route('/repos/<repo:repo_key>/zipball/<branch_or_tag_or_sha>/')
 @corsify
 def get_zip_file(repo_key, branch_or_tag_or_sha):
     """
@@ -117,7 +118,7 @@ def get_zip_file(repo_key, branch_or_tag_or_sha):
                                               mime_types.ZIP)
 
 
-@archives.route('/repos/<repo_key>/tarball/<branch_or_tag_or_sha>/')
+@archives.route('/repos/<repo:repo_key>/tarball/<branch_or_tag_or_sha>/')
 @corsify
 def get_tarball(repo_key, branch_or_tag_or_sha):
     """

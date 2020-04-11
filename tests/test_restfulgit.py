@@ -246,6 +246,16 @@ class RepoKeyTestCase(_RestfulGitTestCase):
                     }
                 )
 
+    def test_deepdir_repos(self):
+        with self.temporary_directory(suffix='.restfulgit') as temp_repos_dir:
+            self.app.config['RESTFULGIT_REPO_BASE_PATH'] = temp_repos_dir
+            pygit2.init_repository(os.path.join(temp_repos_dir, 'onedir/bare.git'), bare=True)
+            pygit2.init_repository(os.path.join(temp_repos_dir, 'second/more/nested/repo'))
+            resp = self.client.get('/repos/')
+            repo_names = {repo['name'] for repo in resp.json}
+            self.assertEquals(repo_names, {
+                'onedir/bare.git', 'second/more/nested/repo'})
+
 
 class SHAConverterTestCase(_RestfulGitTestCase):
     def test_empty_sha_rejected(self):

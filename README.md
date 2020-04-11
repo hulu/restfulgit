@@ -60,7 +60,7 @@ If the variable is not set or the loading attempt fails, RestfulGit will then at
 
 | Config parameter                     | Default value     | Description                                                                                                                                         |
 |--------------------------------------|-------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------|
-| RESTFULGIT_REPO_BASE_PATH            | (none)            | Root path for Git repositories. Note: only repositories immediately under this path are currently supported.                                        |
+| RESTFULGIT_REPO_BASE_PATH            | (none)            | Root path for Git repositories. Restfulgit will look for 5 repositories deep in directory tree.                                                     |
 | RESTFULGIT_DEFAULT_COMMIT_LIST_LIMIT | 50                | Number of most recent commits to return by default from the "commits" API endpoint.                                                                 |
 | RESTFULGIT_ENABLE_CORS               | False             | Whether to enable [cross-origin resource sharing (CORS)](http://en.wikipedia.org/wiki/Cross-origin_resource_sharing) headers for the API endpoints. |
 | RESTFULGIT_CORS_ALLOWED_HEADERS      | `[]` (empty list) | List of HTTP header names (strings) that are allowed be used by the client when making a CORS request.                                              |
@@ -71,6 +71,9 @@ If the variable is not set or the loading attempt fails, RestfulGit will then at
 --
 
 All of these routes return JSON unless otherwise specified.
+
+For repositories within directories slashes should be replaced with `;`
+(semicolon). If there is `;` in directory name, it can be encoded with `;;`.
 
 Commits
 ----------
