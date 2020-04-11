@@ -16,7 +16,7 @@ from restfulgit.porcelain.converters import convert_repo, convert_branch_verbose
 from restfulgit.utils.json import jsonify
 from restfulgit.utils.cors import corsify
 from restfulgit.utils.json_err_pages import json_error_page, register_general_error_handler
-from restfulgit.utils.url_converters import SHAConverter, register_converter
+from restfulgit.utils.url_converters import RepoConverter, SHAConverter, register_converter
 from restfulgit.utils import mime_types
 
 
@@ -40,6 +40,7 @@ else:
 
 porcelain = Blueprint('porcelain', __name__)  # pylint: disable=C0103
 register_converter(porcelain, 'sha', SHAConverter)
+register_converter(porcelain, 'repo', RepoConverter)
 register_general_error_handler(porcelain, json_error_page)
 
 
@@ -50,7 +51,7 @@ def get_repo_list():
     return [convert_repo(repo_key) for repo_key in sorted(get_repo_names())]
 
 
-@porcelain.route('/repos/<repo_key>/')
+@porcelain.route('/repos/<repo:repo_key>/')
 @corsify
 @jsonify
 def get_repo_info(repo_key):
@@ -58,7 +59,7 @@ def get_repo_info(repo_key):
     return convert_repo(repo_key)
 
 
-@porcelain.route('/repos/<repo_key>/branches/')
+@porcelain.route('/repos/<repo:repo_key>/branches/')
 @corsify
 @jsonify
 def get_branches(repo_key):
@@ -67,7 +68,7 @@ def get_branches(repo_key):
     return [convert_branch_summary(repo_key, branch) for branch in branches]
 
 
-@porcelain.route('/repos/<repo_key>/branches/<branch_name>/')
+@porcelain.route('/repos/<repo:repo_key>/branches/<branch_name>/')
 @corsify
 @jsonify
 def get_branch(repo_key, branch_name):
@@ -86,7 +87,7 @@ def _is_merged(repo, current_branch, other_branch):
     return merge_base_oid == other_branch.target
 
 
-@porcelain.route('/repos/<repo_key>/branches/<branch_name>/merged/')
+@porcelain.route('/repos/<repo:repo_key>/branches/<branch_name>/merged/')
 @corsify
 @jsonify
 def get_merged_branches(repo_key, branch_name):  # NOTE: This endpoint is a RestfulGit extension
@@ -101,7 +102,7 @@ def get_merged_branches(repo_key, branch_name):  # NOTE: This endpoint is a Rest
     return [convert_branch_summary(repo_key, merged_branch) for merged_branch in merged_branches]
 
 
-@porcelain.route('/repos/<repo_key>/branches/<branch_name>/unique-commits/sorted/<any(topological,chronological):sort>/')
+@porcelain.route('/repos/<repo:repo_key>/branches/<branch_name>/unique-commits/sorted/<any(topological,chronological):sort>/')
 @corsify
 @jsonify
 def get_commits_unique_to_branch(repo_key, branch_name, sort):  # NOTE: This endpoint is a RestfulGit extension
@@ -120,7 +121,7 @@ def get_commits_unique_to_branch(repo_key, branch_name, sort):  # NOTE: This end
 TAG_REF_PREFIX = "refs/tags/"
 
 
-@porcelain.route('/repos/<repo_key>/tags/')
+@porcelain.route('/repos/<repo:repo_key>/tags/')
 @corsify
 @jsonify
 def get_tags(repo_key):
@@ -142,7 +143,7 @@ def get_tags(repo_key):
     ]
 
 
-@porcelain.route('/repos/<repo_key>/tags/<tag_name>/')
+@porcelain.route('/repos/<repo:repo_key>/tags/<tag_name>/')
 @corsify
 @jsonify
 def get_tag(repo_key, tag_name):  # NOTE: This endpoint is a RestfulGit extension
@@ -163,7 +164,7 @@ def get_tag(repo_key, tag_name):  # NOTE: This endpoint is a RestfulGit extensio
     return result
 
 
-@porcelain.route('/repos/<repo_key>/commits/<branch_or_tag_or_sha>/')
+@porcelain.route('/repos/<repo:repo_key>/commits/<branch_or_tag_or_sha>/')
 @corsify
 @jsonify
 def get_commit(repo_key, branch_or_tag_or_sha):
@@ -172,8 +173,8 @@ def get_commit(repo_key, branch_or_tag_or_sha):
     return convert_commit(repo_key, repo, commit, include_diff=True)
 
 
-@porcelain.route('/repos/<repo_key>/contents/')
-@porcelain.route('/repos/<repo_key>/contents/<path:file_path>')
+@porcelain.route('/repos/<repo:repo_key>/contents/')
+@porcelain.route('/repos/<repo:repo_key>/contents/<path:file_path>')
 @corsify
 @jsonify
 def get_contents(repo_key, file_path=''):
@@ -185,7 +186,7 @@ def get_contents(repo_key, file_path=''):
     return _get_contents(repo_key, repo, refspec, file_path, obj)
 
 
-@porcelain.route('/repos/<repo_key>/raw/<branch_or_tag_or_sha>/<path:file_path>')
+@porcelain.route('/repos/<repo:repo_key>/raw/<branch_or_tag_or_sha>/<path:file_path>')
 @corsify
 def get_raw(repo_key, branch_or_tag_or_sha, file_path):
     repo = get_repo(repo_key)
@@ -198,7 +199,7 @@ def get_raw(repo_key, branch_or_tag_or_sha, file_path):
     return Response(data, mimetype=mime_type)
 
 
-@porcelain.route('/repos/<repo_key>/commit/<branch_or_tag_or_sha>.diff')
+@porcelain.route('/repos/<repo:repo_key>/commit/<branch_or_tag_or_sha>.diff')
 @corsify
 def get_diff(repo_key, branch_or_tag_or_sha=None):
     repo = get_repo(repo_key)
@@ -207,7 +208,7 @@ def get_diff(repo_key, branch_or_tag_or_sha=None):
     return Response(diff.patch or '', mimetype=mime_types.DIFF)
 
 
-@porcelain.route('/repos/<repo_key>/compare/<old_branch_or_tag_or_sha>...<new_branch_or_tag_or_sha>.diff')
+@porcelain.route('/repos/<repo:repo_key>/compare/<old_branch_or_tag_or_sha>...<new_branch_or_tag_or_sha>.diff')
 @corsify
 def get_compare_diff(repo_key, old_branch_or_tag_or_sha, new_branch_or_tag_or_sha):
     context = request.args.get('context', 3)  # NOTE: The `context` parameter is a RestfulGit extension
@@ -225,7 +226,7 @@ def get_compare_diff(repo_key, old_branch_or_tag_or_sha, new_branch_or_tag_or_sh
     return Response(diff.patch or '', mimetype=mime_types.DIFF)
 
 
-@porcelain.route('/repos/<repo_key>/blame/<branch_or_tag_or_sha>/<path:file_path>')  # NOTE: This endpoint is a RestfulGit extension
+@porcelain.route('/repos/<repo:repo_key>/blame/<branch_or_tag_or_sha>/<path:file_path>')  # NOTE: This endpoint is a RestfulGit extension
 @corsify
 @jsonify
 def get_blame(repo_key, branch_or_tag_or_sha, file_path):
@@ -274,7 +275,7 @@ def get_blame(repo_key, branch_or_tag_or_sha, file_path):
     return convert_blame(repo_key, repo, blame, raw_lines, min_line)
 
 
-@porcelain.route('/repos/<repo_key>/contributors/')
+@porcelain.route('/repos/<repo:repo_key>/contributors/')
 @corsify
 @jsonify
 def get_contributors(repo_key):

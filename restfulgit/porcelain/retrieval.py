@@ -16,16 +16,26 @@ GIT_OBJ_TO_PORCELAIN_NAME = {
 }
 
 
+def detect_repos(path, depth=5):
+    for dirent in os.scandir(path):
+        if not dirent.is_dir():
+            continue
+        if dirent.name == '.git':
+            yield path
+            break
+        if dirent.name.endswith('.git'):
+            yield dirent.path
+            continue
+        if depth > 1:
+            yield from detect_repos(dirent.path, depth=depth-1)
+
+
 def get_repo_names():
-    children = (
-        (name, safe_join(current_app.config['RESTFULGIT_REPO_BASE_PATH'], name))
-        for name in os.listdir(current_app.config['RESTFULGIT_REPO_BASE_PATH'])
-    )
-    subdirs = [(dir_name, full_path) for dir_name, full_path in children if os.path.isdir(full_path)]
-    mirrors = set(name for name, _ in subdirs if name.endswith('.git'))
-    working_copies = set(name for name, full_path in subdirs if os.path.isdir(safe_join(full_path, '.git')))
-    repositories = mirrors | working_copies
-    return repositories
+    prefix = current_app.config['RESTFULGIT_REPO_BASE_PATH'].rstrip('/') + '/'
+    prefix_len = len(prefix)
+    relative_repo_paths = (path[prefix_len:] for path in detect_repos(prefix)
+                           if path.startswith(prefix))
+    return {rel_path for rel_path in relative_repo_paths}
 
 
 def get_commit_for_refspec(repo, branch_or_tag_or_sha):

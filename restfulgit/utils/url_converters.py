@@ -12,3 +12,12 @@ def register_converter(blueprint, name, converter):
 
 class SHAConverter(BaseConverter):  # pylint: disable=W0232
     regex = r'(?:[0-9a-fA-F]{1,40})'
+
+
+class RepoConverter(BaseConverter):
+
+    def to_python(self, value):
+        return value.replace(';', '/').replace(';;', ';')
+
+    def to_url(self, value):
+        return value.replace(';', ';;').replace('/', ';')

@@ -12,15 +12,16 @@ from restfulgit.plumbing.converters import convert_commit, convert_blob, convert
 from restfulgit.utils.json import jsonify
 from restfulgit.utils.cors import corsify
 from restfulgit.utils.json_err_pages import json_error_page, register_general_error_handler
-from restfulgit.utils.url_converters import SHAConverter, register_converter
+from restfulgit.utils.url_converters import RepoConverter, SHAConverter, register_converter
 
 
 plumbing = Blueprint('plumbing', __name__)  # pylint: disable=C0103
 register_converter(plumbing, 'sha', SHAConverter)
+register_converter(plumbing, 'repo', RepoConverter)
 register_general_error_handler(plumbing, json_error_page)
 
 
-@plumbing.route('/repos/<repo_key>/git/commits/')
+@plumbing.route('/repos/<repo:repo_key>/git/commits/')
 @corsify
 @jsonify
 def get_commit_list(repo_key):
@@ -65,7 +66,7 @@ def get_commit_list(repo_key):
     return commits
 
 
-@plumbing.route('/repos/<repo_key>/git/commits/<sha:sha>/')
+@plumbing.route('/repos/<repo:repo_key>/git/commits/<sha:sha>/')
 @corsify
 @jsonify
 def get_commit(repo_key, sha):
@@ -74,7 +75,7 @@ def get_commit(repo_key, sha):
     return convert_commit(repo_key, commit)
 
 
-@plumbing.route('/repos/<repo_key>/git/commits/<sha:left_sha>/merge-base/<sha:right_sha>/')
+@plumbing.route('/repos/<repo:repo_key>/git/commits/<sha:left_sha>/merge-base/<sha:right_sha>/')
 @corsify
 @jsonify
 def get_merge_base_for_commits(repo_key, left_sha, right_sha):  # NOTE: RestfulGit extension
@@ -90,7 +91,7 @@ def get_merge_base_for_commits(repo_key, left_sha, right_sha):  # NOTE: RestfulG
         return convert_commit(repo_key, merge_base_commit)
 
 
-@plumbing.route('/repos/<repo_key>/git/trees/<sha:sha>/')
+@plumbing.route('/repos/<repo:repo_key>/git/trees/<sha:sha>/')
 @corsify
 @jsonify
 def get_tree(repo_key, sha):
@@ -100,7 +101,7 @@ def get_tree(repo_key, sha):
     return convert_tree(repo_key, repo, tree, recursive)
 
 
-@plumbing.route('/repos/<repo_key>/git/blobs/<sha:sha>/')
+@plumbing.route('/repos/<repo:repo_key>/git/blobs/<sha:sha>/')
 @corsify
 @jsonify
 def get_blob(repo_key, sha):
@@ -109,7 +110,7 @@ def get_blob(repo_key, sha):
     return convert_blob(repo_key, blob)
 
 
-@plumbing.route('/repos/<repo_key>/git/tags/<sha:sha>/')
+@plumbing.route('/repos/<repo:repo_key>/git/tags/<sha:sha>/')
 @corsify
 @jsonify
 def get_tag(repo_key, sha):
@@ -118,8 +119,8 @@ def get_tag(repo_key, sha):
     return convert_tag(repo_key, repo, tag)
 
 
-@plumbing.route('/repos/<repo_key>/git/refs/')
-@plumbing.route('/repos/<repo_key>/git/refs/<path:ref_path>')
+@plumbing.route('/repos/<repo:repo_key>/git/refs/')
+@plumbing.route('/repos/<repo:repo_key>/git/refs/<path:ref_path>')
 @corsify
 @jsonify
 def get_refs(repo_key, ref_path=None):
